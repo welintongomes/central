@@ -55,7 +55,7 @@ h1,h2,h3,p{margin:0;}
 ::selection{background:rgba(53,105,92,.18);}
 
 /* ============================================================
-   TEMA ESCURO (DARK MODE) E SEGURANÇA
+   TEMA ESCURO E SEGURANÇA
    ============================================================ */
 html.dark-theme, body.dark-theme { background: #0A0A0A; }
 body.dark-theme {
@@ -76,7 +76,7 @@ body.dark-theme #app { box-shadow: 0 0 60px rgba(0,0,0,0.5); }
 .item, .gal-item { transition: opacity 0.3s ease, transform 0.12s ease, box-shadow 0.12s ease; }
 .lazy-card.lazy-hidden { opacity: 0; pointer-events: none; }
 
-#app{ position:relative; max-width:480px; margin:0 auto; height:100%; background:var(--paper); overflow:hidden; box-shadow:0 0 60px rgba(0,0,0,.18); }
+#app{ position:relative; max-width:900px; margin:0 auto; height:100%; background:var(--paper); overflow:hidden; box-shadow:0 0 60px rgba(0,0,0,.18); }
 
 .screen{ position:absolute; inset:0; display:flex; flex-direction:column; background:var(--paper); opacity:0; transform:translateX(16px); pointer-events:none; transition:opacity .22s ease, transform .22s ease; padding-bottom:env(safe-area-inset-bottom); }
 .screen.active{ opacity:1; transform:translateX(0); pointer-events:auto; z-index:2; }
@@ -84,7 +84,7 @@ body.dark-theme #app { box-shadow: 0 0 60px rgba(0,0,0,0.5); }
 
 /* ---------- HOME ---------- */
 #screen-home{overflow-y:auto;}
-.home-header{ display: flex;gap: 8px; justify-content: center;align-items: baseline; position: sticky; top: 0; z-index: 10; padding: calc(env(safe-area-inset-top) + 5px) var(--sp-5) 5px; background:linear-gradient(180deg, var(--tint-1) 0%, var(--tint-2) 100%); border-bottom:1px solid var(--line); }
+.home-header{ display: flex;gap: 8px; justify-content: center;align-items: baseline; position: sticky; top: 0; z-index: 10; padding: calc(env(safe-area-inset-top) + 9px) var(--sp-5) 18px; background:linear-gradient(180deg, var(--tint-1) 0%, var(--tint-2) 100%); border-bottom:1px solid var(--line); }
 .home-header .greet{ font-size:24px; font-weight:700; letter-spacing:-.3px; display:flex; align-items:center; gap:8px; }
 .home-header .date{ margin-top:4px; font-size:14px; color:var(--ink-soft); font-weight:500; text-transform:capitalize; }
 .stat-row{ display:flex; gap:8px; margin-top:16px; overflow-x:auto; padding-bottom:2px; scrollbar-width:none; }
@@ -98,7 +98,7 @@ body.dark-theme #app { box-shadow: 0 0 60px rgba(0,0,0,0.5); }
 .clear-search { position: absolute; right: 12px; width: 22px; height: 22px; border-radius: 50%; background: var(--line); color: var(--ink-soft); font-size: 11px; display: flex; align-items: center; justify-content: center; transition: background 0.15s; }
 .clear-search:active { background: var(--ink-faint); color: var(--surface); }
 
-.tile-grid{overflow-y: auto; max-height: 67vh; display:grid; grid-template-columns:1fr 1fr; gap:12px; padding:18px var(--sp-5) 28px; }
+.tile-grid{overflow-y: auto; scrollbar-width: none; max-height: 67vh; display:grid; grid-template-columns:1fr 1fr; gap:12px; padding:18px var(--sp-5) 28px; }
 .tile{ background:var(--surface);align-items: center; border:1px solid var(--line); border-radius:var(--r-lg); padding:16px 14px; text-align:left; display:flex; flex-direction:column; gap:10px; box-shadow:0 1px 3px rgba(var(--shadow-rgb),.05); transition:transform .12s ease, box-shadow .12s ease; }
 .tile:active{transform:scale(.96);box-shadow:0 1px 1px rgba(var(--shadow-rgb),.04);}
 .tile .bubble{ width:38px;height:38px; border-radius:12px; display:flex;align-items:center;justify-content:center; font-size:18px; }
@@ -108,15 +108,15 @@ body.dark-theme #app { box-shadow: 0 0 60px rgba(0,0,0,0.5); }
 
 /* ---------- MODULE SCREENS ---------- */
 .module-screen{background:var(--surface-2);}
-.module-header{ padding:calc(env(safe-area-inset-top) + 14px) var(--sp-4) 16px; display:flex; align-items:center; gap:10px; color:#fff; flex:0 0 auto; }
+.module-header{ padding: calc(env(safe-area-inset-top) + 5px) var(--sp-4) 16px; display:flex; align-items:center; gap:10px; color:#fff; flex:0 0 auto; }
 .module-header h2{font-size:19px;font-weight:700;letter-spacing:-.2px;flex:1;}
-.back-btn, .header-action{ width:34px;height:34px; border-radius:50%; border:none; background:rgba(255,255,255,.22); color:#fff; font-size:18px; display:flex;align-items:center;justify-content:center; flex:0 0 auto; }
+.back-btn, .header-action{ width:56px;height:56px; border-radius:50%; border:none; background:rgba(255,255,255,.22); color:#fff; font-size:18px; display:flex;align-items:center;justify-content:center; flex:0 0 auto; }
 .back-btn:active{background:rgba(255,255,255,.34);}
 
 .filter-tabs{justify-content: center; display:flex; gap:8px; padding: 10px 23px 20px 23px; flex:0 0 auto; overflow-x:auto; scrollbar-width:none; }
 .filter-tabs::-webkit-scrollbar{display:none;}
-.f-tab{ flex:0 0 auto; padding:7px 14px; border-radius:var(--r-pill); border:none; background:rgba(255,255,255,.22); color:#fff; font-size:12.5px; font-weight:600; opacity:.75; }
-.f-tab.active{background:#fff;color: #141414;opacity:1;font-weight: 700;}
+.f-tab{ flex:0 0 auto; padding:7px 14px; border-radius:var(--r-pill); border:none; background: rgb(59 110 143 / 91%); color:#fff; font-size:12.5px; font-weight:600; opacity:.75; }
+.f-tab.active{background: #35695c;opacity:1;font-weight: 700;}
 
 .module-body{ flex:1; overflow-y:auto; padding:16px var(--sp-4) 80px; background:var(--surface-2); border-top-left-radius:20px; border-top-right-radius:20px; margin-top:-14px; }
 
@@ -138,7 +138,7 @@ body.dark-theme #app { box-shadow: 0 0 60px rgba(0,0,0,0.5); }
 .empty-state.compact{padding:22px 10px;}
 .empty-state.compact .e-icon{font-size:24px;margin-bottom:6px;}
 
-.fab{ position:absolute; left:20px; bottom:calc(124px + env(safe-area-inset-bottom)); width:56px;height:56px; border-radius:50%; border:none; color:#fff; font-size:26px; font-weight:400; box-shadow:0 6px 16px rgba(var(--shadow-rgb),.28); z-index:5; display:flex;align-items:center;justify-content:center; transition:transform .12s; }
+.fab{ position:absolute; left:20px; bottom:calc(90px + env(safe-area-inset-bottom)); width:56px;height:56px; border-radius:50%; border:none; color:#fff; font-size:26px; font-weight:400; box-shadow:0 6px 16px rgba(var(--shadow-rgb),.28); z-index:5; display:flex;align-items:center;justify-content:center; transition:transform .12s; }
 .fab:active{transform:scale(.92);}
 
 /* ---------- SHEET (bottom form) ---------- */
@@ -158,7 +158,7 @@ body.dark-theme #app { box-shadow: 0 0 60px rgba(0,0,0,0.5); }
 .seg{display:flex;gap:8px;}
 .seg button{ flex:1; padding:10px; border-radius:var(--r-sm); border:1.5px solid var(--line); background:var(--surface-2); font-size:13.5px; font-weight:700; color:var(--ink-soft); }
 .seg button.active{border-color:var(--accent);color:var(--accent);background:rgba(53,105,92,.08);}
-.chip-picker{display:flex;flex-wrap:wrap;gap:8px;}
+.chip-picker{display:flex;flex-wrap:wrap;gap:8px; overflow-y: auto; scrollbar-width: none; flex-wrap: nowrap;}
 .chip-picker button{ padding:8px 13px; border-radius:var(--r-pill); border:1.5px solid var(--line); background:var(--surface-2); font-size:13px; font-weight:600; color:var(--ink-soft); }
 .chip-picker button.active{background:var(--accent);border-color:var(--accent);color:#fff;}
 .emoji-picker{display:flex;justify-content:space-between;}
@@ -170,7 +170,6 @@ body.dark-theme #app { box-shadow: 0 0 60px rgba(0,0,0,0.5); }
 .btn-primary:active{opacity:.85;}
 .btn-ghost{background:var(--surface-2);color:var(--ink-soft);border:1.5px solid var(--line);}
 .btn-danger-text{background:none;border:none;color:var(--danger);font-size:13.5px;font-weight:700;padding:6px 0;text-align:left;}
-
 /* ---------- misc widgets ---------- */
 .streak-dots{display:flex;gap:5px;margin-top:8px;}
 .streak-dots span{width:8px;height:8px;border-radius:50%;background:var(--line);}
@@ -186,7 +185,7 @@ body.dark-theme #app { box-shadow: 0 0 60px rgba(0,0,0,0.5); }
 .month-nav button{background:none;border:none;font-size:17px;color:var(--ink-soft);width:30px;height:30px;}
 .month-nav span{font-size:13.5px;font-weight:700;text-transform:capitalize;min-width:120px;text-align:center;}
 
-.quick-add-row{display:flex;gap:8px;margin-bottom:14px;}
+.quick-add-row{display: flex;gap: 8px;margin: 8px 14px 8px 13px;flex-direction: row-reverse;}
 .quick-add-row input{ flex:1; border:1.5px solid var(--line); background:var(--surface); border-radius:var(--r-pill); padding:11px 16px; font-size:14.5px; outline:none; color: var(--ink);}
 .quick-add-row input:focus{border-color:var(--accent);}
 .quick-add-row button{ width:44px;height:44px; border-radius:50%; border:none; color:#fff; font-size:20px; flex:0 0 auto; }
@@ -222,19 +221,31 @@ body.dark-theme #app { box-shadow: 0 0 60px rgba(0,0,0,0.5); }
     background: linear-gradient(180deg, var(--tint-1) 0%, var(--tint-2) 100%);
     border-bottom: 1px solid var(--line);
 }
+@media (min-width: 768px) {
+
+    .sheet {
+      scrollbar-width: thin;
+      scrollbar-color: rgb(86 85 81 / 55%) rgba(255, 255, 255, .05);
+        width: 800px;
+        max-width: 800px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+}
 </style>
 </head>
 <body>
 <div id="app">
 
 <!-- ===== HOME ===== -->
-<section id="screen-home" class="screen active">
+<section id="screen-home" class="screen active" style="scrollbar-width: none";>
   
   
   
   <div class="greet home-header"><span id="greet-emoji">👋</span><span id="greet-text">Olá</span><div class="date" id="date-text"></div></div>
   <div id="home-alerts" style="padding: 16px var(--sp-5) 0;"></div>
-  <div class="list" id="search-results" style="display: none;min-height: 67.9vh; overflow-y: auto; max-height: 68vh; padding: 25px 15px 25px 15px;"></div>
+  <div class="list" id="search-results" style="display: none;min-height: 66.9vh; overflow-y: auto; scrollbar-width: thin; scrollbar-color: rgb(60 56 56 / 80%) rgba(255, 255, 255, 0.05); max-height: 67vh; padding: 25px 15px 25px 15px;"></div>
 
   <div class="tile-grid" id="tile-grid"></div>
   <div class="home-headerbottom">
@@ -317,12 +328,13 @@ body.dark-theme #app { box-shadow: 0 0 60px rgba(0,0,0,0.5); }
 <section id="screen-shopping" class="screen module-screen">
   
   <div class="module-body" style="margin-top:0;padding-top:16px;">
-    <div class="quick-add-row">
+    
+    <div class="list" id="shopping-list"></div>
+  </div>
+  <div class="quick-add-row">
       <input type="text" id="shopping-quick-input" placeholder="Adicionar item…" onkeydown="if(event.key==='Enter')quickAddShopping()">
       <button style="background:var(--c-shopping)" onclick="quickAddShopping()">+</button>
     </div>
-    <div class="list" id="shopping-list"></div>
-  </div>
   <div class="module-header" id="shopping-header">
     <button class="back-btn" onclick="goHome()">←</button>
     <h2>Lista de compras</h2>
@@ -413,7 +425,7 @@ body.dark-theme #app { box-shadow: 0 0 60px rgba(0,0,0,0.5); }
 <div id="media-viewer" style="position:fixed; inset:0; background:rgba(0,0,0,0.95); z-index:100; display:none; flex-direction:column; justify-content:center; align-items:center; opacity:0; transition:opacity 0.2s;">
   <button onclick="closeGalleryViewer()" style="position:absolute; top:calc(env(safe-area-inset-top) + 20px); right:20px; color:#fff; font-size:24px; width:40px; height:40px; background:rgba(255,255,255,0.2); border-radius:50%; border:none;">✕</button>
   <div id="media-viewer-content" style="width:100%; max-height:80vh; display:flex; justify-content:center; align-items:center;"></div>
-  <div id="media-viewer-title" style="color:#fff; margin-top:20px; font-weight:600; font-size:16px;"></div>
+  <div id="media-viewer-title" style="color:#fff; margin-top:20px; font-weight:600; font-size:16px; padding:0 20px; text-align:center;"></div>
   <button id="media-viewer-del" class="btn-danger-text" style="position:absolute; bottom:calc(env(safe-area-inset-bottom) + 30px); font-size:16px;">🗑️ Excluir</button>
 </div>
 
@@ -425,7 +437,7 @@ body.dark-theme #app { box-shadow: 0 0 60px rgba(0,0,0,0.5); }
     <div id="sheet-fields"></div>
     <button class="btn-danger-text" id="sheet-delete" style="display:none;">Excluir</button>
     <div class="sheet-actions">
-      <button class="btn btn-ghost" onclick="closeSheet()">Cancelar</button>
+      <button class="btn btn-ghost" onclick="closeSheet()" id="btn-cancelar-sheet">Cancelar</button>
       <button class="btn btn-primary" id="sheet-submit">Salvar</button>
     </div>
   </div>
@@ -446,10 +458,7 @@ function toggleTheme() {
 }
 function loadTheme() {
   const saved = localStorage.getItem('central-theme');
-  if (saved === 'dark') {
-    document.body.classList.add('dark-theme');
-    document.documentElement.classList.add('dark-theme');
-  }
+  if (saved === 'dark') { document.body.classList.add('dark-theme'); document.documentElement.classList.add('dark-theme'); }
 }
 
 /* ============================================================
@@ -472,11 +481,7 @@ function h(tag, attrs, children){
   return el;
 }
 function fieldWrap(label, inputEl){ return h('div',{class:'field'},[h('label',{},label), inputEl]); }
-function emptyState(icon,text,sub,compact){
-  return h('div',{class:'empty-state'+(compact?' compact':'')},[
-    h('div',{class:'e-icon'},icon), h('div',{class:'e-text'},text), h('div',{class:'e-sub'},sub)
-  ]);
-}
+function emptyState(icon,text,sub,compact){ return h('div',{class:'empty-state'+(compact?' compact':'')},[ h('div',{class:'e-icon'},icon), h('div',{class:'e-text'},text), h('div',{class:'e-sub'},sub) ]); }
 function pad(n){ return String(n).padStart(2,'0'); }
 function isoDate(d){ return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }
 function todayIso(){ return isoDate(new Date()); }
@@ -494,7 +499,7 @@ function toast(msg){
 }
 
 /* ============================================================
-   INDEXEDDB LAYER (ATUALIZADO PARA V3)
+   INDEXEDDB LAYER (Versão 3 mantida, segura para atualizações)
    ============================================================ */
 const DB_NAME='centralPessoalDB';
 const DB_VERSION=3;
@@ -510,10 +515,7 @@ function openDatabase(){
         if(!d.objectStoreNames.contains(name)){ d.createObjectStore(name, {keyPath:'id', autoIncrement:true}); }
       });
     };
-    req.onblocked = () => {
-      toast('Feche outras abas para o app atualizar!');
-      reject(new Error('blocked'));
-    };
+    req.onblocked = () => { toast('Por favor, feche as outras abas deste site!'); reject(new Error('blocked')); };
     req.onsuccess = (e)=>{ db=e.target.result; resolve(db); };
     req.onerror = (e)=> reject(e.target.error);
   });
@@ -576,10 +578,24 @@ function openSheet(cfg){
   document.getElementById('sheet-title').textContent=cfg.title;
   const fieldsBox=document.getElementById('sheet-fields');
   fieldsBox.innerHTML=''; cfg.buildFields(fieldsBox);
+  
   const delBtn=document.getElementById('sheet-delete');
   if(cfg.onDelete){ delBtn.style.display='block'; delBtn.onclick=()=>{ closeSheet(); cfg.onDelete(); }; } else { delBtn.style.display='none'; delBtn.onclick=null; }
-  const submitBtn=document.getElementById('sheet-submit'); submitBtn.textContent=cfg.submitLabel||'Salvar';
-  submitBtn.onclick=async ()=>{ const result = await cfg.onSubmit(); if(result!==false) closeSheet(); };
+  
+  const submitBtn=document.getElementById('sheet-submit'); 
+  const cancelBtn=document.getElementById('btn-cancelar-sheet');
+  
+  // Esconde os botões padrão se a configuração pedir
+  if(cfg.hideButtons) {
+     submitBtn.style.display = 'none';
+     cancelBtn.style.display = 'none';
+  } else {
+     submitBtn.style.display = 'block';
+     cancelBtn.style.display = 'block';
+     submitBtn.textContent=cfg.submitLabel||'Salvar';
+     submitBtn.onclick=async ()=>{ const result = await cfg.onSubmit(); if(result!==false) closeSheet(); };
+  }
+  
   document.getElementById('sheet-overlay').classList.add('open');
 }
 function closeSheet(){ document.getElementById('sheet-overlay').classList.remove('open'); }
@@ -649,7 +665,6 @@ async function updateHomeStats(){
   const wToday=waterLogs.find(w=>w.date===todayISO); const wCount=wToday?wToday.count:0; setSub('water', wCount+'/8 copos');
   buildStatChips(pending.length, income-outcome, wCount);
 
-  // Alertas
   const alertsBox = document.getElementById('home-alerts'); alertsBox.innerHTML = ''; 
   const urgentTasks = tasks.filter(t => !t.done && t.due && t.due <= todayISO && !t.isEncrypted);
   if (urgentTasks.length > 0) {
@@ -751,8 +766,15 @@ async function handleGlobalSearch() {
       const cp = r.checkProps; row.appendChild(h('div', { class: 'check' + cp.extraClass, style: cp.extraStyle, onclick: cp.action }, cp.checkText));
     } else {
       let icon = '', color = '';
-      if (r.type === 'note') { icon = '📝'; color = 'var(--c-notes)'; } if (r.type === 'contact') { icon = '📇'; color = 'var(--c-contacts)'; } if (r.type === 'expense') { icon = '💰'; color = 'var(--c-expenses)'; }
-      if (r.type === 'journal') { icon = '📔'; color = 'var(--c-journal)'; } if (r.type === 'password') { icon = '🔑'; color = '#505560'; } if (r.type === 'gallery') { icon = '🖼️'; color = '#8E543B'; }
+      if (r.type === 'note') { icon = '📝'; color = 'var(--c-notes)'; } 
+      if (r.type === 'contact') { icon = '📇'; color = 'var(--c-contacts)'; } 
+      if (r.type === 'expense') { icon = '💰'; color = 'var(--c-expenses)'; }
+      if (r.type === 'journal') { icon = '📔'; color = 'var(--c-journal)'; } 
+      if (r.type === 'password') { icon = '🔑'; color = '#505560'; } 
+      if (r.type === 'gallery') {
+         icon = r.item.mediaType === 'audio' ? '🎵' : (r.item.mediaType === 'video' ? '🎬' : '🖼️'); 
+         color = '#8E543B';
+      }
       row.appendChild(h('div', { style: `background:${color}; color:#fff; width:34px; height:34px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:16px; flex: 0 0 auto;` }, icon));
     }
 
@@ -782,14 +804,14 @@ async function handleGlobalSearch() {
 }
 
 /* ============================================================
-   BACKUP
+   BACKUP E DADOS
    ============================================================ */
 function openSettings() {
   openSheet({
     title: 'Backup e Dados',
     buildFields: (box) => {
       box.appendChild(h('div', {style: 'font-size:13px; color:var(--ink-soft); margin-bottom:16px; line-height:1.5; text-align:center;'}, 'Seus dados ficam apenas na memória deste celular. Salve um backup para não perder nada.'));
-      box.appendChild(h('button', { type: 'button', class: 'btn btn-primary', style: 'width:100%; margin-bottom:12px; background:var(--ink);', onclick: () => { closeSheet(); exportAllData(); } }, '💾 Salvar Backup (Exportar)'));
+      box.appendChild(h('button', { type: 'button', class: 'btn btn-primary', style: 'width:100%; margin-bottom:12px;', onclick: () => { closeSheet(); exportAllData(); } }, '💾 Salvar Backup (Exportar)'));
       box.appendChild(h('button', { type: 'button', class: 'btn btn-ghost', style: 'width:100%;', onclick: () => { closeSheet(); triggerImport(); } }, '📂 Restaurar Backup (Importar)'));
     },
     submitLabel: 'Fechar', onSubmit: () => { return true; }
@@ -1093,7 +1115,7 @@ function openPasswordForm(existing) {
       const userInput = h('input',{type:'text', id:'f-pwd-user', style:'flex:1', value:(existing&&existing.username)||''});
       const copyUserBtn = h('button', { type:'button', class:'btn btn-ghost', style:'flex:0 0 auto; padding:11px 14px; font-size:16px;', onclick: () => { const val = document.getElementById('f-pwd-user').value; if(val) { navigator.clipboard.writeText(val); toast('Usuário copiado!'); } } }, '📋');
       const userWrap = h('div', {style:'display:flex; gap:8px;'}); userWrap.appendChild(userInput); userWrap.appendChild(copyUserBtn); box.appendChild(fieldWrap('Usuário', userWrap));
-      const pwdInput = h('input',{type:'password', id:'f-pwd-pass', style:'flex:1', value:(existing&&existing.password)||''});
+      const pwdInput = h('input',{type:'text', id:'f-pwd-pass', style:'flex:1', value:(existing&&existing.password)||''}); // Alterado type:text para copiar fácil
       const copyPwdBtn = h('button', { type:'button', class:'btn btn-ghost', style:'flex:0 0 auto; padding:11px 14px; font-size:16px;', onclick: () => { const val = document.getElementById('f-pwd-pass').value; if(val) { navigator.clipboard.writeText(val); toast('Senha copiada!'); } } }, '📋');
       const genBtn = h('button', { type:'button', class:'btn btn-ghost', style:'flex:0 0 auto; padding:11px 14px; font-size:16px;', onclick: () => { const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%&*"; let pwd = ""; for(let i=0; i<16; i++) pwd += chars.charAt(Math.floor(Math.random() * chars.length)); document.getElementById('f-pwd-pass').value = pwd; } }, '🎲'); 
       const pwdWrap = h('div', {style:'display:flex; gap:8px;'}); pwdWrap.appendChild(pwdInput); pwdWrap.appendChild(copyPwdBtn); pwdWrap.appendChild(genBtn); box.appendChild(fieldWrap('Senha', pwdWrap));
@@ -1109,58 +1131,98 @@ function openPasswordForm(existing) {
 }
 
 /* ============================================================
-   GALERIA SECRETA
+   GALERIA SECRETA (MULTI, CÂMERA E ÁUDIO)
    ============================================================ */
 async function renderGallery() {
   const list = document.getElementById('gallery-list'); list.innerHTML = ''; let items = await dbAll('gallery');
   items.sort((a,b) => (b.createdAt||0) - (a.createdAt||0)); 
-  if(!items.length){ list.appendChild(emptyState('🖼️','Galeria Vazia','Toque no + para guardar fotos ou vídeos', true)); return; }
+  if(!items.length){ list.appendChild(emptyState('🖼️','Galeria Vazia','Toque no + para guardar mídias', true)); return; }
   items.forEach(g => {
     const row = h('div', {class: 'gal-item', onclick: () => openGalleryViewer(g)});
-    if (g.mediaType === 'video') { row.appendChild(h('video', {class: 'gal-thumb', src: g.mediaData, muted: true, autoplay: true, loop: true, playsinline: true})); } else { row.appendChild(h('img', {class: 'gal-thumb', src: g.mediaData})); }
+    if (g.mediaType === 'video') { row.appendChild(h('video', {class: 'gal-thumb', src: g.mediaData, muted: true, autoplay: true, loop: true, playsinline: true})); } 
+    else if (g.mediaType === 'audio') { row.appendChild(h('div', {class: 'gal-thumb', style: 'display:flex; align-items:center; justify-content:center; font-size:40px; background:var(--surface-2);'}, '🎵')); }
+    else { row.appendChild(h('img', {class: 'gal-thumb', src: g.mediaData})); }
     row.appendChild(h('div', {class: 'gal-info'}, g.title || 'Sem título')); list.appendChild(row);
   });
   if(window.aplicarLazyLoading) window.aplicarLazyLoading();
 }
-let tempMediaData = null; let tempMediaType = null;
+
 function openGalleryForm() {
-  tempMediaData = null; tempMediaType = null;
   openSheet({
-    title: 'Adicionar à Galeria',
+    title: 'Adicionar Mídia',
+    hideButtons: true, // Esconde os botões padrão, o upload fará o trabalho
     buildFields: (box) => {
-      const uploadBox = h('div', { style: 'width:100%; height:180px; background:var(--surface-2); border:2px dashed var(--line); border-radius:var(--r-md); display:flex; flex-direction:column; justify-content:center; align-items:center; color:var(--ink-soft); font-weight:600; font-size:14px; overflow:hidden; position:relative;', onclick: () => triggerGalleryUpload(uploadBox) });
-      uploadBox.innerHTML = '<span style="font-size:32px; margin-bottom:8px;">📸</span> Toque para escolher foto/vídeo<br><span style="font-size:11px; font-weight:400; margin-top:6px;">Max: 15MB</span>';
-      box.appendChild(fieldWrap('Mídia', uploadBox)); box.appendChild(fieldWrap('Descrição / Título', h('input',{type:'text', id:'f-gal-title', placeholder:'Ex: Documento, Placa...'})));
-    },
-    onSubmit: async () => {
-      if (!tempMediaData) { toast('Escolha uma foto ou vídeo!'); return false; } const title = document.getElementById('f-gal-title').value.trim();
-      toast('Salvando...'); const obj = { createdAt: Date.now(), title: title, mediaData: tempMediaData, mediaType: tempMediaType };
-      await dbAdd('gallery', obj); renderGallery(); updateHomeStats(); toast('Salvo na galeria!');
+      box.appendChild(fieldWrap('Descrição / Título (Opcional)', h('input',{type:'text', id:'f-gal-title', placeholder:'Ex: Documentos, Viagem...'})));
+      
+      const grid = h('div', {style: 'display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:14px;'});
+      
+      const btnCam = h('button', {type:'button', class:'btn btn-ghost', style:'height:90px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;', onclick: () => triggerGalleryUpload('camera')});
+      btnCam.innerHTML = '<span style="font-size:28px;">📸</span><span style="font-size:13px; font-weight:700;">Câmera</span>';
+      
+      const btnAud = h('button', {type:'button', class:'btn btn-ghost', style:'height:90px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;', onclick: () => triggerGalleryUpload('audio')});
+      btnAud.innerHTML = '<span style="font-size:28px;">🎙️</span><span style="font-size:13px; font-weight:700;">Áudio</span>';
+      
+      const btnFiles = h('button', {type:'button', class:'btn btn-ghost', style:'grid-column: span 2; padding:16px; font-size:14px; display:flex; align-items:center; justify-content:center; gap:8px;', onclick: () => triggerGalleryUpload('files')});
+      btnFiles.innerHTML = '<span style="font-size:22px;">📂</span> Escolher da Galeria (Múltiplos)';
+
+      grid.appendChild(btnCam); grid.appendChild(btnAud); grid.appendChild(btnFiles);
+      box.appendChild(grid);
+      
+      box.appendChild(h('div', {style: 'font-size:12px; color:var(--ink-soft); text-align:center; margin-top:16px;'}, 'Max: 15MB por arquivo. O salvamento é automático ao selecionar a mídia.'));
     }
   });
 }
-function triggerGalleryUpload(boxEl) {
-  const inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/*, video/*';
+
+function triggerGalleryUpload(mode) {
+  const inp = document.createElement('input'); inp.type = 'file';
+  if (mode === 'camera') { inp.accept = 'image/*, video/*'; inp.capture = 'environment'; } 
+  else if (mode === 'audio') { inp.accept = 'audio/*'; inp.capture = 'microphone'; } 
+  else { inp.accept = 'image/*, video/*, audio/*'; inp.multiple = true; }
+  
   inp.onchange = e => {
-    const f = e.target.files[0]; if(!f) return;
-    if(f.size > 15 * 1024 * 1024) { alert('Arquivo muito grande! Máx 15MB.'); return; }
-    const reader = new FileReader();
-    reader.onload = ev => {
-      tempMediaData = ev.target.result; tempMediaType = f.type.startsWith('video') ? 'video' : 'image'; boxEl.style.border = 'none';
-      if (tempMediaType === 'video') { boxEl.innerHTML = `<video src="${tempMediaData}" style="width:100%; height:100%; object-fit:cover;" muted autoplay loop playsinline></video>`; } else { boxEl.innerHTML = `<img src="${tempMediaData}" style="width:100%; height:100%; object-fit:cover;">`; }
-    }; reader.readAsDataURL(f);
-  }; inp.click();
+    const files = Array.from(e.target.files); if(!files.length) return;
+    const baseTitle = document.getElementById('f-gal-title').value.trim() || 'Mídia Secreta';
+    closeSheet(); toast(`Processando ${files.length} arquivo(s)...`);
+    
+    // Timeout para permitir que a UI feche suavemente antes do processamento pesado
+    setTimeout(async () => {
+      let count = 0;
+      for (let i = 0; i < files.length; i++) {
+        const f = files[i];
+        if(f.size > 15 * 1024 * 1024) { alert(`O arquivo ${f.name} é muito grande (>15MB) e será ignorado.`); continue; }
+        
+        let mType = 'image'; if (f.type.startsWith('video')) mType = 'video'; if (f.type.startsWith('audio')) mType = 'audio';
+        
+        const data = await new Promise(resolve => { const reader = new FileReader(); reader.onload = ev => resolve(ev.target.result); reader.readAsDataURL(f); });
+        
+        let title = baseTitle; if (files.length > 1) title += ` (${i+1})`;
+        await dbAdd('gallery', { createdAt: Date.now() + i, title: title, mediaData: data, mediaType: mType }); 
+        count++;
+      }
+      if(count > 0) { renderGallery(); updateHomeStats(); toast(`${count} item(ns) salvo(s)!`); } else { toast('Nenhum item salvo.'); }
+    }, 150);
+  };
+  inp.click();
 }
+
 function openGalleryViewer(g) {
   const viewer = document.getElementById('media-viewer'); const content = document.getElementById('media-viewer-content');
   document.getElementById('media-viewer-title').textContent = g.title || 'Mídia Secreta'; content.innerHTML = '';
-  if (g.mediaType === 'video') { content.appendChild(h('video', {src: g.mediaData, style: 'max-width:100%; max-height:80vh; border-radius:8px;', controls: true, autoplay: true, playsinline: true})); } else { content.appendChild(h('img', {src: g.mediaData, style: 'max-width:100%; max-height:80vh; border-radius:8px; object-fit:contain;'})); }
+  
+  if (g.mediaType === 'video') { content.appendChild(h('video', {src: g.mediaData, style: 'max-width:100%; max-height:80vh; border-radius:8px;', controls: true, autoplay: true, playsinline: true})); } 
+  else if (g.mediaType === 'audio') { content.appendChild(h('audio', {src: g.mediaData, style: 'width:90%; outline:none;', controls: true, autoplay: true})); } 
+  else { content.appendChild(h('img', {src: g.mediaData, style: 'max-width:100%; max-height:80vh; border-radius:8px; object-fit:contain;'})); }
+  
   const delBtn = document.getElementById('media-viewer-del');
-  delBtn.onclick = () => { if(confirm('Excluir?')) { dbDel('gallery', g.id).then(() => { closeGalleryViewer(); renderGallery(); updateHomeStats(); toast('Excluído'); }); } };
+  delBtn.onclick = () => { if(confirm('Excluir permanentemente?')) { dbDel('gallery', g.id).then(() => { closeGalleryViewer(); renderGallery(); updateHomeStats(); toast('Excluído'); }); } };
+  
   viewer.style.display = 'flex'; setTimeout(() => viewer.style.opacity = '1', 10);
 }
-function closeGalleryViewer() { const viewer = document.getElementById('media-viewer'); viewer.style.opacity = '0'; document.getElementById('media-viewer-content').innerHTML = ''; setTimeout(() => viewer.style.display = 'none', 200); }
 
+function closeGalleryViewer() { 
+  const viewer = document.getElementById('media-viewer'); viewer.style.opacity = '0'; 
+  setTimeout(() => { document.getElementById('media-viewer-content').innerHTML = ''; viewer.style.display = 'none'; }, 200); 
+}
 
 /* ============================================================
    CRIPTOGRAFIA DE NÍVEL MILITAR (VAULT)
@@ -1218,7 +1280,7 @@ function toggleModuleLock(key) {
 }
 
 /* ============================================================
-   LAZY LOADING
+   LAZY LOADING VIRTUAL
    ============================================================ */
 window._lazyObserver = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
@@ -1232,7 +1294,7 @@ window._lazyObserver = new IntersectionObserver((entries) => {
 window.aplicarLazyLoading = () => { if (!window._lazyObserver) return; const seletores = '.item:not(.lazy-card), .gal-item:not(.lazy-card)'; document.querySelectorAll(seletores).forEach(el => { el.classList.add('lazy-card'); window._lazyObserver.observe(el); }); };
 
 /* ============================================================
-   INIT & UTILS
+   INIT E CRONÔMETROS
    ============================================================ */
 function updateHabitTimersUI() {
   const timers = document.querySelectorAll('.habit-timer'); if (!timers.length) return;
