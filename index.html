@@ -121,7 +121,7 @@ body.dark-theme #app { box-shadow: 0 0 60px rgba(0,0,0,0.5); }
 
 .module-body{ flex:1; overflow-y:auto; padding:16px var(--sp-4) 80px; background:var(--surface-2); border-top-left-radius:20px; border-top-right-radius:20px; margin-top:-14px; }
 
-.list{display:flex;flex-direction:column;gap:10px;}
+.list{display:flex;flex-direction:column;gap:10px;overflow-y:auto;max-height: 37vh;}
 .item{ background:var(--surface); border:1px solid var(--line); border-radius:var(--r-md); padding:13px 14px; display:flex; align-items:flex-start; gap:11px; box-shadow:0 1px 2px rgba(var(--shadow-rgb),.04); }
 .item .grow{flex:1;min-width:0;}
 .item .i-title{font-size:15px;font-weight:600;line-height:1.35;word-break:break-word;}
@@ -334,16 +334,22 @@ body.dark-theme #app { box-shadow: 0 0 60px rgba(0,0,0,0.5); }
   
   <div class="module-body" style="margin-top:0;padding-top:16px;">
     
+    
+    
     <div class="list" id="shopping-list"></div>
+    
   </div>
-  <div class="quick-add-row">
+  <div class="quick-add-row" style="margin-top:8px;">
       <input type="text" id="shopping-quick-input" placeholder="Adicionar item…" onkeydown="if(event.key==='Enter')quickAddShopping()">
       <button style="background:var(--c-shopping)" onclick="quickAddShopping()">+</button>
     </div>
+  <!-- Área onde os Chips das múltiplas listas vão aparecer -->
+    <div id="shopping-list-header-area"></div>
   <div class="module-header" id="shopping-header">
     <button class="back-btn" onclick="goHome()">←</button>
-    <h2>Lista de compras</h2>
-    <button class="header-action" onclick="clearCheckedShopping()" title="Limpar marcados">🧹</button>
+    <h2 style="flex:1;">Compras</h2>
+    <button class="header-action" onclick="deleteCurrentShoppingList()" title="Apagar lista inteira">🗑️</button>
+    <button class="header-action" style="margin-left:8px;" onclick="clearCheckedShopping()" title="Limpar marcados">🧹</button>
   </div>
 </section>
 
@@ -730,8 +736,9 @@ function renderModule(key){
 function setSub(key, text){ const n=document.getElementById('sub-'+key); if(n) n.textContent=text; }
 
 async function updateHomeStats(){
-  const [tasks, notes, expenses, habits, habitLogs, shopping, journal, contacts, waterLogs] = await Promise.all(
-    ['tasks','notes','expenses','habits','habitLogs','shopping','journal','contacts','waterLogs'].map(dbAll)
+  // AGORA BUSCAMOS TODOS OS 12 MÓDULOS!
+  const [tasks, notes, expenses, habits, habitLogs, shopping, journal, contacts, waterLogs, passwords, gallery, quotes] = await Promise.all(
+    ['tasks','notes','expenses','habits','habitLogs','shopping','journal','contacts','waterLogs','passwords','gallery','quotes'].map(dbAll)
   );
   
   const pending = tasks.filter(t=>!t.done && !t.isEncrypted);
@@ -753,9 +760,17 @@ async function updateHomeStats(){
   setSub('journal', journal.length? journal.length+' registro'+(journal.length>1?'s':'') : 'Nada escrito ainda');
   setSub('contacts', contacts.length? contacts.length+' salvo'+(contacts.length>1?'s':'') : 'Nenhum salvo');
   
-  const wToday=waterLogs.find(w=>w.date===todayISO); const wCount=wToday?wToday.count:0; setSub('water', wCount+'/8 copos');
+  const wToday=waterLogs.find(w=>w.date===todayISO); const wCount=wToday?wToday.count:0; 
+  setSub('water', wCount+'/8 copos');
+  
+  // NOVOS CONTADORES 
+  setSub('passwords', passwords.length ? passwords.length + ' salvas' : 'Cofre vazio');
+  setSub('gallery', gallery.length ? gallery.length + ' mídias' : 'Galeria vazia');
+  setSub('quotes', quotes.length ? quotes.length + ' frases' : 'Inspire-se');
+
   buildStatChips(pending.length, income-outcome, wCount);
 
+  // Alertas
   const alertsBox = document.getElementById('home-alerts'); alertsBox.innerHTML = ''; 
   const urgentTasks = tasks.filter(t => !t.done && t.due && t.due <= todayISO && !t.isEncrypted);
   if (urgentTasks.length > 0) {
@@ -1153,19 +1168,139 @@ function openHabitForm(existing){
 /* ============================================================
    OUTROS MÓDULOS (Compras, Diário, Contatos)
    ============================================================ */
+// modo lista de compras
+/* ============================================================
+   LISTA DE COMPRAS (Múltiplas Listas Inteligentes)
+   ============================================================ */
+let currentShoppingList = localStorage.getItem('active-shopping-list') || 'Lista 1';
+const SHOPPING_CATS = ['Mercado', 'Hortifruti', 'Açougue', 'Limpeza', 'Farmácia', 'Outros'];
+
 async function renderShopping(){
-  const list=document.getElementById('shopping-list'); list.innerHTML=''; let items=await dbAll('shopping');
-  items.sort((a,b)=>{ if(a.checked!==b.checked) return a.checked?1:-1; return (b.createdAt||0)-(a.createdAt||0); });
-  if(!items.length){ list.appendChild(emptyState('🛒','Lista vazia','Adicione itens no campo acima')); return; }
-  items.forEach(it=>{
-    const row=h('div',{class:'item'+(it.checked?' done':''), onclick:()=>toggleShopping(it)}); row.appendChild(h('div',{class:'check'+(it.checked?' on ck-shopping':'')}, it.checked?'✓':'')); const grow=h('div',{class:'grow'}); grow.appendChild(h('div',{class:'i-title'}, it.name)); row.appendChild(grow); row.appendChild(h('button',{class:'icon-btn', onclick:(e)=>{ e.stopPropagation(); confirmDelete('shopping', it.id, ()=>{renderShopping();updateHomeStats();}); }},'✕')); list.appendChild(row);
+  const listBox = document.getElementById('shopping-list'); listBox.innerHTML=''; 
+  let items = await dbAll('shopping');
+
+  // Atualiza os itens antigos que você já tinha para a "Lista 1" para você não perder nada
+  let migrated = false;
+  for (let i of items) { if(!i.listName) { i.listName = 'Lista 1'; await dbPut('shopping', i); migrated = true; } }
+  if (migrated) items = await dbAll('shopping');
+
+  let existingLists = Array.from(new Set(items.map(i => i.listName)));
+  if (!existingLists.includes(currentShoppingList)) existingLists.push(currentShoppingList);
+
+  // Ordena as listas (Lista 1, Lista 2... em ordem numérica)
+  existingLists.sort((a,b) => {
+      const numA = parseInt((a.match(/\d+/) || [0])[0]);
+      const numB = parseInt((b.match(/\d+/) || [0])[0]);
+      if (a.startsWith('Lista') && b.startsWith('Lista')) return numA - numB;
+      return a.localeCompare(b);
   });
+
+  // Constrói os Chips (Abas) das listas no topo
+  const headerArea = document.getElementById('shopping-list-header-area'); headerArea.innerHTML = '';
+  const chipWrap = h('div', {class: 'chip-picker', style: 'margin: 6px 14px 6px 13px; display:flex; flex-wrap:nowrap; overflow-x:auto; scrollbar-width:none; padding-bottom:4px; -webkit-overflow-scrolling:touch;'});
+
+  existingLists.forEach(lName => {
+    chipWrap.appendChild(h('button', {
+      class: currentShoppingList === lName ? 'active' : '', style: 'flex: 0 0 auto;',
+      onclick: () => { currentShoppingList = lName; localStorage.setItem('active-shopping-list', lName); renderShopping(); }
+    }, lName));
+  });
+
+  chipWrap.appendChild(h('button', { style: 'flex: 0 0 auto; border: 1.5px dashed var(--c-shopping); background: transparent; color: var(--c-shopping); font-weight:700;', onclick: openNewShoppingListForm }, '➕ Nova Lista'));
+  headerArea.appendChild(chipWrap);
+
+  // Renderiza apenas os itens da lista que está selecionada
+  let currentItems = items.filter(i => i.listName === currentShoppingList);
+  currentItems.sort((a,b) => { if(a.checked!==b.checked) return a.checked?1:-1; return (b.createdAt||0)-(a.createdAt||0); });
+
+  if(!currentItems.length){ listBox.appendChild(emptyState('🛒','Lista vazia','Adicione itens no campo acima')); }
+  else {
+    currentItems.forEach(it => {
+      const row = h('div',{class:'item'+(it.checked?' done':'')});
+      row.appendChild(h('div',{class:'check'+(it.checked?' on ck-shopping':''), onclick: (e) => { e.stopPropagation(); toggleShopping(it); }}, it.checked?'✓':''));
+      const grow = h('div',{class:'grow', onclick: () => openShoppingItemForm(it)});
+      grow.appendChild(h('div',{class:'i-title'}, it.name));
+      if (it.category && it.category !== 'Outros') grow.appendChild(h('div',{class:'i-sub'}, it.category)); // Mostra a categoria do item
+      row.appendChild(grow);
+      row.appendChild(h('button',{class:'icon-btn', onclick:(e)=>{ e.stopPropagation(); confirmDelete('shopping', it.id, ()=>{renderShopping();updateHomeStats();}); }},'✕'));
+      listBox.appendChild(row);
+    });
+  }
   if(window.aplicarLazyLoading) window.aplicarLazyLoading();
 }
-async function toggleShopping(it){ it.checked=!it.checked; await dbPut('shopping', it); renderShopping(); updateHomeStats(); }
-async function quickAddShopping(){ const inp=document.getElementById('shopping-quick-input'); const name=inp.value.trim(); if(!name) return; await dbAdd('shopping', {name:name, checked:false, createdAt:Date.now()}); inp.value=''; renderShopping(); updateHomeStats(); }
-async function clearCheckedShopping(){ const items=await dbAll('shopping'); const checked=items.filter(i=>i.checked); if(!checked.length){ toast('Nada marcado ainda'); return; } if(!confirm('Remover os itens marcados?')) return; for(const it of checked) await dbDel('shopping', it.id); renderShopping(); updateHomeStats(); toast('Lista limpa'); }
 
+async function toggleShopping(it){ it.checked=!it.checked; await dbPut('shopping', it); renderShopping(); updateHomeStats(); }
+
+async function quickAddShopping(){ 
+  const inp=document.getElementById('shopping-quick-input'); const name=inp.value.trim(); if(!name) return; 
+  await dbAdd('shopping', { name: name, checked: false, listName: currentShoppingList, category: 'Outros', createdAt: Date.now() }); 
+  inp.value=''; renderShopping(); updateHomeStats(); 
+}
+
+// O algoritmo simples e genial para auto-nomear (Lista 1, 2, 3...) cobrindo buracos
+function getNextShoppingListName(existingLists) {
+  let i = 1; while (existingLists.includes(`Lista ${i}`)) { i++; } return `Lista ${i}`;
+}
+
+async function openNewShoppingListForm() {
+  const items = await dbAll('shopping');
+  const existingLists = Array.from(new Set(items.map(i => i.listName)));
+  const suggestion = getNextShoppingListName(existingLists); // Encontra o número vago
+
+  openSheet({
+    title: 'Nova Lista de Compras',
+    buildFields: (box) => { box.appendChild(fieldWrap('Nome da Lista', h('input', {type:'text', id:'f-new-list', placeholder: `Deixe em branco para usar: "${suggestion}"`}))); },
+    onSubmit: () => {
+       let val = document.getElementById('f-new-list').value.trim();
+       if (!val) val = suggestion; // Aplica o algoritmo se estiver em branco
+       currentShoppingList = val; localStorage.setItem('active-shopping-list', val);
+       renderShopping();
+    }
+  });
+}
+
+function openShoppingItemForm(existing) {
+  let cat = existing.category || 'Outros';
+  openSheet({
+     title: 'Editar Produto',
+     buildFields: (box) => {
+        box.appendChild(fieldWrap('Nome do Produto', h('input',{type:'text', id:'f-shop-name', value:existing.name})));
+        box.appendChild(fieldWrap('Categoria do Produto', buildFormCategoryField(SHOPPING_CATS, cat)));
+     },
+     onSubmit: async () => {
+        const name = document.getElementById('f-shop-name').value.trim(); if(!name) { toast('Nome inválido'); return false; }
+        existing.name = name; existing.category = document.getElementById('f-cat-input').dataset.val;
+        await dbPut('shopping', existing); renderShopping(); updateHomeStats(); toast('Salvo');
+     },
+     onDelete: () => confirmDelete('shopping', existing.id, ()=>{renderShopping();updateHomeStats();})
+  });
+}
+
+async function clearCheckedShopping(){ 
+  const items = await dbAll('shopping'); 
+  const checked = items.filter(i => i.checked && i.listName === currentShoppingList); // Apaga só da lista atual
+  if(!checked.length){ toast('Nada marcado nesta lista'); return; } 
+  if(!confirm('Remover itens marcados desta lista?')) return; 
+  for(const it of checked) await dbDel('shopping', it.id); 
+  renderShopping(); updateHomeStats(); toast('Itens limpos'); 
+}
+
+async function deleteCurrentShoppingList() {
+  const items = await dbAll('shopping');
+  const toDelete = items.filter(i => i.listName === currentShoppingList);
+  
+  if (!confirm(toDelete.length > 0 ? `Apagar a lista "${currentShoppingList}" e seus ${toDelete.length} itens?` : `Apagar a lista vazia "${currentShoppingList}"?`)) return;
+  
+  for (let i of toDelete) await dbDel('shopping', i.id); // Deleta todos do banco
+  
+  // Reorganiza e pula para a próxima lista ou cria a Lista 1
+  const remainingLists = Array.from(new Set(items.filter(i => i.listName !== currentShoppingList).map(i => i.listName)));
+  currentShoppingList = remainingLists.length ? remainingLists[0] : 'Lista 1';
+  localStorage.setItem('active-shopping-list', currentShoppingList);
+  
+  renderShopping(); updateHomeStats(); toast('Lista apagada!');
+}
+//fim modo de lista de compras
 const MOODS=['😊','🙂','😐','😢','😠','😴'];
 async function renderJournal(){
   const list=document.getElementById('journal-list'); list.innerHTML=''; const entries=await dbAll('journal');
