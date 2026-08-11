@@ -26,6 +26,7 @@
   --c-notes:#7A5C8E;
   --c-expenses:#B8862B;
   --c-habits:#3E7A5D;
+  --c-quotes: #795548;
   --c-shopping:#8E3B46;
   --c-journal:#4A4E7C;
   --c-contacts:#2E8B7F;
@@ -197,6 +198,7 @@ body.dark-theme #app { box-shadow: 0 0 60px rgba(0,0,0,0.5); }
 #notes-header,#notes-fab,.bubble.b-notes{background:var(--c-notes);}
 #expenses-header,#expenses-fab,.bubble.b-expenses{background:var(--c-expenses);}
 #habits-header,#habits-fab,.bubble.b-habits{background:var(--c-habits);}
+#quotes-header, #quotes-fab, .bubble.b-quotes { background: var(--c-quotes); }
 #shopping-header,#shopping-fab,.bubble.b-shopping{background:var(--c-shopping);}
 #journal-header,#journal-fab,.bubble.b-journal{background:var(--c-journal);}
 #contacts-header,#contacts-fab,.bubble.b-contacts{background:var(--c-contacts);}
@@ -233,6 +235,9 @@ body.dark-theme #app { box-shadow: 0 0 60px rgba(0,0,0,0.5); }
     }
 
 }
+#quotes-cat-filter { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding-bottom: 4px; }
+#quotes-cat-filter::-webkit-scrollbar { display: none; }
+#quotes-cat-filter button.active { background: var(--c-quotes) !important; border-color: var(--c-quotes) !important; color: #fff !important; }
 </style>
 </head>
 <body>
@@ -418,7 +423,36 @@ body.dark-theme #app { box-shadow: 0 0 60px rgba(0,0,0,0.5); }
     <h2>Galeria Secreta</h2>
   </div>
 </section>
+<!-- ===== CITAÇÕES E FRASES ===== -->
+<section id="screen-quotes" class="screen module-screen">
+  
+  <div class="module-body" style="margin-top:0;padding-top:16px;">
+    
+    <!-- Tela da Frase Gerada -->
+    <div style="background:var(--surface); border:1px solid var(--line); border-radius:var(--r-lg); padding:24px 20px; text-align:center; margin-bottom:16px; box-shadow:0 4px 12px rgba(var(--shadow-rgb),.05); display:flex; flex-direction:column; gap:10px; min-height:160px; justify-content:center; position:relative;">
+      <div style="font-size:42px; color:var(--ink-faint); line-height:0; position:absolute; top:30px; left:16px; opacity:0.3;">“</div>
+      <div id="qd-text" style="font-size:17px; font-style:italic; font-weight:600; color:var(--ink); position:relative; z-index:1;">Selecione uma categoria e toque no botão abaixo para inspirar-se.</div>
+      <div id="qd-author" style="font-size:14px; color:var(--ink-soft); font-weight:700; margin-top:8px;"></div>
+      <div id="qd-obs" style="font-size:12.5px; color:var(--ink-faint); margin-top:4px;"></div>
+    </div>
 
+    <!-- Botão Mágico -->
+    <button class="btn btn-primary" style="width:100%; margin-bottom:20px; background:var(--c-quotes); border-radius:var(--r-pill); padding:14px; display:flex; align-items:center; justify-content:center; gap:8px;" onclick="generateRandomQuote()">
+      <span style="font-size:20px;">✨</span> Gerar Frase Aleatória
+    </button>
+    
+    <!-- Filtros e Lista -->
+    <div id="quotes-cat-filter" class="chip-picker"></div>
+    <div style="font-size:12px; font-weight:700; color:var(--ink-soft); margin:10px 0; text-transform:uppercase; letter-spacing:0.5px; text-align:center;">Todas as frases da categoria</div>
+    
+    <div class="list" id="quotes-list"></div>
+  </div>
+  <button class="fab" id="quotes-fab" onclick="openQuoteForm()">+</button>
+  <div class="module-header" id="quotes-header">
+    <button class="back-btn" onclick="goHome()">←</button>
+    <h2>Citações e Frases</h2>
+  </div>
+</section>
 </div> <!-- FIM APP -->
 
 <!-- VISUALIZADOR DE MÍDIA EM TELA CHEIA -->
@@ -502,8 +536,8 @@ function toast(msg){
    INDEXEDDB LAYER (Versão 3 mantida, segura para atualizações)
    ============================================================ */
 const DB_NAME='centralPessoalDB';
-const DB_VERSION=3;
-const STORES=['tasks','notes','expenses','habits','habitLogs','shopping','journal','contacts','waterLogs','weight','passwords','gallery'];
+const DB_VERSION=4;
+const STORES=['tasks','notes','expenses','habits','habitLogs','shopping','journal','contacts','waterLogs','weight','passwords','gallery', 'quotes'];
 let db;
 function openDatabase(){
   return new Promise((resolve,reject)=>{
@@ -553,22 +587,78 @@ function buildCategoryFilter(containerId, defaultCats, items, currentFilter, onC
 
 function buildFormCategoryField(defaultCats, initialValue) {
    const wrap = h('div', {class: 'field', style: 'display:flex; flex-direction:column; gap:8px;'});
-   let currentVal = initialValue || defaultCats[0];
-   const isDefault = defaultCats.includes(currentVal);
-   const chips = h('div', {class: 'chip-picker'});
-   defaultCats.forEach(c => {
-      chips.appendChild(h('button', {
-         type: 'button', class: (isDefault && currentVal === c) ? 'active' : '',
-         onclick: (e) => { chips.querySelectorAll('button').forEach(b => b.classList.remove('active')); e.currentTarget.classList.add('active'); const inp = document.getElementById('f-cat-input'); inp.value = ''; inp.dataset.val = c; }
-      }, c));
+
+   // 1. Truque mestre: Descobre qual é o módulo atual (banco de dados) baseado na lista de categorias padrão
+   let storeName = 'tasks';
+   if(defaultCats === NOTE_CATS) storeName = 'notes';
+   if(defaultCats === EXP_CATS) storeName = 'expenses';
+   if(defaultCats === HABIT_CATS) storeName = 'habits';
+   if(defaultCats === CONTACT_CATS) storeName = 'contacts';
+   if(defaultCats === PWD_CATS) storeName = 'passwords';
+   if(defaultCats === QUOTE_CATS) storeName = 'quotes';
+
+   // 2. Busca no banco de dados todas as categorias que você já salvou neste módulo
+   dbAll(storeName).then(items => {
+       const dbCats = items.map(i => i.category).filter(Boolean);
+
+       // 3. Junta as originais com as suas, ignorando maiúsculas/minúsculas para não duplicar (ex: App e app)
+       const lowerSet = new Set();
+       const uniqueCats = [];
+       [...defaultCats, ...dbCats].forEach(c => {
+           const low = c.toLowerCase();
+           if (!lowerSet.has(low)) { 
+               lowerSet.add(low); 
+               uniqueCats.push(c); // Guarda do jeitinho que você digitou na primeira vez
+           }
+       });
+
+       let currentVal = initialValue || defaultCats[0];
+       
+       // 4. Se a categoria atual bater com uma já existente (mesmo com case errado), ele corrige a capitalização
+       const matchedCat = uniqueCats.find(c => c.toLowerCase() === currentVal.toLowerCase());
+       if (matchedCat) currentVal = matchedCat;
+
+       const chips = h('div', {class: 'chip-picker'});
+       
+       uniqueCats.forEach(c => {
+          chips.appendChild(h('button', {
+             type: 'button', class: (currentVal === c) ? 'active' : '',
+             onclick: (e) => {
+                 chips.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+                 e.currentTarget.classList.add('active');
+                 const inp = document.getElementById('f-cat-input');
+                 inp.value = ''; 
+                 inp.dataset.val = c;
+             }
+          }, c));
+       });
+
+       // 5. Desenha o campo de texto para o caso de querer criar mais uma nova
+       const isKnown = uniqueCats.some(c => c.toLowerCase() === currentVal.toLowerCase());
+       const input = h('input', { type: 'text', id: 'f-cat-input', placeholder: 'Ou digite uma nova categoria...', value: isKnown ? '' : currentVal });
+       input.dataset.val = currentVal; // Guarda o valor final que será salvo no banco
+
+       input.oninput = (e) => {
+          const val = e.target.value.trim();
+          if (val !== '') {
+              chips.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+              e.target.dataset.val = val;
+          } else {
+              const first = chips.querySelector('button');
+              if(first) { 
+                  first.classList.add('active'); 
+                  e.target.dataset.val = first.textContent; 
+              }
+          }
+       };
+
+       // Monta tudo na tela
+       wrap.innerHTML = ''; 
+       wrap.appendChild(chips); 
+       wrap.appendChild(input);
    });
-   const input = h('input', { type: 'text', id: 'f-cat-input', placeholder: 'Ou digite uma nova categoria...', value: isDefault ? '' : currentVal, 'data-val': currentVal });
-   input.oninput = (e) => {
-      const val = e.target.value.trim();
-      if (val !== '') { chips.querySelectorAll('button').forEach(b => b.classList.remove('active')); e.target.dataset.val = val; } 
-      else { const first = chips.querySelector('button'); if(first) { first.classList.add('active'); e.target.dataset.val = first.textContent; } }
-   };
-   wrap.appendChild(chips); wrap.appendChild(input); return wrap;
+
+   return wrap;
 }
 
 /* ============================================================
@@ -605,6 +695,7 @@ const MODULES=[
   {key:'notes', title:'Notas', icon:'📝', cls:'b-notes'},
   {key:'expenses', title:'Gastos', icon:'💰', cls:'b-expenses'},
   {key:'habits', title:'Hábitos', icon:'🔥', cls:'b-habits'},
+  {key:'quotes', title:'Citações', icon:'💬', cls:'b-quotes'},
   {key:'shopping', title:'Compras', icon:'🛒', cls:'b-shopping'},
   {key:'journal', title:'Diário', icon:'📔', cls:'b-journal'},
   {key:'contacts', title:'Contatos', icon:'📇', cls:'b-contacts'},
@@ -633,7 +724,7 @@ function renderModule(key){
     if (list) { list.innerHTML = ''; list.appendChild(emptyState('🔒', 'Módulo Protegido', 'Toque no cadeado no topo para destravar.')); }
   } else {
     screen.classList.remove('is-locked');
-    ({tasks:renderTasks, notes:renderNotes, expenses:renderExpenses, habits:renderHabits, shopping:renderShopping, journal:renderJournal, contacts:renderContacts, water:renderWater, passwords:renderPasswords, gallery:renderGallery})[key]();
+    ({tasks:renderTasks, notes:renderNotes, expenses:renderExpenses, habits:renderHabits, shopping:renderShopping, journal:renderJournal, contacts:renderContacts, water:renderWater, passwords:renderPasswords, gallery:renderGallery, quotes:renderQuotes})[key]();
   }
 }
 function setSub(key, text){ const n=document.getElementById('sub-'+key); if(n) n.textContent=text; }
@@ -706,7 +797,7 @@ function clearSearch() { document.getElementById('global-search').value = ''; gl
 
 function renderGlobalSearchChips() {
   const container = document.getElementById('global-search-filters'); container.style.display = 'flex'; container.innerHTML = '';
-  const cats = ['Todos', 'Tarefas', 'Hábitos', 'Notas', 'Diário', 'Compras', 'Gastos', 'Senhas', 'Contatos', 'Galeria'];
+  const cats = ['Todos', 'Tarefas', 'Hábitos', 'Notas', 'Diário', 'Compras', 'Gastos', 'Senhas', 'Contatos', 'Galeria', 'Citações'];
   cats.forEach(c => { container.appendChild(h('button', { type: 'button', class: globalSearchFilter === c ? 'active' : '', style: 'flex: 0 0 auto;', onclick: () => { globalSearchFilter = c; handleGlobalSearch(); } }, c)); });
 }
 
@@ -718,7 +809,7 @@ async function handleGlobalSearch() {
   if (!isSearchMode && !q) { grid.style.display = 'grid'; hint.style.display = 'block'; resBox.style.display = 'none'; resBox.innerHTML = ''; clearBtn.style.display = 'none'; document.getElementById('global-search-filters').style.display = 'none'; return; }
   clearBtn.style.display = 'flex'; grid.style.display = 'none'; hint.style.display = 'none'; resBox.style.display = 'flex'; resBox.innerHTML = ''; renderGlobalSearchChips();
 
-  const [tasks, notes, contacts, expenses, shopping, journal, habits, habitLogs, passwords, gallery] = await Promise.all([ dbAll('tasks'), dbAll('notes'), dbAll('contacts'), dbAll('expenses'), dbAll('shopping'), dbAll('journal'), dbAll('habits'), dbAll('habitLogs'), dbAll('passwords'), dbAll('gallery') ]);
+  const [tasks, notes, contacts, expenses, shopping, journal, habits, habitLogs, passwords, gallery] = await Promise.all([ dbAll('tasks'), dbAll('notes'), dbAll('contacts'), dbAll('expenses'), dbAll('shopping'), dbAll('journal'), dbAll('habits'), dbAll('habitLogs'), dbAll('passwords'), dbAll('gallery'), dbAll('quotes') ]);
   let results = []; const todayISO = todayIso(); const now = Date.now();
 
   if (globalSearchFilter === 'Todos' || globalSearchFilter === 'Tarefas') tasks.forEach(t => { if (!t.isEncrypted && (!q || (t.text || '').toLowerCase().includes(q))) results.push({ type: 'task', item: t, title: t.text, sub: t.done ? 'Concluída' : 'Pendente' }); });
@@ -752,6 +843,9 @@ async function handleGlobalSearch() {
   if (globalSearchFilter === 'Todos' || globalSearchFilter === 'Gastos') expenses.forEach(e => { if (!e.isEncrypted && (!q || (e.description || '').toLowerCase().includes(q) || (e.category || '').toLowerCase().includes(q))) results.push({ type: 'expense', item: e, title: e.description || e.category, sub: `R$ ${e.amount} · ${humanDateFull(e.date)}` }); });
   if (globalSearchFilter === 'Todos' || globalSearchFilter === 'Senhas') passwords.forEach(p => { if (!p.isEncrypted && (!q || (p.title || '').toLowerCase().includes(q) || (p.username || '').toLowerCase().includes(q))) results.push({ type: 'password', item: p, title: p.title, sub: (p.category||'Cofre') + (p.username ? ' · ' + p.username : '') }); });
   if (globalSearchFilter === 'Todos' || globalSearchFilter === 'Galeria') gallery.forEach(g => { if (!g.isEncrypted && (!q || (g.title || '').toLowerCase().includes(q))) results.push({ type: 'gallery', item: g, title: g.title || 'Mídia Secreta', sub: 'Galeria' }); });
+
+  // NOVO: Busca dentro das citações
+  if (globalSearchFilter === 'Todos' || globalSearchFilter === 'Citações') quotes.forEach(qt => { if (!qt.isEncrypted && (!q || (qt.text || '').toLowerCase().includes(q) || (qt.author || '').toLowerCase().includes(q))) results.push({ type: 'quote', item: qt, title: qt.author || 'Desconhecido', sub: `"${(qt.text || '').slice(0, 50)}..."` }); });
 
   if (results.length === 0) { resBox.appendChild(emptyState('🔍', 'Nada encontrado', 'Tente pesquisar por outros termos')); return; }
 
@@ -1450,6 +1544,103 @@ function toggleModuleLock(key) {
     }
   });
 }
+
+/* ============================================================
+   CITAÇÕES E FRASES
+   ============================================================ */
+let quoteCatFilter = 'Todos';
+const QUOTE_CATS = ['Filosofia', 'Motivação', 'Livros', 'Filmes', 'Outro'];
+
+async function renderQuotes() {
+  const list = document.getElementById('quotes-list'); list.innerHTML = ''; 
+  let quotes = await dbAll('quotes');
+  
+  buildCategoryFilter('quotes-cat-filter', QUOTE_CATS, quotes, quoteCatFilter, (val) => { quoteCatFilter = val; renderQuotes(); });
+  
+  if (quoteCatFilter !== 'Todos') quotes = quotes.filter(q => (q.category || QUOTE_CATS[0]) === quoteCatFilter); 
+  quotes.sort((a,b) => (b.createdAt||0) - (a.createdAt||0));
+  
+  if(!quotes.length){ list.appendChild(emptyState('💬','Nenhuma frase','Adicione uma nova citação no +')); return; }
+  
+  quotes.forEach(q => {
+    const row = h('div',{class:'item'}); 
+    const grow = h('div',{class:'grow', onclick:()=>openQuoteForm(q)}); 
+    const rawText = (q.text||'').replace(/\n/g,' '); 
+    grow.appendChild(h('div',{class:'i-title', style:'font-style:italic;'}, `"${rawText.slice(0,60)+(rawText.length>60?'…':'')}"`));
+    
+    let subParts = [q.author || 'Desconhecido', (q.category || QUOTE_CATS[0])];
+    if(q.seen) subParts.push('👀 Já lida'); // Tag especial
+    grow.appendChild(h('div',{class:'i-sub'}, subParts.join(' · '))); 
+    
+    row.appendChild(grow); 
+    row.appendChild(h('button',{class:'icon-btn', onclick:(e)=>{ e.stopPropagation(); confirmDelete('quotes', q.id, ()=>{renderQuotes();updateHomeStats();}); }},'✕')); 
+    list.appendChild(row);
+  });
+  if(window.aplicarLazyLoading) window.aplicarLazyLoading();
+}
+
+async function generateRandomQuote() {
+  let all = await dbAll('quotes');
+  if (quoteCatFilter !== 'Todos') all = all.filter(q => (q.category || QUOTE_CATS[0]) === quoteCatFilter);
+  
+  if (all.length === 0) { toast('Nenhuma frase nesta categoria!'); return; }
+  
+  let unseen = all.filter(q => !q.seen);
+  
+  // A mágica do Ciclo Contínuo: Se leu todas, reinicia a categoria!
+  if (unseen.length === 0) {
+    for (const q of all) { q.seen = false; await dbPut('quotes', q); }
+    unseen = all;
+    toast('Ciclo reiniciado! 🔄');
+  }
+  
+  // Sorteio Aleatório
+  const randIndex = Math.floor(Math.random() * unseen.length);
+  const chosen = unseen[randIndex];
+  
+  // Marca como vista e salva
+  chosen.seen = true;
+  await dbPut('quotes', chosen);
+  
+  // Exibe na tela
+  document.getElementById('qd-text').textContent = `"${chosen.text}"`;
+  document.getElementById('qd-author').textContent = `- ${chosen.author || 'Desconhecido'}`;
+  document.getElementById('qd-obs').textContent = chosen.obs ? `Obs: ${chosen.obs}` : '';
+  
+  renderQuotes(); // Atualiza a lista abaixo
+}
+
+function openQuoteForm(existing) {
+  const isEdit = !!existing; let cat = (existing && existing.category) || QUOTE_CATS[0];
+  openSheet({
+    title: isEdit ? 'Editar Citação' : 'Nova Citação',
+    buildFields: (box) => {
+      const ta = h('textarea',{id:'f-quote-text', style:'min-height:100px; font-style:italic;', placeholder:'Digite a frase aqui...'}); 
+      ta.value = (existing&&existing.text)||''; 
+      box.appendChild(fieldWrap('Frase', ta));
+      
+      box.appendChild(fieldWrap('Autor', h('input',{type:'text', id:'f-quote-author', placeholder:'Ex: Friedrich Nietzsche', value:(existing&&existing.author)||''}))); 
+      box.appendChild(fieldWrap('Categoria', buildFormCategoryField(QUOTE_CATS, cat))); 
+      
+      const taObs = h('textarea',{id:'f-quote-obs', style:'min-height:60px;', placeholder:'Observações ou contexto (Opcional)'}); 
+      taObs.value = (existing&&existing.obs)||''; 
+      box.appendChild(fieldWrap('Observação (Opcional)', taObs));
+    },
+    onSubmit: async () => {
+      const text = document.getElementById('f-quote-text').value.trim(); 
+      if(!text){ toast('Escreva a frase'); return false; } 
+      const obj = existing || {createdAt:Date.now(), seen: false}; 
+      obj.text = text; obj.author = document.getElementById('f-quote-author').value.trim(); 
+      obj.obs = document.getElementById('f-quote-obs').value.trim(); 
+      obj.category = document.getElementById('f-cat-input').dataset.val; 
+      
+      if(existing) await dbPut('quotes', obj); else await dbAdd('quotes', obj); 
+      renderQuotes(); updateHomeStats(); toast('Salvo'); 
+    }, 
+    onDelete: isEdit ? ()=>confirmDelete('quotes', existing.id, ()=>{renderQuotes();updateHomeStats();}) : null
+  });
+}
+
 /* ============================================================
    LAZY LOADING VIRTUAL
    ============================================================ */
