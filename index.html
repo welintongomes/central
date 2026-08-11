@@ -535,7 +535,7 @@ const EXP_CATS = ['Alimentação','Transporte','Moradia','Lazer','Saúde','Outro
 const EXP_CAT_COLOR = {'Alimentação':'#B8862B','Transporte':'#3B6E8F','Moradia':'#8E3B46','Lazer':'#7A5C8E','Saúde':'#2E8B7F','Outros':'#8A8578'};
 const HABIT_CATS = ['Saúde', 'Trabalho', 'Estudos', 'Casa', 'Outro']; let habitCatFilter = 'Todos';
 const CONTACT_CATS = ['Emergência','Família','Médico','Trabalho','Outro']; let contactFilter = 'Todos'; 
-const PWD_CATS = ['E-mails', 'Bancos', 'Redes Sociais', 'Trabalho', 'Outros']; let pwdCatFilter = 'Todos';
+const PWD_CATS = ['Emails', 'Bancos', 'Social', 'Trabalho', 'Outros']; let pwdCatFilter = 'Todos';
 
 function buildCategoryFilter(containerId, defaultCats, items, currentFilter, onChange) {
   const dbCats = items.map(i => i.category).filter(Boolean);
@@ -804,7 +804,7 @@ async function handleGlobalSearch() {
 }
 
 /* ============================================================
-   BACKUP E DADOS
+   BACKUP E DADOS (Atualizado para suportar Arquivos Brutos)
    ============================================================ */
 function openSettings() {
   openSheet({
@@ -817,33 +817,84 @@ function openSettings() {
     submitLabel: 'Fechar', onSubmit: () => { return true; }
   });
 }
+
+// Converte Blob para Texto (Base64) temporariamente para o Backup
+async function blobToBase64(blob) {
+  return new Promise(resolve => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.readAsDataURL(blob);
+  });
+}
+
+// Converte o Texto (Base64) de volta para Blob ao Restaurar
+async function base64ToBlob(base64) {
+  const res = await fetch(base64);
+  return await res.blob();
+}
+
 async function exportAllData() {
+  toast('Preparando backup... aguarde.');
   try {
-    const data = {}; for (const store of STORES) data[store] = await dbAll(store);
+    const data = {}; 
+    for (const store of STORES) {
+      const items = await dbAll(store);
+      // Vasculha os itens procurando arquivos brutos para converter antes de salvar
+      for (const item of items) {
+        if (item.mediaEncrypted instanceof Blob) {
+          item.mediaEncrypted = await blobToBase64(item.mediaEncrypted);
+        }
+        if (item.mediaData instanceof Blob) {
+          item.mediaData = await blobToBase64(item.mediaData);
+        }
+      }
+      data[store] = items;
+    }
     data['_settings'] = { masterHash: localStorage.getItem('master-hash'), lockedModules: localStorage.getItem('locked-modules') };
+    
     const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url;
-    a.download = `central-backup-${todayIso()}.json`; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); toast('Backup salvo!');
+    const url = URL.createObjectURL(blob); 
+    const a = document.createElement('a'); a.href = url;
+    a.download = `central-backup-${todayIso()}.json`; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); 
+    toast('Backup salvo com sucesso!');
   } catch (e) { toast('Erro ao salvar backup.'); console.error(e); }
 }
+
 function triggerImport() {
   const input = document.createElement('input'); input.type = 'file'; input.accept = '.json';
   input.onchange = (e) => {
     const file = e.target.files[0]; if (!file) return; const reader = new FileReader();
+    toast('Lendo arquivo...');
     reader.onload = async (ev) => {
       try {
         const data = JSON.parse(ev.target.result);
         if (confirm('⚠️ ATENÇÃO: Isso vai substituir TUDO. Deseja continuar?')) {
-          toast('Restaurando...');
+          toast('Restaurando e processando mídias...');
           if(data['_settings']) { localStorage.setItem('master-hash', data['_settings'].masterHash || ''); localStorage.setItem('locked-modules', data['_settings'].lockedModules || '[]'); }
-          for (const store of STORES) { if (data[store]) { const items = await dbAll(store); for (const item of items) await dbDel(store, item.id); for (const item of data[store]) await dbPut(store, item); } }
+          
+          for (const store of STORES) { 
+            if (data[store]) { 
+              const items = await dbAll(store); 
+              for (const item of items) await dbDel(store, item.id); 
+              
+              for (const item of data[store]) {
+                // Se o backup contiver mídias em texto, converte de volta para Blob
+                if (typeof item.mediaEncrypted === 'string' && item.mediaEncrypted.startsWith('data:')) {
+                  item.mediaEncrypted = await base64ToBlob(item.mediaEncrypted);
+                }
+                if (typeof item.mediaData === 'string' && item.mediaData.startsWith('data:')) {
+                  item.mediaData = await base64ToBlob(item.mediaData);
+                }
+                await dbPut(store, item); 
+              } 
+            } 
+          }
           toast('Tudo pronto! Recarregando...'); setTimeout(() => location.reload(), 1200);
         }
-      } catch (err) { toast('Arquivo inválido.'); console.error(err); }
+      } catch (err) { toast('Arquivo inválido ou corrompido.'); console.error(err); }
     }; reader.readAsText(file);
   }; input.click();
 }
-
 /* ============================================================
    TAREFAS
    ============================================================ */
@@ -1133,15 +1184,27 @@ function openPasswordForm(existing) {
 /* ============================================================
    GALERIA SECRETA (MULTI, CÂMERA E ÁUDIO)
    ============================================================ */
+   // NOVA FUNÇÃO: Cria links ultraleves para arquivos pesados
+function getMediaSrc(data) {
+  // Se for um arquivo puro sem limite de tamanho (novo padrão)
+  if (data instanceof Blob || data instanceof File) {
+    return URL.createObjectURL(data);
+  }
+  // Mantém funcionando as imagens que você já tinha salvo antes
+  return data; 
+}
 async function renderGallery() {
   const list = document.getElementById('gallery-list'); list.innerHTML = ''; let items = await dbAll('gallery');
   items.sort((a,b) => (b.createdAt||0) - (a.createdAt||0)); 
   if(!items.length){ list.appendChild(emptyState('🖼️','Galeria Vazia','Toque no + para guardar mídias', true)); return; }
   items.forEach(g => {
     const row = h('div', {class: 'gal-item', onclick: () => openGalleryViewer(g)});
-    if (g.mediaType === 'video') { row.appendChild(h('video', {class: 'gal-thumb', src: g.mediaData, muted: true, autoplay: true, loop: true, playsinline: true})); } 
+    
+    const src = getMediaSrc(g.mediaData); // A mágica acontece aqui!
+
+    if (g.mediaType === 'video') { row.appendChild(h('video', {class: 'gal-thumb', src: src, muted: true, autoplay: true, loop: true, playsinline: true})); } 
     else if (g.mediaType === 'audio') { row.appendChild(h('div', {class: 'gal-thumb', style: 'display:flex; align-items:center; justify-content:center; font-size:40px; background:var(--surface-2);'}, '🎵')); }
-    else { row.appendChild(h('img', {class: 'gal-thumb', src: g.mediaData})); }
+    else { row.appendChild(h('img', {class: 'gal-thumb', src: src})); }
     row.appendChild(h('div', {class: 'gal-info'}, g.title || 'Sem título')); list.appendChild(row);
   });
   if(window.aplicarLazyLoading) window.aplicarLazyLoading();
@@ -1163,7 +1226,7 @@ function openGalleryForm() {
       btnAud.innerHTML = '<span style="font-size:28px;">🎙️</span><span style="font-size:13px; font-weight:700;">Áudio</span>';
       
       const btnFiles = h('button', {type:'button', class:'btn btn-ghost', style:'grid-column: span 2; padding:16px; font-size:14px; display:flex; align-items:center; justify-content:center; gap:8px;', onclick: () => triggerGalleryUpload('camera')});
-      btnFiles.innerHTML = '<span style="font-size:22px;">📂</span> Escolher da Galeria (Múltiplos)';
+      btnFiles.innerHTML = '<span style="font-size:22px;">📂</span> Escolher 1 item da galeria';
 
       grid.appendChild(btnCam); grid.appendChild(btnAud); grid.appendChild(btnFiles);
       box.appendChild(grid);
@@ -1184,19 +1247,18 @@ function triggerGalleryUpload(mode) {
     const baseTitle = document.getElementById('f-gal-title').value.trim() || 'Mídia Secreta';
     closeSheet(); toast(`Processando ${files.length} arquivo(s)...`);
     
-    // Timeout para permitir que a UI feche suavemente antes do processamento pesado
     setTimeout(async () => {
       let count = 0;
       for (let i = 0; i < files.length; i++) {
         const f = files[i];
-        if(f.size > 15 * 1024 * 1024) { alert(`O arquivo ${f.name} é muito grande (>15MB) e será ignorado.`); continue; }
+        
+        // ⚠️ O LIMITE DE TAMANHO FOI COMPLETAMENTE REMOVIDO!
         
         let mType = 'image'; if (f.type.startsWith('video')) mType = 'video'; if (f.type.startsWith('audio')) mType = 'audio';
-        
-        const data = await new Promise(resolve => { const reader = new FileReader(); reader.onload = ev => resolve(ev.target.result); reader.readAsDataURL(f); });
-        
         let title = baseTitle; if (files.length > 1) title += ` (${i+1})`;
-        await dbAdd('gallery', { createdAt: Date.now() + i, title: title, mediaData: data, mediaType: mType }); 
+        
+        // Salva o ARQUIVO PURO (Blob) direto no banco. É instantâneo!
+        await dbAdd('gallery', { createdAt: Date.now() + i, title: title, mediaData: f, mediaType: mType }); 
         count++;
       }
       if(count > 0) { renderGallery(); updateHomeStats(); toast(`${count} item(ns) salvo(s)!`); } else { toast('Nenhum item salvo.'); }
@@ -1209,9 +1271,11 @@ function openGalleryViewer(g) {
   const viewer = document.getElementById('media-viewer'); const content = document.getElementById('media-viewer-content');
   document.getElementById('media-viewer-title').textContent = g.title || 'Mídia Secreta'; content.innerHTML = '';
   
-  if (g.mediaType === 'video') { content.appendChild(h('video', {src: g.mediaData, style: 'max-width:100%; max-height:80vh; border-radius:8px;', controls: true, autoplay: true, playsinline: true})); } 
-  else if (g.mediaType === 'audio') { content.appendChild(h('audio', {src: g.mediaData, style: 'width:90%; outline:none;', controls: true, autoplay: true})); } 
-  else { content.appendChild(h('img', {src: g.mediaData, style: 'max-width:100%; max-height:80vh; border-radius:8px; object-fit:contain;'})); }
+  const src = getMediaSrc(g.mediaData); // A mágica acontece aqui também!
+  
+  if (g.mediaType === 'video') { content.appendChild(h('video', {src: src, style: 'max-width:100%; max-height:80vh; border-radius:8px;', controls: true, autoplay: true, playsinline: true})); } 
+  else if (g.mediaType === 'audio') { content.appendChild(h('audio', {src: src, style: 'width:90%; outline:none;', controls: true, autoplay: true})); } 
+  else { content.appendChild(h('img', {src: src, style: 'max-width:100%; max-height:80vh; border-radius:8px; object-fit:contain;'})); }
   
   const delBtn = document.getElementById('media-viewer-del');
   delBtn.onclick = () => { if(confirm('Excluir permanentemente?')) { dbDel('gallery', g.id).then(() => { closeGalleryViewer(); renderGallery(); updateHomeStats(); toast('Excluído'); }); } };
@@ -1229,18 +1293,84 @@ function closeGalleryViewer() {
    ============================================================ */
 const Vault = {
   async hashPwd(pwd) { const hash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pwd)); return Array.from(new Uint8Array(hash)).map(b=>b.toString(16).padStart(2,'0')).join(''); },
-  async deriveKey(pwd, salt) { const material = await crypto.subtle.importKey("raw", new TextEncoder().encode(pwd), "PBKDF2", false, ["deriveKey"]); return crypto.subtle.deriveKey({name: "PBKDF2", salt: salt, iterations: 100000, hash: "SHA-256"}, material, {name: "AES-GCM", length: 256}, false, ["encrypt", "decrypt"]); },
+  
+  async deriveKey(pwd, salt) { 
+    const material = await crypto.subtle.importKey("raw", new TextEncoder().encode(pwd), "PBKDF2", false, ["deriveKey"]); 
+    return crypto.subtle.deriveKey({name: "PBKDF2", salt: salt, iterations: 100000, hash: "SHA-256"}, material, {name: "AES-GCM", length: 256}, false, ["encrypt", "decrypt"]); 
+  },
+  
   async encryptItem(item, pwd) {
     if(item.isEncrypted) return item; 
-    const salt = crypto.getRandomValues(new Uint8Array(16)); const iv = crypto.getRandomValues(new Uint8Array(12)); const key = await this.deriveKey(pwd, salt); const encoded = new TextEncoder().encode(JSON.stringify(item)); const encrypted = await crypto.subtle.encrypt({name: "AES-GCM", iv}, key, encoded);
-    return { id: item.id, isEncrypted: true, salt: Array.from(salt), iv: Array.from(iv), data: Array.from(new Uint8Array(encrypted)) };
+    
+    const salt = crypto.getRandomValues(new Uint8Array(16)); 
+    const iv = crypto.getRandomValues(new Uint8Array(12)); 
+    const key = await this.deriveKey(pwd, salt);
+    
+    let mediaBlob = null;
+    // Clonamos o item para não alterar a tela visualmente caso algo dê erro
+    const itemToEncrypt = { ...item };
+
+    if(itemToEncrypt.mediaData && (itemToEncrypt.mediaData instanceof Blob || itemToEncrypt.mediaData instanceof File)) {
+       mediaBlob = itemToEncrypt.mediaData;
+       itemToEncrypt.mediaData = 'is_blob_encrypted';
+    }
+
+    const encoded = new TextEncoder().encode(JSON.stringify(itemToEncrypt)); 
+    const encrypted = await crypto.subtle.encrypt({name: "AES-GCM", iv}, key, encoded);
+    
+    let finalEncryptedMediaBlob = null;
+    let mediaIvArray = null;
+    
+    if(mediaBlob) {
+        // CORREÇÃO: Cria um IV (vetor) ÚNICO para o vídeo, evitando que o celular bloqueie a operação
+        const mediaIv = crypto.getRandomValues(new Uint8Array(12));
+        mediaIvArray = Array.from(mediaIv);
+        
+        const buffer = await mediaBlob.arrayBuffer();
+        const encryptedMedia = await crypto.subtle.encrypt({name: "AES-GCM", iv: mediaIv}, key, buffer);
+        
+        // Transformamos de volta em Blob, pois é o formato mais seguro para salvar arquivos gigantes no IndexedDB
+        finalEncryptedMediaBlob = new Blob([encryptedMedia]); 
+    }
+
+    // Voltamos os dados pequenos para Array.from() garantindo compatibilidade 100% com suas senhas antigas
+    return { 
+        id: item.id, 
+        isEncrypted: true, 
+        salt: Array.from(salt), 
+        iv: Array.from(iv), 
+        data: Array.from(new Uint8Array(encrypted)), 
+        mediaIv: mediaIvArray,
+        mediaEncrypted: finalEncryptedMediaBlob 
+    };
   },
+  
   async decryptItem(encItem, pwd) {
     if(!encItem.isEncrypted) return encItem;
     try {
-      const salt = new Uint8Array(encItem.salt); const iv = new Uint8Array(encItem.iv); const data = new Uint8Array(encItem.data); const key = await this.deriveKey(pwd, salt); const decrypted = await crypto.subtle.decrypt({name: "AES-GCM", iv}, key, data); const item = JSON.parse(new TextDecoder().decode(decrypted)); item.id = encItem.id; 
+      // Usar new Uint8Array garante que ele leia perfeitamente tanto as mídias novas quanto as antigas
+      const salt = new Uint8Array(encItem.salt); 
+      const iv = new Uint8Array(encItem.iv); 
+      const data = new Uint8Array(encItem.data); 
+      
+      const key = await this.deriveKey(pwd, salt); 
+      const decrypted = await crypto.subtle.decrypt({name: "AES-GCM", iv}, key, data); 
+      const item = JSON.parse(new TextDecoder().decode(decrypted)); 
+      
+      if(item.mediaData === 'is_blob_encrypted' && encItem.mediaEncrypted) {
+          const mediaIv = new Uint8Array(encItem.mediaIv);
+          const encryptedBuffer = await encItem.mediaEncrypted.arrayBuffer();
+          const decryptedMedia = await crypto.subtle.decrypt({name: "AES-GCM", iv: mediaIv}, key, encryptedBuffer);
+          
+          let mimeType = item.mediaType === 'video' ? 'video/mp4' : (item.mediaType === 'audio' ? 'audio/mpeg' : 'image/jpeg');
+          item.mediaData = new Blob([decryptedMedia], {type: mimeType});
+      }
+      
+      item.id = encItem.id; 
       return item;
-    } catch(e) { throw new Error('Senha incorreta ou dados corrompidos'); }
+    } catch(e) { 
+      throw new Error('Falha ao descriptografar'); 
+    }
   }
 };
 function promptMasterPassword(title, callback) {
@@ -1266,19 +1396,37 @@ function injectPadlocks() {
     }
   });
 }
+
 function toggleModuleLock(key) {
-  const lockedArr = JSON.parse(localStorage.getItem('locked-modules')||'[]'); const isLocked = lockedArr.includes(key); const title = isLocked ? 'Destravar Módulo' : 'Criptografar Módulo';
+  const lockedArr = JSON.parse(localStorage.getItem('locked-modules')||'[]'); 
+  const isLocked = lockedArr.includes(key); 
+  const title = isLocked ? 'Destravar Módulo' : 'Criptografar Módulo';
+  
   promptMasterPassword(title, async (pwd) => {
     toast('Processando...');
     try {
       const items = await dbAll(key);
-      for (let item of items) { let processed = isLocked ? await Vault.decryptItem(item, pwd) : await Vault.encryptItem(item, pwd); await dbPut(key, processed); }
-      let newArr = isLocked ? lockedArr.filter(k => k !== key) : [...lockedArr, key]; localStorage.setItem('locked-modules', JSON.stringify(newArr));
-      document.getElementById('lock-btn-' + key).textContent = isLocked ? '🔓' : '🔒'; renderModule(key); toast(isLocked ? 'Destravado' : 'Travado 🔒'); updateHomeStats();
-    } catch (e) { console.error(e); toast('Erro! Senha errada.'); }
+      for (let item of items) { 
+          let processed = isLocked ? await Vault.decryptItem(item, pwd) : await Vault.encryptItem(item, pwd); 
+          await dbPut(key, processed); 
+      }
+      let newArr = isLocked ? lockedArr.filter(k => k !== key) : [...lockedArr, key]; 
+      localStorage.setItem('locked-modules', JSON.stringify(newArr));
+      document.getElementById('lock-btn-' + key).textContent = isLocked ? '🔓' : '🔒'; 
+      renderModule(key); 
+      toast(isLocked ? 'Destravado' : 'Travado 🔒'); 
+      updateHomeStats();
+    } catch (e) { 
+      console.error(e); 
+      // Agora o sistema não mente mais para você:
+      if (e.message === 'Falha ao descriptografar') {
+          toast('Senha incorreta!'); 
+      } else {
+          toast('Erro interno ao processar. Veja o console.'); 
+      }
+    }
   });
 }
-
 /* ============================================================
    LAZY LOADING VIRTUAL
    ============================================================ */
