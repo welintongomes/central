@@ -542,10 +542,7 @@ body.dark-theme #app { box-shadow: 0 0 60px rgba(0,0,0,0.5); }
   <div class="module-body" style="margin-top:0;padding-top:16px; display:flex; flex-direction:column;">
     
     <div id="fc-dashboard">
-       <!-- NOVO: Filtro de Categorias -->
-       <div class="chip-picker" id="fc-cat-filter" style="margin-bottom:12px;"></div>
-
-       <!-- Painel de Revisões (Esconde quando filtra) -->
+       <div id="fc-cat-filter" class="chip-picker" style="margin-bottom:12px;"></div>
        <div id="fc-dash-top" style="background:var(--surface); border:1px solid var(--line); border-radius:var(--r-lg); padding:16px; margin-bottom:16px; box-shadow:0 1px 2px rgba(var(--shadow-rgb),.04); display:flex; align-items:center; gap:14px;">
          <div style="font-size:32px;">🎯</div>
          <div>
@@ -553,10 +550,7 @@ body.dark-theme #app { box-shadow: 0 0 60px rgba(0,0,0,0.5); }
            <div style="font-size:13px; color:var(--ink-soft); margin-top:2px;" id="fc-total-due">Calculando...</div>
          </div>
        </div>
-       
        <div class="list" id="fc-decks-list"></div>
-       
-       <!-- NOVO: Lista de cartões para edição (Aparece quando filtra) -->
        <div class="list" id="fc-cards-list" style="display:none;"></div>
     </div>
 
@@ -564,9 +558,17 @@ body.dark-theme #app { box-shadow: 0 0 60px rgba(0,0,0,0.5); }
     <div id="fc-study-area" style="display:none; flex-direction:column; flex:1;">
        <div style="text-align:center; margin-bottom:16px; font-size:13px; font-weight:700; color:var(--ink-soft);" id="fc-progress">Cartão 1</div>
        
-       <!-- Fila de Blocos (Frente, Verso, Exemplos) -->
        <div id="fc-blocks" style="display:flex; flex-direction:column; gap:12px;"></div>
 
+       <!-- NOVO: Área de Digitação (Modo Hardcore) -->
+       <div id="fc-type-area" style="display:none; margin-top:20px; flex-direction:column; gap:10px;">
+         <input type="text" id="fc-type-input" placeholder="Digite a resposta..." style="padding:16px; border-radius:var(--r-md); border:2px solid var(--line); background:var(--surface); font-size:16px; width:100%; text-align:center; color:var(--ink); font-weight:600; outline:none;" onkeydown="if(event.key==='Enter') verifyFlashcard()">
+         <button class="btn btn-primary" style="background:#4A90E2; padding:14px; display:flex; justify-content:center; gap:8px;" onclick="verifyFlashcard()">
+           <span style="font-size:18px;">✔️</span> Verificar Resposta
+         </button>
+       </div>
+
+       <!-- Botão Padrão de Virar -->
        <button id="fc-flip-btn" class="btn btn-primary" style="margin-top:20px; background:#4A90E2; display:flex; align-items:center; justify-content:center; gap:8px;" onclick="flipFlashcard()">
          <span style="font-size:18px;">🔄</span> Virar Cartão
        </button>
@@ -584,10 +586,13 @@ body.dark-theme #app { box-shadow: 0 0 60px rgba(0,0,0,0.5); }
   <button class="fab" id="flashcards-fab" onclick="openFlashcardForm()">+</button>
   <div class="module-header" id="flashcards-header">
     <button class="back-btn" onclick="exitFlashcardStudy()">←</button>
-    <h2 style="flex:1;font-size: 4vw; ">Estudo Ativo</h2>
-    <!-- NOVO: Botão de Editar durante o estudo -->
-    <button class="header-action" onclick="editCurrentFlashcard()" id="fc-edit-btn" title="Editar Cartão" style="display:none; margin-right:8px; font-size:16px;">✏️</button>
-    <button class="header-action" onclick="toggleFCTts()" id="fc-tts-btn" title="Leitura Automática">🔊</button>
+    <h2 style="flex:1;">Estudo</h2>
+    <button class="header-action" onclick="editCurrentFlashcard()" id="fc-edit-btn" title="Editar Cartão" style="display:none; margin-right:8px; font-size:16px; width: 30px; height: 30px;">✏️</button>
+    
+    <!-- NOVO: Chave Seletora de Modo (Digitar vs Virar) -->
+    <button class="header-action" onclick="toggleFCTypeMode()" id="fc-type-btn" title="Modo de Estudo" style="margin-right:8px;height: 30px;width: 30px;">🔄</button>
+    
+    <button class="header-action" onclick="toggleFCTts()" id="fc-tts-btn" title="Leitura Automática" style="width: 30px; height: 30px;">🔊</button>
   </div>
 </section>
 
@@ -940,40 +945,44 @@ function setupGreeting(){
 }
 
 /* ============================================================
-   BUSCA GLOBAL
+   BUSCA GLOBAL (Inteligente - Ignora Acentos e Maiúsculas)
    ============================================================ */
 let globalSearchFilter = 'Todos'; let isSearchMode = false;
 function enterSearchMode() { isSearchMode = true; handleGlobalSearch(); }
 function clearSearch() { document.getElementById('global-search').value = ''; globalSearchFilter = 'Todos'; isSearchMode = false; document.getElementById('global-search-filters').style.display = 'none'; handleGlobalSearch(); }
 
+// NOVA MAGIA: Remove acentos, cedilhas e deixa tudo minúsculo para comparar
+function norm(str) { return (str || '').toString().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase(); }
+
 function renderGlobalSearchChips() {
   const container = document.getElementById('global-search-filters'); container.style.display = 'flex'; container.innerHTML = '';
-  // ADICIONADOS: Citações e Flashcards na lista
   const cats = ['Todos', 'Tarefas', 'Hábitos', 'Notas', 'Diário', 'Compras', 'Gastos', 'Senhas', 'Contatos', 'Galeria', 'Citações', 'Flashcards'];
   cats.forEach(c => { container.appendChild(h('button', { type: 'button', class: globalSearchFilter === c ? 'active' : '', style: 'flex: 0 0 auto;', onclick: () => { globalSearchFilter = c; handleGlobalSearch(); } }, c)); });
 }
 
 async function handleGlobalSearch() {
-  const input = document.getElementById('global-search'); const q = input.value.toLowerCase().trim();
+  const input = document.getElementById('global-search'); 
+  const q = norm(input.value.trim()); // Busca normalizada!
+  
   const grid = document.getElementById('tile-grid'); const resBox = document.getElementById('search-results');
   const hint = document.querySelector('.hint-footer'); const clearBtn = document.getElementById('clear-search-btn');
 
   if (!isSearchMode && !q) { grid.style.display = 'grid'; hint.style.display = 'block'; resBox.style.display = 'none'; resBox.innerHTML = ''; clearBtn.style.display = 'none'; document.getElementById('global-search-filters').style.display = 'none'; return; }
   clearBtn.style.display = 'flex'; grid.style.display = 'none'; hint.style.display = 'none'; resBox.style.display = 'flex'; resBox.innerHTML = ''; renderGlobalSearchChips();
 
-  // CORREÇÃO: Agora 'quotes' e 'flashcards' estão declarados no array e no Promise.all!
   const [tasks, notes, contacts, expenses, shopping, journal, habits, habitLogs, passwords, gallery, quotes, flashcards] = await Promise.all([ 
       dbAll('tasks'), dbAll('notes'), dbAll('contacts'), dbAll('expenses'), dbAll('shopping'), dbAll('journal'), dbAll('habits'), dbAll('habitLogs'), dbAll('passwords'), dbAll('gallery'), dbAll('quotes'), dbAll('flashcards') 
   ]);
   
   let results = []; const todayISO = todayIso(); const now = Date.now();
 
-  if (globalSearchFilter === 'Todos' || globalSearchFilter === 'Tarefas') tasks.forEach(t => { if (!t.isEncrypted && (!q || (t.text || '').toLowerCase().includes(q))) results.push({ type: 'task', item: t, title: t.text, sub: t.done ? 'Concluída' : 'Pendente' }); });
-  if (globalSearchFilter === 'Todos' || globalSearchFilter === 'Compras') shopping.forEach(s => { if (!s.isEncrypted && (!q || (s.name || '').toLowerCase().includes(q))) results.push({ type: 'shopping', item: s, title: s.name, sub: 'Lista de compras' }); });
+  // Todos os itens agora usam a função norm() para comparar com a busca
+  if (globalSearchFilter === 'Todos' || globalSearchFilter === 'Tarefas') tasks.forEach(t => { if (!t.isEncrypted && (!q || norm(t.text).includes(q))) results.push({ type: 'task', item: t, title: t.text, sub: t.done ? 'Concluída' : 'Pendente' }); });
+  if (globalSearchFilter === 'Todos' || globalSearchFilter === 'Compras') shopping.forEach(s => { if (!s.isEncrypted && (!q || norm(s.name).includes(q))) results.push({ type: 'shopping', item: s, title: s.name, sub: 'Lista de compras' }); });
   
   if (globalSearchFilter === 'Todos' || globalSearchFilter === 'Hábitos') {
     habits.forEach(hb => {
-      if (!hb.isEncrypted && (!q || (hb.name || '').toLowerCase().includes(q))) {
+      if (!hb.isEncrypted && (!q || norm(hb.name).includes(q))) {
         const isTimer = hb.type === 'timer'; let checkText = '', extraClass = '', extraStyle = '', sub = '', hasTimer = false, action = null;
         if (isTimer) {
           const target = hb.target || 0; const currentStep = hb.currentStep || 0; const isWaiting = (hb.readyAt && hb.readyAt > now); const isDone = target > 0 && currentStep >= target;
@@ -994,17 +1003,22 @@ async function handleGlobalSearch() {
     });
   }
 
-  if (globalSearchFilter === 'Todos' || globalSearchFilter === 'Notas') notes.forEach(n => { if (!n.isEncrypted && (!q || (n.title || '').toLowerCase().includes(q) || (n.content || '').toLowerCase().includes(q))) results.push({ type: 'note', item: n, title: n.title || '(sem título)', sub: (n.category || 'Geral') + ' · Nota' }); });
-  if (globalSearchFilter === 'Todos' || globalSearchFilter === 'Diário') journal.forEach(j => { if (!j.isEncrypted && (!q || (j.text || '').toLowerCase().includes(q))) { const raw = (j.text||'').replace(/\n/g,' '); const preview = raw.slice(0,60)+(raw.length>60?'…':''); results.push({ type: 'journal', item: j, title: humanDateFull(j.date), sub: (j.mood||'📔') + ' · ' + preview }); } });
-  if (globalSearchFilter === 'Todos' || globalSearchFilter === 'Contatos') contacts.forEach(c => { if (!c.isEncrypted && (!q || (c.name || '').toLowerCase().includes(q) || (c.notes || '').toLowerCase().includes(q) || (c.phone || '').includes(q))) results.push({ type: 'contact', item: c, title: c.name, sub: (c.category||'Contato') + (c.phone ? ' · ' + c.phone : '') }); });
-  if (globalSearchFilter === 'Todos' || globalSearchFilter === 'Gastos') expenses.forEach(e => { if (!e.isEncrypted && (!q || (e.description || '').toLowerCase().includes(q) || (e.category || '').toLowerCase().includes(q))) results.push({ type: 'expense', item: e, title: e.description || e.category, sub: `R$ ${e.amount} · ${humanDateFull(e.date)}` }); });
-  if (globalSearchFilter === 'Todos' || globalSearchFilter === 'Senhas') passwords.forEach(p => { if (!p.isEncrypted && (!q || (p.title || '').toLowerCase().includes(q) || (p.username || '').toLowerCase().includes(q))) results.push({ type: 'password', item: p, title: p.title, sub: (p.category||'Cofre') + (p.username ? ' · ' + p.username : '') }); });
-  if (globalSearchFilter === 'Todos' || globalSearchFilter === 'Galeria') gallery.forEach(g => { if (!g.isEncrypted && (!q || (g.title || '').toLowerCase().includes(q))) results.push({ type: 'gallery', item: g, title: g.title || 'Mídia Secreta', sub: 'Galeria' }); });
-  if (globalSearchFilter === 'Todos' || globalSearchFilter === 'Citações') quotes.forEach(qt => { if (!qt.isEncrypted && (!q || (qt.text || '').toLowerCase().includes(q) || (qt.author || '').toLowerCase().includes(q))) results.push({ type: 'quote', item: qt, title: qt.author || 'Desconhecido', sub: `"${(qt.text || '').slice(0, 50)}..."` }); });
+if (globalSearchFilter === 'Todos' || globalSearchFilter === 'Notas') notes.forEach(n => { if (!n.isEncrypted && (!q || norm(n.title).includes(q) || norm(n.content).includes(q))) results.push({ type: 'note', item: n, title: n.title || '(sem título)', sub: (n.category || 'Geral') + ' · Nota' }); });
   
-  // NOVO: Busca dentro dos Flashcards!
-  if (globalSearchFilter === 'Todos' || globalSearchFilter === 'Flashcards') flashcards.forEach(fc => { if (!fc.isEncrypted && (!q || (fc.front || '').toLowerCase().includes(q) || (fc.back || '').toLowerCase().includes(q))) results.push({ type: 'flashcard', item: fc, title: fc.front, sub: `Verso: ${(fc.back || '').slice(0, 40)}...` }); });
-
+  if (globalSearchFilter === 'Todos' || globalSearchFilter === 'Diário') journal.forEach(j => { if (!j.isEncrypted && (!q || norm(j.text).includes(q))) { const raw = (j.text||'').replace(/\n/g,' '); const preview = raw.slice(0,60)+(raw.length>60?'…':''); results.push({ type: 'journal', item: j, title: humanDateFull(j.date), sub: (j.mood||'📔') + ' · ' + preview }); } });
+  
+  if (globalSearchFilter === 'Todos' || globalSearchFilter === 'Contatos') contacts.forEach(c => { if (!c.isEncrypted && (!q || norm(c.name).includes(q) || norm(c.notes).includes(q) || norm(c.phone).includes(q))) results.push({ type: 'contact', item: c, title: c.name, sub: (c.category||'Contato') + (c.phone ? ' · ' + c.phone : '') }); });
+  
+  if (globalSearchFilter === 'Todos' || globalSearchFilter === 'Gastos') expenses.forEach(e => { if (!e.isEncrypted && (!q || norm(e.description).includes(q) || norm(e.category).includes(q))) results.push({ type: 'expense', item: e, title: e.description || e.category, sub: `R$ ${e.amount} · ${humanDateFull(e.date)}` }); });
+  
+  if (globalSearchFilter === 'Todos' || globalSearchFilter === 'Senhas') passwords.forEach(p => { if (!p.isEncrypted && (!q || norm(p.title).includes(q) || norm(p.username).includes(q))) results.push({ type: 'password', item: p, title: p.title, sub: (p.category||'Cofre') + (p.username ? ' · ' + p.username : '') }); });
+  
+  if (globalSearchFilter === 'Todos' || globalSearchFilter === 'Galeria') gallery.forEach(g => { if (!g.isEncrypted && (!q || norm(g.title).includes(q))) results.push({ type: 'gallery', item: g, title: g.title || 'Mídia Secreta', sub: 'Galeria' }); });
+  
+  if (globalSearchFilter === 'Todos' || globalSearchFilter === 'Citações') quotes.forEach(qt => { if (!qt.isEncrypted && (!q || norm(qt.text).includes(q) || norm(qt.author).includes(q))) results.push({ type: 'quote', item: qt, title: qt.author || 'Desconhecido', sub: `"${(qt.text || '').slice(0, 50)}..."` }); });
+  
+  if (globalSearchFilter === 'Todos' || globalSearchFilter === 'Flashcards') flashcards.forEach(fc => { if (!fc.isEncrypted && (!q || norm(fc.front).includes(q) || norm(fc.back).includes(q))) results.push({ type: 'flashcard', item: fc, title: fc.front, sub: `Verso: ${(fc.back || '').slice(0, 40)}...` }); });
+  
   if (results.length === 0) { resBox.appendChild(emptyState('🔍', 'Nada encontrado', 'Tente pesquisar por outros termos')); return; }
 
   results.forEach(r => {
@@ -1916,12 +1930,13 @@ function openQuoteForm(existing) {
   });
 }
 /* ============================================================
-   FLASHCARDS E ALGORITMO SM-2 (Com Filtro e Edição Inteligente)
+   FLASHCARDS E ALGORITMO SM-2 (Com Modo Digitação)
    ============================================================ */
 const FC_CATS = ['Inglês (1000 Palavras)', 'Português Culto', 'Espanhol', 'Outro'];
 let fcDueToday = []; let fcCurrentIndex = 0; let fcIsFlipped = false;
 let fcTtsEnabled = localStorage.getItem('fc-tts') !== 'off';
-let fcCatFilter = 'Todos'; // <-- Novo filtro
+let fcTypeMode = localStorage.getItem('fc-type') === 'on'; // Lógica da chave de digitação
+let fcCatFilter = 'Todos'; 
 
 function toggleFCTts() {
   fcTtsEnabled = !fcTtsEnabled; localStorage.setItem('fc-tts', fcTtsEnabled ? 'on' : 'off');
@@ -1929,12 +1944,24 @@ function toggleFCTts() {
   toast(fcTtsEnabled ? 'Leitura automática ativada' : 'Leitura automática desligada');
 }
 
+// NOVA FUNÇÃO: Alternar o Modo (Digitar ⌨️ ou Virar 🔄)
+function toggleFCTypeMode() {
+  fcTypeMode = !fcTypeMode; localStorage.setItem('fc-type', fcTypeMode ? 'on' : 'off');
+  document.getElementById('fc-type-btn').textContent = fcTypeMode ? '⌨️' : '🔄';
+  toast(fcTypeMode ? 'Modo Digitação ativado' : 'Modo Virar Cartão ativado');
+  
+  // Atualiza a tela em tempo real se já estiver estudando
+  if (document.getElementById('fc-study-area').style.display === 'flex' && !fcIsFlipped) {
+      showFlashcard();
+  }
+}
+
 function exitFlashcardStudy() {
   if (document.getElementById('fc-study-area').style.display === 'flex') {
     document.getElementById('fc-study-area').style.display = 'none';
     document.getElementById('fc-dashboard').style.display = 'block';
     document.getElementById('flashcards-fab').style.display = 'flex';
-    document.getElementById('fc-edit-btn').style.display = 'none'; // Esconde o lápis
+    document.getElementById('fc-edit-btn').style.display = 'none';
     window.speechSynthesis.cancel();
     renderFlashcards();
   } else { goHome(); }
@@ -1942,19 +1969,16 @@ function exitFlashcardStudy() {
 
 async function renderFlashcards() {
   document.getElementById('fc-tts-btn').style.opacity = fcTtsEnabled ? '1' : '0.4';
-  const allCards = await dbAll('flashcards');
+  document.getElementById('fc-type-btn').textContent = fcTypeMode ? '⌨️' : '🔄'; // Seta o botão correto
   
-  const dashTop = document.getElementById('fc-dash-top');
-  const decksList = document.getElementById('fc-decks-list');
-  const cardsList = document.getElementById('fc-cards-list');
+  const allCards = await dbAll('flashcards');
+  const dashTop = document.getElementById('fc-dash-top'); const decksList = document.getElementById('fc-decks-list'); const cardsList = document.getElementById('fc-cards-list');
   decksList.innerHTML = ''; cardsList.innerHTML = '';
   
-  // Desenha os Chips de Filtro
   buildCategoryFilter('fc-cat-filter', FC_CATS, allCards, fcCatFilter, (val) => { fcCatFilter = val; renderFlashcards(); });
   
   const now = Date.now();
   
-  // Se está vendo Todos, mostra o Resumo e os Decks
   if (fcCatFilter === 'Todos') {
       dashTop.style.display = 'flex'; decksList.style.display = 'flex'; cardsList.style.display = 'none';
       const dueCards = allCards.filter(c => !c.isEncrypted && c.nextReview <= now);
@@ -1975,15 +1999,11 @@ async function renderFlashcards() {
         const grow = h('div',{class:'grow'}); grow.appendChild(h('div',{class:'i-title'}, cat)); grow.appendChild(h('div',{class:'i-sub'}, `${stats.total} total · Toque para estudar`)); 
         row.appendChild(check); row.appendChild(grow); decksList.appendChild(row);
       }
-  } 
-  // Se filtrou por categoria, mostra a lista de cartões para editar
-  else {
+  } else {
       dashTop.style.display = 'none'; decksList.style.display = 'none'; cardsList.style.display = 'flex';
-      
       let filteredCards = allCards.filter(c => (c.category || 'Geral') === fcCatFilter);
       const dueInDeck = filteredCards.filter(c => !c.isEncrypted && c.nextReview <= now).length;
       
-      // Botões "Estudar" e "Renomear"
       const btnRow = h('div', {style:'display:flex; gap:8px; margin-bottom:16px;'});
       const studyBtn = h('button', { class: 'btn btn-primary', style: 'background:#4A90E2; flex:1; display:flex; align-items:center; justify-content:center; gap:8px;', onclick: () => startFlashcardStudy(fcCatFilter, allCards) });
       studyBtn.innerHTML = `<span style="font-size:18px;">🎯</span> Estudar (${dueInDeck})`;
@@ -2006,7 +2026,6 @@ async function renderFlashcards() {
   }
 }
 
-// Renomeia o deck inteiro de uma vez!
 async function renameDeck(oldName) {
   openSheet({
       title: 'Renomear Deck',
@@ -2031,12 +2050,11 @@ function startFlashcardStudy(category, allCards) {
   document.getElementById('fc-dashboard').style.display = 'none';
   document.getElementById('flashcards-fab').style.display = 'none';
   document.getElementById('fc-study-area').style.display = 'flex';
-  document.getElementById('fc-edit-btn').style.display = 'flex'; // Mostra o Lápis mágico
+  document.getElementById('fc-edit-btn').style.display = 'flex'; 
   
   fcDueToday.sort(() => Math.random() - 0.5); fcCurrentIndex = 0; showFlashcard();
 }
 
-// Abre o formulário da carta atual e atualiza a tela na hora ao salvar
 function editCurrentFlashcard() {
   if (fcDueToday.length > 0 && fcCurrentIndex < fcDueToday.length) openFlashcardForm(fcDueToday[fcCurrentIndex]);
 }
@@ -2066,23 +2084,53 @@ function showFlashcard() {
   const blocksArea = document.getElementById('fc-blocks'); blocksArea.innerHTML = '';
   
   blocksArea.appendChild(createFCBlock('Frente (Pergunta)', card.front, card.frontLang, ''));
-  
-  document.getElementById('fc-flip-btn').style.display = 'flex';
   document.getElementById('fc-answers').style.display = 'none';
+  
+  // Decide se mostra o botão de virar ou o campo de digitar
+  if (fcTypeMode) {
+      document.getElementById('fc-flip-btn').style.display = 'none';
+      document.getElementById('fc-type-area').style.display = 'flex';
+      const inp = document.getElementById('fc-type-input');
+      inp.value = '';
+      setTimeout(() => { inp.focus(); }, 150); // Foco automático para você já sair digitando
+  } else {
+      document.getElementById('fc-type-area').style.display = 'none';
+      document.getElementById('fc-flip-btn').style.display = 'flex';
+  }
   
   if (fcTtsEnabled) playFCVoice(card.front, card.frontLang);
 }
 
-function flipFlashcard() {
+// NOVA FUNÇÃO: Recebe o que você digitou e avalia
+function verifyFlashcard() {
+    const typed = document.getElementById('fc-type-input').value.trim();
+    if (!typed) { toast('Digite a resposta primeiro!'); return; }
+    flipFlashcard(typed);
+}
+
+function flipFlashcard(typedValue = null) {
   if (fcIsFlipped) return; fcIsFlipped = true; const card = fcDueToday[fcCurrentIndex];
   const blocksArea = document.getElementById('fc-blocks');
   
+  // SE ESTAVA NO MODO DIGITAR: Ele avalia sua resposta inteligentemente (ignorando acentos e maiúsculas)
+  if (typedValue !== null) {
+      const expected = norm(card.back); // Usa a mesma função mágica da Busca Global!
+      const actual = norm(typedValue);
+      const isCorrect = expected === actual;
+      
+      const typeBlock = h('div', { class: 'fc-block ' + (isCorrect ? 'is-note' : 'is-back'), style: isCorrect ? 'border-color:var(--c-habits); background:rgba(62,122,93,0.1); cursor:default;' : 'border-color:var(--danger); background:rgba(217,74,74,0.1); cursor:default;' });
+      typeBlock.appendChild(h('div', {class: 'fc-lbl', style: isCorrect ? 'color:var(--c-habits)' : 'color:var(--danger)'}, isCorrect ? '✨ Correto!' : '❌ Incorreto'));
+      typeBlock.appendChild(h('div', {class: 'fc-txt t-small'}, `Você digitou: "${typedValue}"`));
+      blocksArea.appendChild(typeBlock);
+  }
+
   blocksArea.appendChild(createFCBlock('Verso (Resposta)', card.back, card.backLang, 'is-back'));
   if (card.example) blocksArea.appendChild(createFCBlock('Exemplo', card.example, card.exLang, 'is-back'));
   if (card.exTranslation) blocksArea.appendChild(createFCBlock('Tradução do Exemplo', card.exTranslation, card.exTLang, 'is-back'));
   if (card.notes) blocksArea.appendChild(createFCBlock('Notas / Contexto', card.notes, card.notesLang, 'is-note'));
   
   document.getElementById('fc-flip-btn').style.display = 'none';
+  document.getElementById('fc-type-area').style.display = 'none';
   document.getElementById('fc-answers').style.display = 'flex';
   
   document.getElementById('fc-time-hard').textContent = formatSM2Time(calcSM2Interval(card, 3));
