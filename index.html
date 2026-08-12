@@ -119,9 +119,9 @@ body.dark-theme #app { box-shadow: 0 0 60px rgba(0,0,0,0.5); }
 .f-tab{ flex:0 0 auto; padding:7px 14px; border-radius:var(--r-pill); border:none; background: rgb(59 110 143 / 91%); color:#fff; font-size:12.5px; font-weight:600; opacity:.75; }
 .f-tab.active{background: #35695c;opacity:1;font-weight: 700;}
 
-.module-body{ flex:1; overflow-y:auto; padding:16px var(--sp-4) 80px; background:var(--surface-2); border-top-left-radius:20px; border-top-right-radius:20px; margin-top:-14px; }
+.module-body{ flex:1; overflow-y:auto; scrollbar-width: none; padding:16px var(--sp-4) 80px; background:var(--surface-2); border-top-left-radius:20px; border-top-right-radius:20px; margin-top:-14px; }
 
-.list{display:flex;flex-direction:column;gap:10px;overflow-y:auto;max-height: 37vh;}
+.list{display:flex;flex-direction:column;gap:10px;}
 .item{ background:var(--surface); border:1px solid var(--line); border-radius:var(--r-md); padding:13px 14px; display:flex; align-items:flex-start; gap:11px; box-shadow:0 1px 2px rgba(var(--shadow-rgb),.04); }
 .item .grow{flex:1;min-width:0;}
 .item .i-title{font-size:15px;font-weight:600;line-height:1.35;word-break:break-word;}
@@ -160,7 +160,7 @@ body.dark-theme #app { box-shadow: 0 0 60px rgba(0,0,0,0.5); }
 .seg button{ flex:1; padding:10px; border-radius:var(--r-sm); border:1.5px solid var(--line); background:var(--surface-2); font-size:13.5px; font-weight:700; color:var(--ink-soft); }
 .seg button.active{border-color:var(--accent);color:var(--accent);background:rgba(53,105,92,.08);}
 .chip-picker{display:flex;flex-wrap:wrap;gap:8px; overflow-y: auto; scrollbar-width: none; flex-wrap: nowrap;}
-.chip-picker button{ padding:8px 13px; border-radius:var(--r-pill); border:1.5px solid var(--line); background:var(--surface-2); font-size:13px; font-weight:600; color:var(--ink-soft); }
+.chip-picker button{flex: 0 0 auto; padding:8px 13px; border-radius:var(--r-pill); border:1.5px solid var(--line); background:var(--surface-2); font-size:13px; font-weight:600; color:var(--ink-soft); }
 .chip-picker button.active{background:var(--accent);border-color:var(--accent);color:#fff;}
 .emoji-picker{display:flex;justify-content:space-between;}
 .emoji-picker button{ width:44px;height:44px; border-radius:50%; border:1.5px solid var(--line); background:var(--surface-2); font-size:21px; display:flex;align-items:center;justify-content:center; }
@@ -238,6 +238,81 @@ body.dark-theme #app { box-shadow: 0 0 60px rgba(0,0,0,0.5); }
 #quotes-cat-filter { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding-bottom: 4px; }
 #quotes-cat-filter::-webkit-scrollbar { display: none; }
 #quotes-cat-filter button.active { background: var(--c-quotes) !important; border-color: var(--c-quotes) !important; color: #fff !important; }
+/* stilos para o modo flashcards */
+/* Cores Base */
+/* ============================================================
+   ESTILOS DOS FLASHCARDS E BLOCOS
+   ============================================================ */
+#flashcards-header, #flashcards-fab, .bubble.b-flashcards { background: #4A90E2; }
+.b-flashcards { font-size: 20px !important; }
+
+.fc-block {
+  background: var(--surface); border: 2px solid var(--line); border-radius: var(--r-md);
+  padding: 20px 16px; position: relative; cursor: pointer; text-align: center;
+  box-shadow: 0 2px 6px rgba(var(--shadow-rgb),.04); transition: transform 0.1s, background 0.2s;
+}
+.fc-block:active { transform: scale(0.97); }
+.fc-block.is-back { background: rgba(74, 144, 226, 0.08); border-color: #4A90E2; }
+.fc-block.is-note { background: var(--surface-2); border-style: dashed; }
+
+.fc-lbl { font-size: 11px; color: var(--ink-soft); text-transform: uppercase; font-weight: 700; margin-bottom: 8px; letter-spacing: 0.5px; }
+.fc-txt { font-size: 19px; font-weight: 700; color: var(--ink); word-break: break-word; }
+.fc-txt.t-small { font-size: 15px; font-weight: 600; color: var(--ink-soft); }
+.fc-icon { position: absolute; top: 12px; right: 14px; font-size: 18px; opacity: 0.8; filter: grayscale(1); transition: filter 0.2s; }
+.fc-block:active .fc-icon { filter: grayscale(0); }
+
+.fc-btn { flex: 1; padding: 12px 4px; font-size: 14.5px; font-weight: 700; border-radius: var(--r-md); border: none; color: #fff; display:flex; flex-direction:column; align-items:center; gap:2px; }
+.fc-btn:active { opacity: 0.8; }
+.fc-btn.b-err { background: var(--danger); }
+.fc-btn.b-hard { background: #E67E22; }
+.fc-btn.b-good { background: var(--c-tasks); }
+.fc-btn.b-easy { background: var(--c-habits); }
+.fc-btn small { font-size: 11px; font-weight: 500; opacity: 0.9; }
+
+.textarea-moderno{
+    width:100%;
+    min-height:70px;
+
+    padding:12px 14px;
+
+    background:var(--surface);
+    color:var(--ink);
+
+    border:1px solid var(--line);
+    border-radius:12px;
+
+    font-family:inherit;
+    font-size:14px;
+    line-height:1.5;
+
+    resize:vertical;
+
+    outline:none;
+
+    transition:
+        border-color .2s ease,
+        box-shadow .2s ease,
+        background .2s ease;
+}
+
+.textarea-moderno::placeholder{
+    color:var(--ink-faint);
+    opacity:.75;
+}
+
+.textarea-moderno:hover{
+    border-color:var(--ink-soft);
+}
+
+.textarea-moderno:focus{
+    border-color:#4A90E2;
+
+    box-shadow:
+        0 0 0 3px rgba(74,144,226,.15);
+
+    background:var(--paper-raised);
+}
+/* fim do css modo flashcard */
 </style>
 </head>
 <body>
@@ -276,7 +351,7 @@ body.dark-theme #app { box-shadow: 0 0 60px rgba(0,0,0,0.5); }
     <button class="f-tab" data-f="done">Concluídas</button>
     <button class="f-tab" data-f="all">Todas</button>
   </div>
-  <div class="module-body"><div class="list" id="tasks-list"></div></div>
+  <div class="module-body"><div class="list" id="tasks-list" style="max-height: 65vh; overflow-y: auto;"></div></div>
   <button class="fab" id="tasks-fab" onclick="openTaskForm()">+</button>
   <div class="module-header" id="tasks-header">
     <button class="back-btn" onclick="goHome()">←</button>
@@ -287,7 +362,7 @@ body.dark-theme #app { box-shadow: 0 0 60px rgba(0,0,0,0.5); }
 <!-- ===== NOTAS ===== -->
 <section id="screen-notes" class="screen module-screen">
   
-  <div class="module-body" style="margin-top:0;padding-top:16px;"><div class="list" id="notes-list"></div></div>
+  <div class="module-body" style="margin-top:0;padding-top:16px;"><div class="list" id="notes-list" style="max-height: 70vh; scrollbar-width: thin; overflow-y: auto;" ></div></div>
   <button class="fab" id="notes-fab" onclick="openNoteForm()">+</button>
   <div class="module-header" id="notes-header">
     <button class="back-btn" onclick="goHome()">←</button>
@@ -309,7 +384,7 @@ body.dark-theme #app { box-shadow: 0 0 60px rgba(0,0,0,0.5); }
       <div class="summary-row"><span>Saídas</span><span class="money-neg" id="exp-outcome">R$ 0,00</span></div>
       <div class="summary-row"><strong>Saldo</strong><strong id="exp-balance">R$ 0,00</strong></div>
     </div>
-    <div class="list" id="expenses-list"></div>
+    <div class="list" id="expenses-list" style="overflow-y: auto; max-height: 45vh;"></div>
   </div>
   <button class="fab" id="expenses-fab" onclick="openExpenseForm()">+</button>
   <div class="module-header" id="expenses-header">
@@ -321,7 +396,7 @@ body.dark-theme #app { box-shadow: 0 0 60px rgba(0,0,0,0.5); }
 <!-- ===== HÁBITOS ===== -->
 <section id="screen-habits" class="screen module-screen">
   
-  <div class="module-body" style="margin-top:0;padding-top:16px;"><div class="list" id="habits-list"></div></div>
+  <div class="module-body" style="margin-top:0;padding-top:16px;"><div class="list" id="habits-list" style="overflow-y: auto; max-height: 70vh;" ></div></div>
   <button class="fab" id="habits-fab" onclick="openHabitForm()">+</button>
   <div class="module-header" id="habits-header">
     <button class="back-btn" onclick="goHome()">←</button>
@@ -332,7 +407,7 @@ body.dark-theme #app { box-shadow: 0 0 60px rgba(0,0,0,0.5); }
 <!-- ===== COMPRAS ===== -->
 <section id="screen-shopping" class="screen module-screen">
   
-  <div class="module-body" style="margin-top:0;padding-top:16px;">
+  <div class="module-body" style="margin-top:0;padding-top:16px;padding-bottom:16px;">
     
     
     
@@ -368,7 +443,7 @@ body.dark-theme #app { box-shadow: 0 0 60px rgba(0,0,0,0.5); }
 <section id="screen-contacts" class="screen module-screen">
   
   <div class="module-body" style="margin-top:0;padding-top:16px;">
-    <div class="list" id="contacts-list"></div>
+    <div class="list" id="contacts-list" style="overflow-y: auto; max-height: 70vh;"></div>
   </div>
   <button class="fab" id="contacts-fab" onclick="openContactForm()">+</button>
   <div class="module-header" id="contacts-header">
@@ -408,7 +483,7 @@ body.dark-theme #app { box-shadow: 0 0 60px rgba(0,0,0,0.5); }
 <section id="screen-passwords" class="screen module-screen">
   
   <div class="module-body" style="margin-top:0;padding-top:16px;">
-    <div class="list" id="passwords-list"></div>
+    <div class="list" id="passwords-list" style="overflow-y: auto; max-height: 70vh;"></div>
   </div>
   <button class="fab" id="passwords-fab" onclick="openPasswordForm()">+</button>
   <div class="module-header" id="passwords-header">
@@ -451,7 +526,7 @@ body.dark-theme #app { box-shadow: 0 0 60px rgba(0,0,0,0.5); }
     <div id="quotes-cat-filter" class="chip-picker"></div>
     <div style="font-size:12px; font-weight:700; color:var(--ink-soft); margin:10px 0; text-transform:uppercase; letter-spacing:0.5px; text-align:center;">Todas as frases da categoria</div>
     
-    <div class="list" id="quotes-list"></div>
+    <div class="list" id="quotes-list" style="max-height: 34.2vh; overflow-y: auto;" ></div>
   </div>
   <button class="fab" id="quotes-fab" onclick="openQuoteForm()">+</button>
   <div class="module-header" id="quotes-header">
@@ -459,7 +534,64 @@ body.dark-theme #app { box-shadow: 0 0 60px rgba(0,0,0,0.5); }
     <h2>Citações e Frases</h2>
   </div>
 </section>
-</div> <!-- FIM APP -->
+</div> 
+
+<!-- ===== FLASHCARDS (SM-2) ===== -->
+<section id="screen-flashcards" class="screen module-screen">
+  
+  <div class="module-body" style="margin-top:0;padding-top:16px; display:flex; flex-direction:column;">
+    
+    <div id="fc-dashboard">
+       <!-- NOVO: Filtro de Categorias -->
+       <div class="chip-picker" id="fc-cat-filter" style="margin-bottom:12px;"></div>
+
+       <!-- Painel de Revisões (Esconde quando filtra) -->
+       <div id="fc-dash-top" style="background:var(--surface); border:1px solid var(--line); border-radius:var(--r-lg); padding:16px; margin-bottom:16px; box-shadow:0 1px 2px rgba(var(--shadow-rgb),.04); display:flex; align-items:center; gap:14px;">
+         <div style="font-size:32px;">🎯</div>
+         <div>
+           <div style="font-size:15px; font-weight:700;">Revisões de Hoje</div>
+           <div style="font-size:13px; color:var(--ink-soft); margin-top:2px;" id="fc-total-due">Calculando...</div>
+         </div>
+       </div>
+       
+       <div class="list" id="fc-decks-list"></div>
+       
+       <!-- NOVO: Lista de cartões para edição (Aparece quando filtra) -->
+       <div class="list" id="fc-cards-list" style="display:none;"></div>
+    </div>
+
+    <!-- ÁREA DE ESTUDO: Janelinhas Modulares -->
+    <div id="fc-study-area" style="display:none; flex-direction:column; flex:1;">
+       <div style="text-align:center; margin-bottom:16px; font-size:13px; font-weight:700; color:var(--ink-soft);" id="fc-progress">Cartão 1</div>
+       
+       <!-- Fila de Blocos (Frente, Verso, Exemplos) -->
+       <div id="fc-blocks" style="display:flex; flex-direction:column; gap:12px;"></div>
+
+       <button id="fc-flip-btn" class="btn btn-primary" style="margin-top:20px; background:#4A90E2; display:flex; align-items:center; justify-content:center; gap:8px;" onclick="flipFlashcard()">
+         <span style="font-size:18px;">🔄</span> Virar Cartão
+       </button>
+
+       <!-- Botões de Resposta SM-2 -->
+       <div id="fc-answers" style="display:none; gap:8px; margin-top:20px;">
+         <button class="fc-btn b-err" onclick="answerFlashcard(1)">Errei<br><small>Agora</small></button>
+         <button class="fc-btn b-hard" onclick="answerFlashcard(3)">Difícil<br><small id="fc-time-hard"></small></button>
+         <button class="fc-btn b-good" onclick="answerFlashcard(4)">Bom<br><small id="fc-time-good"></small></button>
+         <button class="fc-btn b-easy" onclick="answerFlashcard(5)">Fácil<br><small id="fc-time-easy"></small></button>
+       </div>
+    </div>
+
+  </div>
+  <button class="fab" id="flashcards-fab" onclick="openFlashcardForm()">+</button>
+  <div class="module-header" id="flashcards-header">
+    <button class="back-btn" onclick="exitFlashcardStudy()">←</button>
+    <h2 style="flex:1;">Estudo Ativo</h2>
+    <!-- NOVO: Botão de Editar durante o estudo -->
+    <button class="header-action" onclick="editCurrentFlashcard()" id="fc-edit-btn" title="Editar Cartão" style="display:none; margin-right:8px; font-size:16px;">✏️</button>
+    <button class="header-action" onclick="toggleFCTts()" id="fc-tts-btn" title="Leitura Automática">🔊</button>
+  </div>
+</section>
+
+<!-- FIM APP -->
 
 <!-- VISUALIZADOR DE MÍDIA EM TELA CHEIA -->
 <div id="media-viewer" style="position:fixed; inset:0; background:rgba(0,0,0,0.95); z-index:100; display:none; flex-direction:column; justify-content:center; align-items:center; opacity:0; transition:opacity 0.2s;">
@@ -542,8 +674,8 @@ function toast(msg){
    INDEXEDDB LAYER (Versão 3 mantida, segura para atualizações)
    ============================================================ */
 const DB_NAME='centralPessoalDB';
-const DB_VERSION=4;
-const STORES=['tasks','notes','expenses','habits','habitLogs','shopping','journal','contacts','waterLogs','weight','passwords','gallery', 'quotes'];
+const DB_VERSION=5;
+const STORES=['tasks','notes','expenses','habits','habitLogs','shopping','journal','contacts','waterLogs','weight','passwords','gallery', 'quotes','flashcards'];
 let db;
 function openDatabase(){
   return new Promise((resolve,reject)=>{
@@ -602,6 +734,7 @@ function buildFormCategoryField(defaultCats, initialValue) {
    if(defaultCats === CONTACT_CATS) storeName = 'contacts';
    if(defaultCats === PWD_CATS) storeName = 'passwords';
    if(defaultCats === QUOTE_CATS) storeName = 'quotes';
+   if(defaultCats === FC_CATS) storeName = 'flashcards';
 
    // 2. Busca no banco de dados todas as categorias que você já salvou neste módulo
    dbAll(storeName).then(items => {
@@ -699,6 +832,7 @@ function closeSheet(){ document.getElementById('sheet-overlay').classList.remove
 const MODULES=[
   {key:'tasks', title:'Tarefas', icon:'✅', cls:'b-tasks'},
   {key:'notes', title:'Notas', icon:'📝', cls:'b-notes'},
+  {key:'flashcards', title:'Flashcards', icon:'🧠', cls:'b-flashcards'},
   {key:'expenses', title:'Gastos', icon:'💰', cls:'b-expenses'},
   {key:'habits', title:'Hábitos', icon:'🔥', cls:'b-habits'},
   {key:'quotes', title:'Citações', icon:'💬', cls:'b-quotes'},
@@ -730,15 +864,15 @@ function renderModule(key){
     if (list) { list.innerHTML = ''; list.appendChild(emptyState('🔒', 'Módulo Protegido', 'Toque no cadeado no topo para destravar.')); }
   } else {
     screen.classList.remove('is-locked');
-    ({tasks:renderTasks, notes:renderNotes, expenses:renderExpenses, habits:renderHabits, shopping:renderShopping, journal:renderJournal, contacts:renderContacts, water:renderWater, passwords:renderPasswords, gallery:renderGallery, quotes:renderQuotes})[key]();
+    ({tasks:renderTasks, notes:renderNotes, expenses:renderExpenses, habits:renderHabits, shopping:renderShopping, journal:renderJournal, contacts:renderContacts, water:renderWater, passwords:renderPasswords, gallery:renderGallery, quotes:renderQuotes, flashcards: renderFlashcards})[key]();
   }
 }
 function setSub(key, text){ const n=document.getElementById('sub-'+key); if(n) n.textContent=text; }
 
 async function updateHomeStats(){
   // AGORA BUSCAMOS TODOS OS 12 MÓDULOS!
-  const [tasks, notes, expenses, habits, habitLogs, shopping, journal, contacts, waterLogs, passwords, gallery, quotes] = await Promise.all(
-    ['tasks','notes','expenses','habits','habitLogs','shopping','journal','contacts','waterLogs','passwords','gallery','quotes'].map(dbAll)
+  const [tasks, notes, expenses, habits, habitLogs, shopping, journal, contacts, waterLogs, passwords, gallery, quotes,flashcards] = await Promise.all(
+    ['tasks','notes','expenses','habits','habitLogs','shopping','journal','contacts','waterLogs','passwords','gallery','quotes','flashcards'].map(dbAll)
   );
   
   const pending = tasks.filter(t=>!t.done && !t.isEncrypted);
@@ -767,6 +901,8 @@ async function updateHomeStats(){
   setSub('passwords', passwords.length ? passwords.length + ' salvas' : 'Cofre vazio');
   setSub('gallery', gallery.length ? gallery.length + ' mídias' : 'Galeria vazia');
   setSub('quotes', quotes.length ? quotes.length + ' frases' : 'Inspire-se');
+  const dueFC = flashcards.filter(f => !f.isEncrypted && (f.nextReview <= now));
+  setSub('flashcards', flashcards.length ? (dueFC.length > 0 ? `🚨 ${dueFC.length} revisões hoje` : 'Tudo em dia') : 'Monte seu deck');
 
   buildStatChips(pending.length, income-outcome, wCount);
 
@@ -1775,7 +1911,284 @@ function openQuoteForm(existing) {
     onDelete: isEdit ? ()=>confirmDelete('quotes', existing.id, ()=>{renderQuotes();updateHomeStats();}) : null
   });
 }
+/* ============================================================
+   FLASHCARDS E ALGORITMO SM-2 (Com Filtro e Edição Inteligente)
+   ============================================================ */
+const FC_CATS = ['Inglês (1000 Palavras)', 'Português Culto', 'Espanhol', 'Outro'];
+let fcDueToday = []; let fcCurrentIndex = 0; let fcIsFlipped = false;
+let fcTtsEnabled = localStorage.getItem('fc-tts') !== 'off';
+let fcCatFilter = 'Todos'; // <-- Novo filtro
 
+function toggleFCTts() {
+  fcTtsEnabled = !fcTtsEnabled; localStorage.setItem('fc-tts', fcTtsEnabled ? 'on' : 'off');
+  document.getElementById('fc-tts-btn').style.opacity = fcTtsEnabled ? '1' : '0.4';
+  toast(fcTtsEnabled ? 'Leitura automática ativada' : 'Leitura automática desligada');
+}
+
+function exitFlashcardStudy() {
+  if (document.getElementById('fc-study-area').style.display === 'flex') {
+    document.getElementById('fc-study-area').style.display = 'none';
+    document.getElementById('fc-dashboard').style.display = 'block';
+    document.getElementById('flashcards-fab').style.display = 'flex';
+    document.getElementById('fc-edit-btn').style.display = 'none'; // Esconde o lápis
+    window.speechSynthesis.cancel();
+    renderFlashcards();
+  } else { goHome(); }
+}
+
+async function renderFlashcards() {
+  document.getElementById('fc-tts-btn').style.opacity = fcTtsEnabled ? '1' : '0.4';
+  const allCards = await dbAll('flashcards');
+  
+  const dashTop = document.getElementById('fc-dash-top');
+  const decksList = document.getElementById('fc-decks-list');
+  const cardsList = document.getElementById('fc-cards-list');
+  decksList.innerHTML = ''; cardsList.innerHTML = '';
+  
+  // Desenha os Chips de Filtro
+  buildCategoryFilter('fc-cat-filter', FC_CATS, allCards, fcCatFilter, (val) => { fcCatFilter = val; renderFlashcards(); });
+  
+  const now = Date.now();
+  
+  // Se está vendo Todos, mostra o Resumo e os Decks
+  if (fcCatFilter === 'Todos') {
+      dashTop.style.display = 'flex'; decksList.style.display = 'flex'; cardsList.style.display = 'none';
+      const dueCards = allCards.filter(c => !c.isEncrypted && c.nextReview <= now);
+      document.getElementById('fc-total-due').textContent = dueCards.length === 0 ? 'Tudo em dia! ✨' : `${dueCards.length} cartão(ões) pendente(s)`;
+      
+      if(!allCards.length){ decksList.appendChild(emptyState('🧠','Nenhum Flashcard','Adicione palavras ou frases no +')); return; }
+      
+      const decks = {};
+      allCards.forEach(c => {
+        const cat = c.category || 'Geral';
+        if (!decks[cat]) decks[cat] = { total: 0, due: 0 };
+        decks[cat].total++; if (!c.isEncrypted && c.nextReview <= now) decks[cat].due++;
+      });
+      
+      for (const [cat, stats] of Object.entries(decks)) {
+        const row = h('div',{class:'item', onclick: () => startFlashcardStudy(cat, allCards)});
+        const check = h('div',{class:'check', style:`border-color:#4A90E2; color:#4A90E2; font-weight:700; ${stats.due>0?'background:rgba(74,144,226,0.15);':''}`}, stats.due);
+        const grow = h('div',{class:'grow'}); grow.appendChild(h('div',{class:'i-title'}, cat)); grow.appendChild(h('div',{class:'i-sub'}, `${stats.total} total · Toque para estudar`)); 
+        row.appendChild(check); row.appendChild(grow); decksList.appendChild(row);
+      }
+  } 
+  // Se filtrou por categoria, mostra a lista de cartões para editar
+  else {
+      dashTop.style.display = 'none'; decksList.style.display = 'none'; cardsList.style.display = 'flex';
+      
+      let filteredCards = allCards.filter(c => (c.category || 'Geral') === fcCatFilter);
+      const dueInDeck = filteredCards.filter(c => !c.isEncrypted && c.nextReview <= now).length;
+      
+      // Botões "Estudar" e "Renomear"
+      const btnRow = h('div', {style:'display:flex; gap:8px; margin-bottom:16px;'});
+      const studyBtn = h('button', { class: 'btn btn-primary', style: 'background:#4A90E2; flex:1; display:flex; align-items:center; justify-content:center; gap:8px;', onclick: () => startFlashcardStudy(fcCatFilter, allCards) });
+      studyBtn.innerHTML = `<span style="font-size:18px;">🎯</span> Estudar (${dueInDeck})`;
+      
+      const renameBtn = h('button', { class: 'btn btn-ghost', style: 'flex: 0 0 auto; padding: 14px; display:flex; align-items:center; justify-content:center;', onclick: () => renameDeck(fcCatFilter) });
+      renameBtn.innerHTML = '✏️ Renomear';
+      
+      btnRow.appendChild(studyBtn); btnRow.appendChild(renameBtn); cardsList.appendChild(btnRow);
+      
+      if (!filteredCards.length) { cardsList.appendChild(emptyState('🔍', 'Deck Vazio', 'Nenhum cartão nesta categoria.')); } 
+      else {
+          filteredCards.forEach(c => {
+              const row = h('div',{class:'item', onclick: () => openFlashcardForm(c)});
+              const grow = h('div',{class:'grow'}); grow.appendChild(h('div',{class:'i-title'}, c.front)); 
+              grow.appendChild(h('div',{class:'i-sub'}, c.nextReview <= now ? '⚠️ Pendente · ' + c.back : c.back)); 
+              row.appendChild(grow); row.appendChild(h('button',{class:'icon-btn', onclick:(e)=>{ e.stopPropagation(); confirmDelete('flashcards', c.id, ()=>{renderFlashcards();updateHomeStats();}); }},'✕')); 
+              cardsList.appendChild(row);
+          });
+      }
+  }
+}
+
+// Renomeia o deck inteiro de uma vez!
+async function renameDeck(oldName) {
+  openSheet({
+      title: 'Renomear Deck',
+      buildFields: (box) => { box.appendChild(fieldWrap('Novo Nome', h('input', {type:'text', id:'f-new-deck-name', value: oldName}))); },
+      onSubmit: async () => {
+          const newName = document.getElementById('f-new-deck-name').value.trim();
+          if(!newName || newName === oldName) return false;
+          const allCards = await dbAll('flashcards');
+          const toUpdate = allCards.filter(c => (c.category || 'Geral') === oldName);
+          toast('Renomeando...');
+          for(let c of toUpdate) { c.category = newName; await dbPut('flashcards', c); }
+          fcCatFilter = newName; renderFlashcards(); updateHomeStats(); toast('Deck renomeado!');
+      }
+  });
+}
+
+function startFlashcardStudy(category, allCards) {
+  const now = Date.now();
+  fcDueToday = allCards.filter(c => !c.isEncrypted && (c.category || 'Geral') === category && c.nextReview <= now);
+  if (fcDueToday.length === 0) { toast('Nenhuma revisão pendente aqui!'); return; }
+  
+  document.getElementById('fc-dashboard').style.display = 'none';
+  document.getElementById('flashcards-fab').style.display = 'none';
+  document.getElementById('fc-study-area').style.display = 'flex';
+  document.getElementById('fc-edit-btn').style.display = 'flex'; // Mostra o Lápis mágico
+  
+  fcDueToday.sort(() => Math.random() - 0.5); fcCurrentIndex = 0; showFlashcard();
+}
+
+// Abre o formulário da carta atual e atualiza a tela na hora ao salvar
+function editCurrentFlashcard() {
+  if (fcDueToday.length > 0 && fcCurrentIndex < fcDueToday.length) openFlashcardForm(fcDueToday[fcCurrentIndex]);
+}
+
+function createFCBlock(label, text, lang, typeClass) {
+  if (!text) return null;
+  const block = h('div', { class: 'fc-block ' + typeClass, onclick: () => playFCVoice(text, lang) });
+  block.appendChild(h('div', {class: 'fc-lbl'}, label));
+  block.appendChild(h('div', {class: 'fc-txt' + (typeClass === 'is-note' ? ' t-small' : '')}, text));
+  block.appendChild(h('div', {class: 'fc-icon'}, '📢'));
+  return block;
+}
+
+function playFCVoice(text, lang) {
+  if (!window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  if (lang) u.lang = lang;
+  window.speechSynthesis.speak(u);
+}
+
+function showFlashcard() {
+  if (fcCurrentIndex >= fcDueToday.length) { toast('Estudo concluído! 🎉'); exitFlashcardStudy(); return; }
+  fcIsFlipped = false; const card = fcDueToday[fcCurrentIndex];
+  
+  document.getElementById('fc-progress').textContent = `Cartão ${fcCurrentIndex + 1} de ${fcDueToday.length}`;
+  const blocksArea = document.getElementById('fc-blocks'); blocksArea.innerHTML = '';
+  
+  blocksArea.appendChild(createFCBlock('Frente (Pergunta)', card.front, card.frontLang, ''));
+  
+  document.getElementById('fc-flip-btn').style.display = 'flex';
+  document.getElementById('fc-answers').style.display = 'none';
+  
+  if (fcTtsEnabled) playFCVoice(card.front, card.frontLang);
+}
+
+function flipFlashcard() {
+  if (fcIsFlipped) return; fcIsFlipped = true; const card = fcDueToday[fcCurrentIndex];
+  const blocksArea = document.getElementById('fc-blocks');
+  
+  blocksArea.appendChild(createFCBlock('Verso (Resposta)', card.back, card.backLang, 'is-back'));
+  if (card.example) blocksArea.appendChild(createFCBlock('Exemplo', card.example, card.exLang, 'is-back'));
+  if (card.exTranslation) blocksArea.appendChild(createFCBlock('Tradução do Exemplo', card.exTranslation, card.exTLang, 'is-back'));
+  if (card.notes) blocksArea.appendChild(createFCBlock('Notas / Contexto', card.notes, card.notesLang, 'is-note'));
+  
+  document.getElementById('fc-flip-btn').style.display = 'none';
+  document.getElementById('fc-answers').style.display = 'flex';
+  
+  document.getElementById('fc-time-hard').textContent = formatSM2Time(calcSM2Interval(card, 3));
+  document.getElementById('fc-time-good').textContent = formatSM2Time(calcSM2Interval(card, 4));
+  document.getElementById('fc-time-easy').textContent = formatSM2Time(calcSM2Interval(card, 5));
+  
+  if (fcTtsEnabled) playFCVoice(card.back, card.backLang);
+}
+
+function calcSM2Interval(card, quality) {
+  let rep = card.repetition || 0; let intv = card.interval || 0; let ef = card.efactor || 2.5;
+  if (quality < 3) { rep = 0; intv = 1; } else { if (rep === 0) intv = 1; else if (rep === 1) intv = 6; else intv = Math.round(intv * ef); rep++; }
+  return intv;
+}
+function formatSM2Time(days) { if (days < 1) return 'Hoje'; if (days === 1) return '1 dia'; if (days < 30) return `${days} dias`; return `${(days/30).toFixed(1)} m`; }
+
+async function answerFlashcard(quality) {
+  const card = fcDueToday[fcCurrentIndex];
+  let rep = card.repetition || 0; let intv = card.interval || 0; let ef = card.efactor || 2.5;
+  if (quality < 3) { rep = 0; intv = 1; } else { if (rep === 0) intv = 1; else if (rep === 1) intv = 6; else intv = Math.round(intv * ef); rep++; }
+  ef = ef + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02)); if (ef < 1.3) ef = 1.3;
+  card.repetition = rep; card.interval = intv; card.efactor = ef;
+  
+  if (quality < 3) { card.nextReview = Date.now(); fcDueToday.push(card); } 
+  else { card.nextReview = Date.now() + (intv * 24 * 60 * 60 * 1000); }
+  
+  await dbPut('flashcards', card); updateHomeStats(); fcCurrentIndex++; showFlashcard();
+}
+
+function buildFlagPicker(memoryKey, defaultLang) {
+  const wrap = h('div', {style: 'display:flex; gap:4px; background:var(--surface-2); padding:2px; border-radius:var(--r-sm); border:1px solid var(--line);'});
+  const langs = [{l:'pt-BR', f:'🇧🇷'}, {l:'en-US', f:'🇺🇸'}, {l:'es-ES', f:'🇪🇸'}, {l:'fr-FR', f:'🇫🇷'}];
+  let saved = localStorage.getItem('fc-lang-' + memoryKey);
+  let current = defaultLang || saved || 'en-US';
+  wrap.dataset.val = current;
+
+  langs.forEach(lg => {
+      const btn = h('button', {
+          type: 'button', 
+          style: `font-size:16px; width:28px; height:28px; border-radius:6px; display:flex; align-items:center; justify-content:center; transition:background 0.2s; ${current === lg.l ? 'background:#4A90E2; color:#fff;' : 'color:var(--ink-faint);'}`,
+          onclick: (e) => {
+              wrap.querySelectorAll('button').forEach(b => { b.style.background = 'transparent'; b.style.color = 'var(--ink-faint)'; });
+              e.currentTarget.style.background = '#4A90E2'; e.currentTarget.style.color = '#fff';
+              wrap.dataset.val = lg.l; localStorage.setItem('fc-lang-' + memoryKey, lg.l); 
+          }
+      }, lg.f);
+      wrap.appendChild(btn);
+  });
+  return wrap;
+}
+
+function openFlashcardForm(existing) {
+  const isEdit = !!existing; let cat = (existing && existing.category) || FC_CATS[0];
+  openSheet({
+    title: isEdit ? 'Editar Flashcard' : 'Novo Flashcard',
+    buildFields: (box) => {
+      box.appendChild(fieldWrap('Categoria (Deck)', buildFormCategoryField(FC_CATS, cat)));
+      
+      const buildField = (label, idTxt, idMemoryKey, placeholder, existingText, defaultLang) => {
+          // CORREÇÃO: Adicionada a class: 'field' aqui na linha de baixo!
+          const row = h('div', {class: 'field', style:'display:flex; flex-direction:column; gap:4px; margin-bottom:10px;'});
+          
+          const head = h('div', {style:'display:flex; justify-content:space-between; align-items:flex-end;'});
+          head.appendChild(h('label', {style:'font-size:12.5px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;'}, label));
+          
+          const flagPicker = buildFlagPicker(idMemoryKey, existing ? (existing[idMemoryKey] || defaultLang) : defaultLang);
+          flagPicker.id = idMemoryKey; head.appendChild(flagPicker); row.appendChild(head);
+          
+          // Agora o textarea vai herdar o visual lindo do sistema automaticamente
+          const ta = h('textarea',{id: idTxt, placeholder: placeholder, style:'width:100%; min-height:60px;'});
+          ta.value = existingText || ''; row.appendChild(ta); box.appendChild(row);
+      };
+
+      buildField('Frente (Pergunta)', 'f-fc-f', 'frontLang', 'Ex: Car', existing?.front, 'en-US');
+      buildField('Verso (Resposta)', 'f-fc-b', 'backLang', 'Ex: Carro', existing?.back, 'pt-BR');
+      buildField('Frase de Exemplo', 'f-fc-ex', 'exLang', 'Ex: I bought a new car.', existing?.example, 'en-US');
+      buildField('Tradução do Exemplo', 'f-fc-ext', 'exTLang', 'Ex: Eu comprei um carro novo.', existing?.exTranslation, 'pt-BR');
+      buildField('Notas (Contexto)', 'f-fc-n', 'notesLang', 'Ex: Substantivo contável.', existing?.notes, 'pt-BR');
+    },
+    onSubmit: async () => {
+      const front = document.getElementById('f-fc-f').value.trim(); const back = document.getElementById('f-fc-b').value.trim();
+      if(!front || !back){ toast('Frente e Verso são obrigatórios!'); return false; }
+      
+      const obj = existing || { createdAt: Date.now(), interval: 0, repetition: 0, efactor: 2.5, nextReview: Date.now() }; 
+      obj.category = document.getElementById('f-cat-input').dataset.val;
+      
+      obj.front = front; obj.frontLang = document.getElementById('frontLang').dataset.val;
+      obj.back = back; obj.backLang = document.getElementById('backLang').dataset.val;
+      obj.example = document.getElementById('f-fc-ex').value.trim(); obj.exLang = document.getElementById('exLang').dataset.val;
+      obj.exTranslation = document.getElementById('f-fc-ext').value.trim(); obj.exTLang = document.getElementById('exTLang').dataset.val;
+      obj.notes = document.getElementById('f-fc-n').value.trim(); obj.notesLang = document.getElementById('notesLang').dataset.val;
+      
+      if(existing) await dbPut('flashcards', obj); else await dbAdd('flashcards', obj); 
+      
+      // Atualiza a tela de estudo instantaneamente se você estiver nela
+      if (document.getElementById('fc-study-area').style.display === 'flex') {
+          fcDueToday[fcCurrentIndex] = obj;
+          const wasFlipped = fcIsFlipped;
+          showFlashcard(); 
+          if(wasFlipped) { fcIsFlipped = false; flipFlashcard(); }
+      }
+      
+      renderFlashcards(); updateHomeStats(); toast('Salvo');
+    },
+    onDelete: isEdit ? ()=>confirmDelete('flashcards', existing.id, ()=>{
+        if(document.getElementById('fc-study-area').style.display === 'flex') { exitFlashcardStudy(); toast('Cartão apagado. Estudo reiniciado.'); }
+        else { renderFlashcards(); updateHomeStats(); }
+    }) : null
+  });
+}
 /* ============================================================
    LAZY LOADING VIRTUAL
    ============================================================ */
