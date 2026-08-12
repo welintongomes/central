@@ -948,7 +948,8 @@ function clearSearch() { document.getElementById('global-search').value = ''; gl
 
 function renderGlobalSearchChips() {
   const container = document.getElementById('global-search-filters'); container.style.display = 'flex'; container.innerHTML = '';
-  const cats = ['Todos', 'Tarefas', 'Hábitos', 'Notas', 'Diário', 'Compras', 'Gastos', 'Senhas', 'Contatos', 'Galeria', 'Citações'];
+  // ADICIONADOS: Citações e Flashcards na lista
+  const cats = ['Todos', 'Tarefas', 'Hábitos', 'Notas', 'Diário', 'Compras', 'Gastos', 'Senhas', 'Contatos', 'Galeria', 'Citações', 'Flashcards'];
   cats.forEach(c => { container.appendChild(h('button', { type: 'button', class: globalSearchFilter === c ? 'active' : '', style: 'flex: 0 0 auto;', onclick: () => { globalSearchFilter = c; handleGlobalSearch(); } }, c)); });
 }
 
@@ -960,7 +961,11 @@ async function handleGlobalSearch() {
   if (!isSearchMode && !q) { grid.style.display = 'grid'; hint.style.display = 'block'; resBox.style.display = 'none'; resBox.innerHTML = ''; clearBtn.style.display = 'none'; document.getElementById('global-search-filters').style.display = 'none'; return; }
   clearBtn.style.display = 'flex'; grid.style.display = 'none'; hint.style.display = 'none'; resBox.style.display = 'flex'; resBox.innerHTML = ''; renderGlobalSearchChips();
 
-  const [tasks, notes, contacts, expenses, shopping, journal, habits, habitLogs, passwords, gallery] = await Promise.all([ dbAll('tasks'), dbAll('notes'), dbAll('contacts'), dbAll('expenses'), dbAll('shopping'), dbAll('journal'), dbAll('habits'), dbAll('habitLogs'), dbAll('passwords'), dbAll('gallery'), dbAll('quotes') ]);
+  // CORREÇÃO: Agora 'quotes' e 'flashcards' estão declarados no array e no Promise.all!
+  const [tasks, notes, contacts, expenses, shopping, journal, habits, habitLogs, passwords, gallery, quotes, flashcards] = await Promise.all([ 
+      dbAll('tasks'), dbAll('notes'), dbAll('contacts'), dbAll('expenses'), dbAll('shopping'), dbAll('journal'), dbAll('habits'), dbAll('habitLogs'), dbAll('passwords'), dbAll('gallery'), dbAll('quotes'), dbAll('flashcards') 
+  ]);
+  
   let results = []; const todayISO = todayIso(); const now = Date.now();
 
   if (globalSearchFilter === 'Todos' || globalSearchFilter === 'Tarefas') tasks.forEach(t => { if (!t.isEncrypted && (!q || (t.text || '').toLowerCase().includes(q))) results.push({ type: 'task', item: t, title: t.text, sub: t.done ? 'Concluída' : 'Pendente' }); });
@@ -988,15 +993,17 @@ async function handleGlobalSearch() {
       }
     });
   }
+
   if (globalSearchFilter === 'Todos' || globalSearchFilter === 'Notas') notes.forEach(n => { if (!n.isEncrypted && (!q || (n.title || '').toLowerCase().includes(q) || (n.content || '').toLowerCase().includes(q))) results.push({ type: 'note', item: n, title: n.title || '(sem título)', sub: (n.category || 'Geral') + ' · Nota' }); });
   if (globalSearchFilter === 'Todos' || globalSearchFilter === 'Diário') journal.forEach(j => { if (!j.isEncrypted && (!q || (j.text || '').toLowerCase().includes(q))) { const raw = (j.text||'').replace(/\n/g,' '); const preview = raw.slice(0,60)+(raw.length>60?'…':''); results.push({ type: 'journal', item: j, title: humanDateFull(j.date), sub: (j.mood||'📔') + ' · ' + preview }); } });
   if (globalSearchFilter === 'Todos' || globalSearchFilter === 'Contatos') contacts.forEach(c => { if (!c.isEncrypted && (!q || (c.name || '').toLowerCase().includes(q) || (c.notes || '').toLowerCase().includes(q) || (c.phone || '').includes(q))) results.push({ type: 'contact', item: c, title: c.name, sub: (c.category||'Contato') + (c.phone ? ' · ' + c.phone : '') }); });
   if (globalSearchFilter === 'Todos' || globalSearchFilter === 'Gastos') expenses.forEach(e => { if (!e.isEncrypted && (!q || (e.description || '').toLowerCase().includes(q) || (e.category || '').toLowerCase().includes(q))) results.push({ type: 'expense', item: e, title: e.description || e.category, sub: `R$ ${e.amount} · ${humanDateFull(e.date)}` }); });
   if (globalSearchFilter === 'Todos' || globalSearchFilter === 'Senhas') passwords.forEach(p => { if (!p.isEncrypted && (!q || (p.title || '').toLowerCase().includes(q) || (p.username || '').toLowerCase().includes(q))) results.push({ type: 'password', item: p, title: p.title, sub: (p.category||'Cofre') + (p.username ? ' · ' + p.username : '') }); });
   if (globalSearchFilter === 'Todos' || globalSearchFilter === 'Galeria') gallery.forEach(g => { if (!g.isEncrypted && (!q || (g.title || '').toLowerCase().includes(q))) results.push({ type: 'gallery', item: g, title: g.title || 'Mídia Secreta', sub: 'Galeria' }); });
-
-  // NOVO: Busca dentro das citações
   if (globalSearchFilter === 'Todos' || globalSearchFilter === 'Citações') quotes.forEach(qt => { if (!qt.isEncrypted && (!q || (qt.text || '').toLowerCase().includes(q) || (qt.author || '').toLowerCase().includes(q))) results.push({ type: 'quote', item: qt, title: qt.author || 'Desconhecido', sub: `"${(qt.text || '').slice(0, 50)}..."` }); });
+  
+  // NOVO: Busca dentro dos Flashcards!
+  if (globalSearchFilter === 'Todos' || globalSearchFilter === 'Flashcards') flashcards.forEach(fc => { if (!fc.isEncrypted && (!q || (fc.front || '').toLowerCase().includes(q) || (fc.back || '').toLowerCase().includes(q))) results.push({ type: 'flashcard', item: fc, title: fc.front, sub: `Verso: ${(fc.back || '').slice(0, 40)}...` }); });
 
   if (results.length === 0) { resBox.appendChild(emptyState('🔍', 'Nada encontrado', 'Tente pesquisar por outros termos')); return; }
 
@@ -1016,15 +1023,14 @@ async function handleGlobalSearch() {
       if (r.type === 'expense') { icon = '💰'; color = 'var(--c-expenses)'; }
       if (r.type === 'journal') { icon = '📔'; color = 'var(--c-journal)'; } 
       if (r.type === 'password') { icon = '🔑'; color = '#505560'; } 
-      if (r.type === 'gallery') {
-         icon = r.item.mediaType === 'audio' ? '🎵' : (r.item.mediaType === 'video' ? '🎬' : '🖼️'); 
-         color = '#8E543B';
-      }
-      row.appendChild(h('div', { style: `background:${color}; color:#fff; width:34px; height:34px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:16px; flex: 0 0 auto;` }, icon));
+      if (r.type === 'quote') { icon = '💬'; color = 'var(--c-quotes)'; } 
+      if (r.type === 'flashcard') { icon = '🧠'; color = '#4A90E2'; } // Ícone dos flashcards
+      if (r.type === 'gallery') { icon = r.item.mediaType === 'audio' ? '🎵' : (r.item.mediaType === 'video' ? '🎬' : '🖼️'); color = '#8E543B'; }
+      if (icon) row.appendChild(h('div', { style: `background:${color}; color:#fff; width:34px; height:34px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:16px; flex: 0 0 auto;` }, icon));
     }
 
     const grow = h('div', { class: 'grow', onclick: () => {
-      if (r.type === 'task') openTaskForm(r.item); else if (r.type === 'note') openNoteForm(r.item); else if (r.type === 'contact') openContactForm(r.item); else if (r.type === 'expense') openExpenseForm(r.item); else if (r.type === 'shopping') toggleShopping(r.item); else if (r.type === 'journal') openJournalForm(r.item); else if (r.type === 'habit') openHabitForm(r.item); else if (r.type === 'password') openPasswordForm(r.item); else if (r.type === 'gallery') openGalleryViewer(r.item);
+      if (r.type === 'task') openTaskForm(r.item); else if (r.type === 'note') openNoteForm(r.item); else if (r.type === 'contact') openContactForm(r.item); else if (r.type === 'expense') openExpenseForm(r.item); else if (r.type === 'shopping') toggleShopping(r.item); else if (r.type === 'journal') openJournalForm(r.item); else if (r.type === 'habit') openHabitForm(r.item); else if (r.type === 'password') openPasswordForm(r.item); else if (r.type === 'gallery') openGalleryViewer(r.item); else if (r.type === 'quote') openQuoteForm(r.item); else if (r.type === 'flashcard') openFlashcardForm(r.item);
     }});
     grow.appendChild(h('div', { class: 'i-title' }, r.title));
     
@@ -1039,9 +1045,7 @@ async function handleGlobalSearch() {
 
     if (r.type === 'password') {
       row.appendChild(h('button',{ class:'icon-btn', style:'color:var(--c-contacts); margin-left: 4px;', onclick: (e)=>{ e.stopPropagation(); navigator.clipboard.writeText(r.item.password); toast('Senha copiada!'); } }, '📋'));
-      if (r.item.url) {
-        row.appendChild(h('button',{ class:'icon-btn', style:'color:var(--c-tasks); margin-left: 4px;', onclick: async (e)=>{ e.stopPropagation(); if(r.item.username) await navigator.clipboard.writeText(r.item.username); toast(r.item.username ? 'Usuário copiado! Abrindo...' : 'Abrindo site...'); setTimeout(() => window.open(r.item.url, '_blank'), 600); } }, '🌐'));
-      }
+      if (r.item.url) { row.appendChild(h('button',{ class:'icon-btn', style:'color:var(--c-tasks); margin-left: 4px;', onclick: async (e)=>{ e.stopPropagation(); if(r.item.username) await navigator.clipboard.writeText(r.item.username); toast(r.item.username ? 'Usuário copiado! Abrindo...' : 'Abrindo site...'); setTimeout(() => window.open(r.item.url, '_blank'), 600); } }, '🌐')); }
     }
     resBox.appendChild(row);
   });
