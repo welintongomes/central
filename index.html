@@ -377,11 +377,11 @@ body.dark-theme #app { box-shadow: 0 0 60px rgba(0,0,0,0.5); }
     
     <div id="exp-filters-area" style="display:flex; flex-direction:column; gap:12px; margin-bottom:16px;">
        
-       <!-- NOVO: Seletor de Mês Clicável idêntico ao do Diário -->
-       <div style="display:flex; align-items:center; gap:8px;">
-         <button class="btn btn-ghost" onclick="changeExpMonth(-1)" style="padding:10px 14px; background:var(--surface); border:1px solid var(--line);">◄</button>
-         <input type="month" id="exp-month-input" style="flex:1; padding:10px; border-radius:var(--r-md); border:1px solid var(--line); background:var(--surface); font-family:inherit; color:var(--ink); font-weight: 600; text-align:center;">
-         <button class="btn btn-ghost" onclick="changeExpMonth(1)" style="padding:10px 14px; background:var(--surface); border:1px solid var(--line);">►</button>
+       <!-- NOVO: Seletor de Mês Super Compacto -->
+       <div style="display:flex; align-items:center; background:var(--surface); border:1px solid var(--line); border-radius:var(--r-pill);">
+         <button class="btn btn-ghost" onclick="changeExpMonth(-1)" style="padding:8px 8px; font-size:24px; border:none; background:transparent; line-height:1;">‹</button>
+         <input type="month" id="exp-month-input" style="flex:3; min-width: min-content; border:none; background:transparent; font-family:inherit; color:var(--ink); font-weight:700; text-align:center; font-size:15px; outline:none; padding:8px 0;">
+         <button class="btn btn-ghost" onclick="changeExpMonth(1)" style="padding:8px 8px; font-size:24px; border:none; background:transparent; line-height:1;">›</button>
        </div>
 
        <div id="exp-cat-filter" class="chip-picker"></div>
@@ -454,11 +454,11 @@ body.dark-theme #app { box-shadow: 0 0 60px rgba(0,0,0,0.5); }
     
     <div id="journal-filters-area" style="display:flex; flex-direction:column; gap:12px; margin-bottom:16px;">
        
-       <!-- NOVO: Seletor de Mês idêntico ao de Gastos -->
-       <div style="display:flex; align-items:center; gap:8px;">
-         <button class="btn btn-ghost" onclick="changeJournalMonth(-1)" style="padding:10px 14px; background:var(--surface); border:1px solid var(--line);">◄</button>
-         <input type="month" id="journal-month-input" style="flex:1; padding:10px; border-radius:var(--r-md); border:1px solid var(--line); background:var(--surface); font-family:inherit; color:var(--ink); font-weight: 600; text-align:center;">
-         <button class="btn btn-ghost" onclick="changeJournalMonth(1)" style="padding:10px 14px; background:var(--surface); border:1px solid var(--line);">►</button>
+       <!-- NOVO: Seletor de Mês Super Compacto -->
+       <div style="display:flex; align-items:center; background:var(--surface); border:1px solid var(--line); border-radius:var(--r-pill);">
+         <button class="btn btn-ghost" onclick="changeJournalMonth(-1)" style="padding:8px 8px; font-size:24px; border:none; background:transparent; line-height:1;">‹</button>
+         <input type="month" id="journal-month-input" style="flex:3; min-width:min-content ; border:none; background:transparent; font-family:inherit; color:var(--ink); font-weight:700; text-align:center; font-size:15px; outline:none; padding:8px 0;">
+         <button class="btn btn-ghost" onclick="changeJournalMonth(1)" style="padding:8px 8px; font-size:24px; border:none; background:transparent; line-height:1;">›</button>
        </div>
 
        <div id="journal-mood-filter"></div>
