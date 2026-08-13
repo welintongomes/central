@@ -543,32 +543,36 @@ body.dark-theme #app { box-shadow: 0 0 60px rgba(0,0,0,0.5); }
   
   <div class="module-body" style="margin-top:0;padding-top:16px;">
     
-    <!-- Tela da Frase Gerada -->
-    <div style="background:var(--surface); border:1px solid var(--line); border-radius:var(--r-lg); padding:24px 20px; text-align:center; margin-bottom:16px; box-shadow:0 4px 12px rgba(var(--shadow-rgb),.05); display:flex; flex-direction:column; gap:10px; min-height:160px; justify-content:center; position:relative;">
+    <div style="background:var(--surface); border:1px solid var(--line); border-radius:var(--r-lg); padding:24px 20px; text-align:center; margin-bottom:16px; box-shadow:0 4px 12px rgba(var(--shadow-rgb),.05); display:flex; flex-direction:column; gap:10px; min-height:160px; justify-content:center; position:relative; cursor:pointer;" onclick="playCurrentQuoteVoice()" title="Tocar em voz alta">
       <div style="font-size:42px; color:var(--ink-faint); line-height:0; position:absolute; top:30px; left:16px; opacity:0.3;">“</div>
       <div id="qd-text" style="font-size:17px; font-style:italic; font-weight:600; color:var(--ink); position:relative; z-index:1;">Selecione uma categoria e toque no botão abaixo para inspirar-se.</div>
       <div id="qd-author" style="font-size:14px; color:var(--ink-soft); font-weight:700; margin-top:8px;"></div>
       <div id="qd-obs" style="font-size:12.5px; color:var(--ink-faint); margin-top:4px;"></div>
     </div>
 
-    <!-- Botão Mágico -->
-    <button class="btn btn-primary" style="width:100%; margin-bottom:20px; background:var(--c-quotes); border-radius:var(--r-pill); padding:14px; display:flex; align-items:center; justify-content:center; gap:8px;" onclick="generateRandomQuote()">
-      <span style="font-size:20px;">✨</span> Gerar Frase Aleatória
-    </button>
+    <!-- NOVO: Botões Divididos Lado a Lado -->
+    <div style="display:flex; gap:8px; margin-bottom:20px;">
+      <button class="btn btn-primary" style="flex:1; background:var(--c-quotes); border-radius:var(--r-pill); padding:14px; display:flex; align-items:center; justify-content:center; gap:6px;" onclick="generateRandomQuote(true)">
+        <span style="font-size:18px;">✨</span> Gerar
+      </button>
+      <button id="quote-autoplay-btn" class="btn btn-primary" style="flex:1; background:var(--c-quotes); border-radius:var(--r-pill); padding:14px; display:flex; align-items:center; justify-content:center; gap:6px;" onclick="toggleQuoteAutoplay()">
+        <span style="font-size:18px;">▶️</span> Autoplay
+      </button>
+    </div>
     
-    <!-- Filtros e Lista -->
     <div id="quotes-cat-filter" class="chip-picker"></div>
     <div style="font-size:12px; font-weight:700; color:var(--ink-soft); margin:10px 0; text-transform:uppercase; letter-spacing:0.5px; text-align:center;">Todas as frases da categoria</div>
     
-    <div class="list" id="quotes-list" style="max-height: 34.2vh; overflow-y: auto;" ></div>
+    <div class="list" id="quotes-list" style="overflow-y: auto; max-height: 35.6vh;"></div>
   </div>
   <button class="fab" id="quotes-fab" onclick="openQuoteForm()">+</button>
   <div class="module-header" id="quotes-header">
-    <button class="back-btn" onclick="goHome()">←</button>
-    <h2>Citações e Frases</h2>
+    <!-- Se voltar para a Home, ele desliga o Autoplay e corta a voz -->
+    <button class="back-btn" onclick="if(isQuoteAutoplay) toggleQuoteAutoplay(); if(window.speechSynthesis)window.speechSynthesis.cancel(); goHome()">←</button>
+    <h2 style="flex:1;">Citações e Frases</h2>
+    <button class="header-action" onclick="toggleQuoteTts()" id="quote-tts-btn" title="Leitura Automática">🔊</button>
   </div>
-</section>
-</div> 
+</section> 
 
 <!-- ===== FLASHCARDS (SM-2) ===== -->
 <section id="screen-flashcards" class="screen module-screen">
@@ -2005,12 +2009,69 @@ function toggleModuleLock(key) {
 }
 
 /* ============================================================
-   CITAÇÕES E FRASES
+   CITAÇÕES E FRASES (Com Autoplay Inteligente)
    ============================================================ */
 let quoteCatFilter = 'Todos';
 const QUOTE_CATS = ['Filosofia', 'Motivação', 'Livros', 'Filmes', 'Outro'];
+let quoteTtsEnabled = localStorage.getItem('quote-tts') !== 'off';
 
+let isQuoteAutoplay = false;
+let quoteAutoplayTimer = null;
+let quoteUtterance = null;
+
+function toggleQuoteTts() {
+  quoteTtsEnabled = !quoteTtsEnabled; 
+  localStorage.setItem('quote-tts', quoteTtsEnabled ? 'on' : 'off');
+  document.getElementById('quote-tts-btn').style.opacity = quoteTtsEnabled ? '1' : '0.4';
+  toast(quoteTtsEnabled ? 'Leitura automática ligada' : 'Leitura automática desligada');
+}
+
+function toggleQuoteAutoplay() {
+    isQuoteAutoplay = !isQuoteAutoplay;
+    const btn = document.getElementById('quote-autoplay-btn');
+    
+    if (isQuoteAutoplay) {
+        btn.innerHTML = '<span style="font-size:18px;">⏸️</span> Parar';
+        btn.style.background = 'var(--danger)'; 
+        generateRandomQuote(); 
+    } else {
+        btn.innerHTML = '<span style="font-size:18px;">▶️</span> Autoplay';
+        btn.style.background = 'var(--c-quotes)';
+        clearTimeout(quoteAutoplayTimer);
+        if (window.speechSynthesis) window.speechSynthesis.cancel();
+    }
+}
+
+function playCurrentQuoteVoice() {
+    if (window.speechSynthesis) window.speechSynthesis.cancel();
+    clearTimeout(quoteAutoplayTimer);
+    
+    const text = document.getElementById('qd-text').textContent;
+    const author = document.getElementById('qd-author').textContent;
+    
+    if (!text || text.includes('Selecione uma categoria')) return;
+    
+    if (window.speechSynthesis) {
+        quoteUtterance = new SpeechSynthesisUtterance(`${text}... ${author}`);
+        quoteUtterance.lang = 'pt-BR'; 
+        
+        quoteUtterance.onend = () => {
+            if (isQuoteAutoplay) {
+                quoteAutoplayTimer = setTimeout(generateRandomQuote, 1500); 
+            }
+        };
+        
+        quoteUtterance.onerror = () => {
+            if (isQuoteAutoplay) quoteAutoplayTimer = setTimeout(generateRandomQuote, 2500);
+        };
+
+        window.speechSynthesis.speak(quoteUtterance);
+    }
+}
+
+// AQUI ESTÁ A FUNÇÃO QUE EU TINHA ESQUECIDO (Ela faz a lista aparecer de novo)
 async function renderQuotes() {
+  document.getElementById('quote-tts-btn').style.opacity = quoteTtsEnabled ? '1' : '0.4';
   const list = document.getElementById('quotes-list'); list.innerHTML = ''; 
   let quotes = await dbAll('quotes');
   
@@ -2028,7 +2089,7 @@ async function renderQuotes() {
     grow.appendChild(h('div',{class:'i-title', style:'font-style:italic;'}, `"${rawText.slice(0,60)+(rawText.length>60?'…':'')}"`));
     
     let subParts = [q.author || 'Desconhecido', (q.category || QUOTE_CATS[0])];
-    if(q.seen) subParts.push('👀 Já lida'); // Tag especial
+    if(q.seen) subParts.push('👀 Já lida'); 
     grow.appendChild(h('div',{class:'i-sub'}, subParts.join(' · '))); 
     
     row.appendChild(grow); 
@@ -2038,35 +2099,55 @@ async function renderQuotes() {
   if(window.aplicarLazyLoading) window.aplicarLazyLoading();
 }
 
-async function generateRandomQuote() {
+async function generateRandomQuote(isManual = false) {
+  if (isManual && isQuoteAutoplay) toggleQuoteAutoplay(); 
+
+  if (window.speechSynthesis) window.speechSynthesis.cancel();
+  clearTimeout(quoteAutoplayTimer);
+  
   let all = await dbAll('quotes');
   if (quoteCatFilter !== 'Todos') all = all.filter(q => (q.category || QUOTE_CATS[0]) === quoteCatFilter);
   
-  if (all.length === 0) { toast('Nenhuma frase nesta categoria!'); return; }
+  if (all.length === 0) { 
+      toast('Nenhuma frase nesta categoria!'); 
+      if(isQuoteAutoplay) toggleQuoteAutoplay(); 
+      return; 
+  }
   
   let unseen = all.filter(q => !q.seen);
   
-  // A mágica do Ciclo Contínuo: Se leu todas, reinicia a categoria!
   if (unseen.length === 0) {
     for (const q of all) { q.seen = false; await dbPut('quotes', q); }
     unseen = all;
-    toast('Ciclo reiniciado! 🔄');
+    
+    if (isQuoteAutoplay) {
+        toggleQuoteAutoplay();
+        toast('Todas as frases lidas! ✅');
+        return;
+    } else {
+        toast('Ciclo reiniciado! 🔄');
+    }
   }
   
-  // Sorteio Aleatório
   const randIndex = Math.floor(Math.random() * unseen.length);
   const chosen = unseen[randIndex];
   
-  // Marca como vista e salva
   chosen.seen = true;
   await dbPut('quotes', chosen);
   
-  // Exibe na tela
   document.getElementById('qd-text').textContent = `"${chosen.text}"`;
   document.getElementById('qd-author').textContent = `- ${chosen.author || 'Desconhecido'}`;
   document.getElementById('qd-obs').textContent = chosen.obs ? `Obs: ${chosen.obs}` : '';
   
-  renderQuotes(); // Atualiza a lista abaixo
+  renderQuotes(); 
+  
+  if (quoteTtsEnabled) {
+      playCurrentQuoteVoice(); 
+  } else if (isQuoteAutoplay) {
+      const wordCount = (chosen.text + ' ' + (chosen.author||'')).split(' ').length;
+      const readTimeMs = (wordCount * 500) + 4000; 
+      quoteAutoplayTimer = setTimeout(generateRandomQuote, readTimeMs);
+  }
 }
 
 function openQuoteForm(existing) {
