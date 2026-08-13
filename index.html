@@ -370,26 +370,45 @@ body.dark-theme #app { box-shadow: 0 0 60px rgba(0,0,0,0.5); }
   </div>
 </section>
 
-<!-- ===== GASTOS ===== -->
+<!-- ===== GASTOS E FINANÇAS ===== -->
 <section id="screen-expenses" class="screen module-screen">
   
   <div class="module-body" style="margin-top:0;padding-top:16px;">
-    <div class="month-nav">
-      <button onclick="shiftExpMonth(-1)">‹</button>
-      <span id="exp-month-label"></span>
-      <button onclick="shiftExpMonth(1)">›</button>
+    
+    <div id="exp-filters-area" style="display:flex; flex-direction:column; gap:12px; margin-bottom:16px;">
+       
+       <!-- NOVO: Seletor de Mês Clicável idêntico ao do Diário -->
+       <div style="display:flex; align-items:center; gap:8px;">
+         <button class="btn btn-ghost" onclick="changeExpMonth(-1)" style="padding:10px 14px; background:var(--surface); border:1px solid var(--line);">◄</button>
+         <input type="month" id="exp-month-input" style="flex:1; padding:10px; border-radius:var(--r-md); border:1px solid var(--line); background:var(--surface); font-family:inherit; color:var(--ink); font-weight: 600; text-align:center;">
+         <button class="btn btn-ghost" onclick="changeExpMonth(1)" style="padding:10px 14px; background:var(--surface); border:1px solid var(--line);">►</button>
+       </div>
+
+       <div id="exp-cat-filter" class="chip-picker"></div>
     </div>
-    <div class="summary-card">
-      <div class="summary-row"><span>Entradas</span><span class="money-pos" id="exp-income">R$ 0,00</span></div>
-      <div class="summary-row"><span>Saídas</span><span class="money-neg" id="exp-outcome">R$ 0,00</span></div>
-      <div class="summary-row"><strong>Saldo</strong><strong id="exp-balance">R$ 0,00</strong></div>
+
+    <!-- Dashboard de Resumo (Receitas, Despesas e Saldo) -->
+    <div id="exp-summary" style="display:flex; gap:8px; margin-bottom:16px;">
+      <div class="summary-card" style="flex:1; background:rgba(62,122,93,0.1); border:1px solid rgba(62,122,93,0.2); padding:10px 4px; border-radius:var(--r-md); text-align:center;">
+        <div style="font-size:10px; font-weight:700; color:var(--c-habits); text-transform:uppercase;">Receitas</div>
+        <div id="exp-total-inc" style="font-size:15px; font-weight:700; color:var(--c-habits); margin-top:4px;">R$ 0,00</div>
+      </div>
+      <div class="summary-card" style="flex:1; background:rgba(217,74,74,0.1); border:1px solid rgba(217,74,74,0.2); padding:10px 4px; border-radius:var(--r-md); text-align:center;">
+        <div style="font-size:10px; font-weight:700; color:var(--danger); text-transform:uppercase;">Despesas</div>
+        <div id="exp-total-out" style="font-size:15px; font-weight:700; color:var(--danger); margin-top:4px;">R$ 0,00</div>
+      </div>
+      <div class="summary-card" style="flex:1; background:var(--surface-2); border:1px solid var(--line); padding:10px 4px; border-radius:var(--r-md); text-align:center;">
+        <div style="font-size:10px; font-weight:700; color:var(--ink-soft); text-transform:uppercase;">Saldo</div>
+        <div id="exp-total-bal" style="font-size:15px; font-weight:700; color:var(--ink); margin-top:4px;">R$ 0,00</div>
+      </div>
     </div>
-    <div class="list" id="expenses-list" style="overflow-y: auto; max-height: 45vh;"></div>
+
+    <div class="list" id="expenses-list" style="max-height: 52vh; overflow-y: auto;"></div>
   </div>
   <button class="fab" id="expenses-fab" onclick="openExpenseForm()">+</button>
   <div class="module-header" id="expenses-header">
     <button class="back-btn" onclick="goHome()">←</button>
-    <h2>Gastos</h2>
+    <h2 style="flex:1;">Gastos</h2>
   </div>
 </section>
 
@@ -431,11 +450,26 @@ body.dark-theme #app { box-shadow: 0 0 60px rgba(0,0,0,0.5); }
 <!-- ===== DIÁRIO ===== -->
 <section id="screen-journal" class="screen module-screen">
   
-  <div class="module-body" style="margin-top:0;padding-top:16px;"><div class="list" id="journal-list"></div></div>
+  <div class="module-body" style="margin-top:0;padding-top:16px;">
+    
+    <div id="journal-filters-area" style="display:flex; flex-direction:column; gap:12px; margin-bottom:16px;">
+       
+       <!-- NOVO: Seletor de Mês idêntico ao de Gastos -->
+       <div style="display:flex; align-items:center; gap:8px;">
+         <button class="btn btn-ghost" onclick="changeJournalMonth(-1)" style="padding:10px 14px; background:var(--surface); border:1px solid var(--line);">◄</button>
+         <input type="month" id="journal-month-input" style="flex:1; padding:10px; border-radius:var(--r-md); border:1px solid var(--line); background:var(--surface); font-family:inherit; color:var(--ink); font-weight: 600; text-align:center;">
+         <button class="btn btn-ghost" onclick="changeJournalMonth(1)" style="padding:10px 14px; background:var(--surface); border:1px solid var(--line);">►</button>
+       </div>
+
+       <div id="journal-mood-filter"></div>
+    </div>
+
+    <div class="list" id="journal-list" style="max-height: 62vh; overflow-y: auto;"></div>
+  </div>
   <button class="fab" id="journal-fab" onclick="openJournalForm()">+</button>
   <div class="module-header" id="journal-header">
     <button class="back-btn" onclick="goHome()">←</button>
-    <h2>Diário</h2>
+    <h2 style="flex:1;">Diário</h2>
   </div>
 </section>
 
@@ -1227,21 +1261,86 @@ function openNoteForm(existing){
 }
 
 /* ============================================================
-   GASTOS
+   GASTOS E FINANÇAS (Com Seletor de Mês Inteligente)
    ============================================================ */
-let expMonthOffset=0; function currentExpMonthDate(){ const d=new Date(); d.setDate(1); d.setMonth(d.getMonth()+expMonthOffset); return d; } function shiftExpMonth(delta){ expMonthOffset+=delta; renderExpenses(); }
-async function renderExpenses(){
-  const d=currentExpMonthDate(); const ym=d.getFullYear()+'-'+pad(d.getMonth()+1); document.getElementById('exp-month-label').textContent=d.toLocaleDateString('pt-BR',{month:'long', year:'numeric'});
-  const list=document.getElementById('expenses-list'); list.innerHTML=''; let expenses=await dbAll('expenses');
-  buildCategoryFilter('expenses-cat-filter', EXP_CATS, expenses, expCatFilter, (val) => { expCatFilter = val; renderExpenses(); });
-  expenses=expenses.filter(e=>e.date && e.date.indexOf(ym)===0); expenses.sort((a,b)=>b.date.localeCompare(a.date));
-  if (expCatFilter !== 'Todos') expenses = expenses.filter(e => e.category === expCatFilter);
-  const income=expenses.filter(e=>e.type==='receita').reduce((s,e)=>s+Number(e.amount),0); const outcome=expenses.filter(e=>e.type==='despesa').reduce((s,e)=>s+Number(e.amount),0);
-  document.getElementById('exp-income').textContent=brl(income); document.getElementById('exp-outcome').textContent=brl(outcome); const balEl=document.getElementById('exp-balance'); balEl.textContent=brl(income-outcome); balEl.className=(income-outcome)>=0?'money-pos':'money-neg';
-  if(!expenses.length){ list.appendChild(emptyState('💰','Nada encontrado','Altere o filtro ou adicione um gasto')); return; }
-  expenses.forEach(e=>{
-    const row=h('div',{class:'item', onclick:()=>openExpenseForm(e)}); const grow=h('div',{class:'grow'}); grow.appendChild(h('div',{class:'i-title'}, e.description||e.category)); const sub=h('div',{class:'i-sub'}); sub.appendChild(h('span',{class:'cat-dot', style:'background:'+(EXP_CAT_COLOR[e.category]||'var(--ink-soft)')})); sub.appendChild(document.createTextNode(e.category+' · '+humanDateFull(e.date))); grow.appendChild(sub); row.appendChild(grow); row.appendChild(h('div',{class:e.type==='receita'?'money-pos':'money-neg', style:'font-size:14.5px;font-weight:700;white-space:nowrap;'}, (e.type==='receita'?'+ ':'− ')+brl(Number(e.amount)))); list.appendChild(row);
+let expMonthFilter = '';
+
+
+// Avança ou retrocede o mês pelas setinhas
+function changeExpMonth(offset) {
+  if (!expMonthFilter) return;
+  let [y, m] = expMonthFilter.split('-').map(Number);
+  m += offset;
+  if (m > 12) { m = 1; y++; }
+  else if (m < 1) { m = 12; y--; }
+  expMonthFilter = y + '-' + String(m).padStart(2, '0');
+  renderExpenses();
+}
+
+async function renderExpenses() {
+  const list = document.getElementById('expenses-list'); list.innerHTML = ''; 
+  let items = await dbAll('expenses');
+
+  if (!expMonthFilter) {
+      const now = new Date();
+      expMonthFilter = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+  }
+  
+  const monthInput = document.getElementById('exp-month-input');
+  if (monthInput) {
+      if (monthInput.value !== expMonthFilter) monthInput.value = expMonthFilter;
+      monthInput.onchange = (e) => { expMonthFilter = e.target.value; renderExpenses(); };
+  }
+
+  buildCategoryFilter('exp-cat-filter', EXP_CATS, items, expCatFilter, (val) => { expCatFilter = val; renderExpenses(); });
+
+  let filtered = items.filter(e => {
+      const matchMonth = (e.date || '').startsWith(expMonthFilter);
+      const matchCat = expCatFilter === 'Todos' || (e.category || EXP_CATS[0]) === expCatFilter;
+      return matchMonth && matchCat;
   });
+
+  filtered.sort((a,b) => (b.date||'').localeCompare(a.date||''));
+
+  // CÁLCULO DE RECEITAS, DESPESAS E SALDO
+  let inc = 0; let out = 0;
+  filtered.forEach(e => { if(e.type === 'receita') inc += Number(e.amount); else out += Number(e.amount); });
+  let balance = inc - out;
+  
+  const incEl = document.getElementById('exp-total-inc');
+  const outEl = document.getElementById('exp-total-out');
+  const balEl = document.getElementById('exp-total-bal');
+  
+  if(incEl) incEl.textContent = brl(inc);
+  if(outEl) outEl.textContent = brl(out);
+  if(balEl) {
+      balEl.textContent = brl(balance);
+      // Mágica visual: Se o saldo for positivo fica verde, se for negativo fica vermelho!
+      balEl.style.color = balance >= 0 ? 'var(--c-habits)' : 'var(--danger)';
+  }
+
+  if (!filtered.length) {
+      list.appendChild(emptyState('💰', 'Nenhum gasto', 'Adicione receitas ou despesas no +'));
+  } else {
+      filtered.forEach(e => {
+          const row = h('div',{class:'item'});
+          
+          const isInc = e.type === 'receita';
+          const icon = h('div',{style:`background:${isInc?'var(--c-habits)':'var(--danger)'}; color:#fff; width:34px; height:34px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:16px; flex:0 0 auto;`}, isInc?'↑':'↓');
+          row.appendChild(icon);
+          
+          const grow = h('div',{class:'grow', onclick: () => openExpenseForm(e)});
+          grow.appendChild(h('div',{class:'i-title'}, e.description || e.category));
+          grow.appendChild(h('div',{class:'i-sub'}, (e.category||EXP_CATS[0]) + ' · ' + humanDateFull(e.date)));
+          
+          row.appendChild(grow);
+          const val = h('div',{style:`font-weight:700; color:${isInc?'var(--c-habits)':'var(--danger)'};`}, brl(e.amount));
+          row.appendChild(val);
+          
+          row.appendChild(h('button',{class:'icon-btn', style:'margin-left:8px;', onclick:(ev)=>{ ev.stopPropagation(); confirmDelete('expenses', e.id, ()=>{renderExpenses();updateHomeStats();}); }},'✕'));
+          list.appendChild(row);
+      });
+  }
   if(window.aplicarLazyLoading) window.aplicarLazyLoading();
 }
 function openExpenseForm(existing){
@@ -1456,13 +1555,84 @@ async function deleteCurrentShoppingList() {
 }
 //fim modo de lista de compras
 const MOODS=['😊','🙂','😐','😢','😠','😴'];
-async function renderJournal(){
-  const list=document.getElementById('journal-list'); list.innerHTML=''; const entries=await dbAll('journal');
-  entries.sort((a,b)=> (b.date||'').localeCompare(a.date||'') || (b.createdAt||0)-(a.createdAt||0) );
-  if(!entries.length){ list.appendChild(emptyState('📔','Diário vazio','Toque no + para escrever')); return; }
-  entries.forEach(en=>{
-    const row=h('div',{class:'item', onclick:()=>openJournalForm(en)}); row.appendChild(h('div',{style:'font-size:22px;line-height:1;'}, en.mood||'📔')); const grow=h('div',{class:'grow'}); grow.appendChild(h('div',{class:'i-title'}, humanDateFull(en.date))); const raw=(en.text||'').replace(/\n/g,' '); grow.appendChild(h('div',{class:'i-sub'}, raw.slice(0,80)+(raw.length>80?'…':''))); row.appendChild(grow); row.appendChild(h('button',{class:'icon-btn', onclick:(e)=>{ e.stopPropagation(); confirmDelete('journal', en.id, ()=>{renderJournal();updateHomeStats();}); }},'✕')); list.appendChild(row);
+/* ============================================================
+   DIÁRIO (Com Filtro de Mês, Setinhas e Rastreador de Humor)
+   ============================================================ */
+let journalMonthFilter = '';
+let journalMoodFilter = 'Todos';
+
+// NOVA FUNÇÃO: Avança ou retrocede o mês pelas setinhas
+function changeJournalMonth(offset) {
+  if (!journalMonthFilter) return;
+  let [y, m] = journalMonthFilter.split('-').map(Number);
+  m += offset;
+  if (m > 12) { m = 1; y++; }
+  else if (m < 1) { m = 12; y--; }
+  journalMonthFilter = y + '-' + String(m).padStart(2, '0');
+  renderJournal();
+}
+async function renderJournal() {
+  const list = document.getElementById('journal-list'); list.innerHTML = ''; 
+  let items = await dbAll('journal');
+
+  // 1. Pega o mês atual automaticamente quando você abre a tela
+  if (!journalMonthFilter) {
+      const now = new Date();
+      journalMonthFilter = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+  }
+  
+  const monthInput = document.getElementById('journal-month-input');
+  if (monthInput.value !== journalMonthFilter) monthInput.value = journalMonthFilter;
+  
+  // Atualiza a lista caso você mude o mês no calendário
+  monthInput.onchange = (e) => { journalMonthFilter = e.target.value; renderJournal(); };
+
+  // 2. Inteligência Artificial: Lê todo o banco e extrai as carinhas que você já usou!
+  const usedMoods = Array.from(new Set(items.map(j => j.mood || '📔'))).filter(Boolean);
+  const allMoods = ['Todos', ...usedMoods];
+  if (!allMoods.includes(journalMoodFilter)) journalMoodFilter = 'Todos';
+
+  // 3. Constrói os Chips (Botões) com as Carinhas
+  const filterBox = document.getElementById('journal-mood-filter'); filterBox.innerHTML = '';
+  const chips = h('div', {class: 'chip-picker', style: 'display:flex; flex-wrap:nowrap; overflow-x:auto; scrollbar-width:none; padding-bottom:4px;'});
+  
+  allMoods.forEach(m => {
+      chips.appendChild(h('button', {
+         type: 'button',
+         class: journalMoodFilter === m ? 'active' : '',
+         style: 'flex: 0 0 auto; font-size:20px; padding:6px 14px;', // Fonte maior para destacar os emojis
+         onclick: () => { journalMoodFilter = m; renderJournal(); }
+      }, m));
   });
+  filterBox.appendChild(chips);
+
+  // 4. Aplica os dois filtros ao mesmo tempo (Mês + Carinha)
+  let filtered = items.filter(j => {
+      const matchMonth = (j.date || '').startsWith(journalMonthFilter);
+      const matchMood = journalMoodFilter === 'Todos' || (j.mood || '📔') === journalMoodFilter;
+      return matchMonth && matchMood;
+  });
+
+  filtered.sort((a,b) => (b.date||'').localeCompare(a.date||''));
+
+  // 5. Renderiza a lista filtrada
+  if (!filtered.length) {
+      list.appendChild(emptyState('📔', 'Diário Vazio', 'Nada escrito com este filtro.'));
+  } else {
+      filtered.forEach(j => {
+        const row = h('div',{class:'item'});
+        const grow = h('div',{class:'grow', onclick: () => openJournalForm(j)});
+        const raw = (j.text||'').replace(/\n/g,' ');
+        const preview = raw.slice(0, 60) + (raw.length > 60 ? '…' : '');
+        
+        grow.appendChild(h('div',{class:'i-title'}, humanDateFull(j.date)));
+        grow.appendChild(h('div',{class:'i-sub'}, (j.mood||'📔') + ' · ' + preview));
+        
+        row.appendChild(grow);
+        row.appendChild(h('button',{class:'icon-btn', onclick:(e)=>{ e.stopPropagation(); confirmDelete('journal', j.id, ()=>{renderJournal();updateHomeStats();}); }},'✕'));
+        list.appendChild(row);
+      });
+  }
   if(window.aplicarLazyLoading) window.aplicarLazyLoading();
 }
 function openJournalForm(existing){
