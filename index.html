@@ -563,12 +563,12 @@ body.dark-theme #app { box-shadow: 0 0 60px rgba(0,0,0,0.5); }
     <div id="quotes-cat-filter" class="chip-picker"></div>
     <div style="font-size:12px; font-weight:700; color:var(--ink-soft); margin:10px 0; text-transform:uppercase; letter-spacing:0.5px; text-align:center;">Todas as frases da categoria</div>
     
-    <div class="list" id="quotes-list" style="overflow-y: auto; max-height: 35.6vh;"></div>
+    <div class="list" id="quotes-list" style="overflow-y: auto; max-height: 34.6vh;"></div>
   </div>
   <button class="fab" id="quotes-fab" onclick="openQuoteForm()">+</button>
   <div class="module-header" id="quotes-header">
     <!-- Se voltar para a Home, ele desliga o Autoplay e corta a voz -->
-    <button class="back-btn" onclick="if(isQuoteAutoplay) toggleQuoteAutoplay(); if(window.speechSynthesis)window.speechSynthesis.cancel(); goHome()">←</button>
+    <button class="back-btn" onclick="if(isQuoteAutoplay) toggleQuoteAutoplay(); if(typeof releaseWakeLock === 'function') releaseWakeLock(); if(window.speechSynthesis)window.speechSynthesis.cancel(); goHome()">←</button>
     <h2 style="flex:1;">Citações e Frases</h2>
     <button class="header-action" onclick="toggleQuoteTts()" id="quote-tts-btn" title="Leitura Automática">🔊</button>
   </div>
@@ -2019,6 +2019,15 @@ let isQuoteAutoplay = false;
 let quoteAutoplayTimer = null;
 let quoteUtterance = null;
 
+// A MÁGICA DA TRAVA DE TELA (WAKE LOCK)
+let wakeLock = null;
+async function requestWakeLock() { 
+  try { if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen'); } catch (e) { console.log('Erro na trava:', e); } 
+}
+function releaseWakeLock() { 
+  if (wakeLock !== null) { wakeLock.release(); wakeLock = null; } 
+}
+
 function toggleQuoteTts() {
   quoteTtsEnabled = !quoteTtsEnabled; 
   localStorage.setItem('quote-tts', quoteTtsEnabled ? 'on' : 'off');
@@ -2033,12 +2042,14 @@ function toggleQuoteAutoplay() {
     if (isQuoteAutoplay) {
         btn.innerHTML = '<span style="font-size:18px;">⏸️</span> Parar';
         btn.style.background = 'var(--danger)'; 
+        requestWakeLock(); // <-- Ativa a trava para a tela não apagar
         generateRandomQuote(); 
     } else {
         btn.innerHTML = '<span style="font-size:18px;">▶️</span> Autoplay';
         btn.style.background = 'var(--c-quotes)';
         clearTimeout(quoteAutoplayTimer);
         if (window.speechSynthesis) window.speechSynthesis.cancel();
+        releaseWakeLock(); // <-- Libera a tela para economizar bateria
     }
 }
 
