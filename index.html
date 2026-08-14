@@ -2953,22 +2953,106 @@ function openWorkHourForm(existing) {
       const extrasList = h('div', {style: 'display:flex; flex-direction:column; gap:8px; margin-bottom:12px;'});
       
       const drawExtras = () => {
-          extrasList.innerHTML = '';
-          currentExtras.forEach((ext, idx) => {
-              const row = h('div', {style: 'display:flex; gap:8px; align-items:center; background:var(--surface-2); padding:8px; border-radius:var(--r-md); border:1px solid var(--line);'});
-              
-              const nameInp = h('input', {type:'text', value: ext.name, placeholder:'Ex: Polimento Jet', style:'flex:2; border:none; background:transparent; border-bottom:1px solid var(--line); outline:none; font-size:14px; padding:4px 0;margin: 0.1px;color: var(--ink);'});
-              nameInp.onchange = (e) => currentExtras[idx].name = e.target.value;
-              
-              const valInp = h('input', {type:'number', value: ext.value, placeholder:'R$', style:'flex:1; border:none; background:transparent; border-bottom:1px solid var(--line); outline:none; font-size:14px; padding:4px 0;margin: 0.1px;color: var(--ink);'});
-              valInp.onchange = (e) => currentExtras[idx].value = Number(e.target.value);
-              
-              const delBtn = h('button', {class:'icon-btn', style:'color:var(--danger);', onclick: (e) => { e.preventDefault(); currentExtras.splice(idx,1); drawExtras(); }}, '✕');
-              
-              row.appendChild(nameInp); row.appendChild(valInp); row.appendChild(delBtn);
-              extrasList.appendChild(row);
-          });
-      };
+    extrasList.innerHTML = '';
+
+    currentExtras.forEach((ext, idx) => {
+
+        const row = h('div', {
+            style: `
+                display:flex;
+                gap:8px;
+                align-items:center;
+
+                width:100%;
+                min-width:0;
+                max-width:100%;
+
+                box-sizing:border-box;
+
+                background:var(--surface-2);
+                padding:8px;
+                border-radius:var(--r-md);
+                border:1px solid var(--line);
+
+                overflow:hidden;
+            `
+        });
+
+        const nameInp = h('input', {
+            type:'text',
+            value: ext.name,
+            placeholder:'Ex: Polimento Jet',
+            style: `
+                flex:2 1 0;
+                min-width:0;
+                width:0;
+                max-width:100%;
+
+                box-sizing:border-box;
+
+                border:none;
+                background:transparent;
+                border-bottom:1px solid var(--line);
+                outline:none;
+
+                font-size:14px;
+                padding:4px 0;
+                margin:0;
+
+                color:var(--ink);
+            `
+        });
+
+        nameInp.onchange = (e) => {
+            currentExtras[idx].name = e.target.value;
+        };
+
+        const valInp = h('input', {
+            type:'number',
+            value: ext.value,
+            placeholder:'R$',
+            style: `
+                flex:1 1 0;
+                min-width:0;
+                width:0;
+                max-width:100%;
+
+                box-sizing:border-box;
+
+                border:none;
+                background:transparent;
+                border-bottom:1px solid var(--line);
+                outline:none;
+
+                font-size:14px;
+                padding:4px 0;
+                margin:0;
+
+                color:var(--ink);
+            `
+        });
+
+        valInp.onchange = (e) => {
+            currentExtras[idx].value = Number(e.target.value);
+        };
+
+        const delBtn = h('button', {
+            class:'icon-btn',
+            style:'color:var(--danger); flex:0 0 auto;',
+            onclick:(e) => {
+                e.preventDefault();
+                currentExtras.splice(idx,1);
+                drawExtras();
+            }
+        }, '✕');
+
+        row.appendChild(nameInp);
+        row.appendChild(valInp);
+        row.appendChild(delBtn);
+
+        extrasList.appendChild(row);
+    });
+};
       drawExtras();
       extrasWrap.appendChild(extrasList);
       
