@@ -94,9 +94,9 @@ body.dark-theme #app { box-shadow: 0 0 60px rgba(0,0,0,0.5); }
 .stat-chip .dot{width:7px;height:7px;border-radius:50%;flex:0 0 auto;}
 
 .search-wrapper { position: relative; display: flex; align-items: center; margin-top: 16px; }
-.search-wrapper input { width: 100%; border: 1.5px solid var(--line); background: var(--surface); border-radius: var(--r-pill); padding: 10px 38px 10px 16px; font-size: 14.5px; outline: none; box-shadow: 0 1px 2px rgba(var(--shadow-rgb),.04); color: var(--ink); }
+.search-wrapper input { width: 100%; border: 1.5px solid var(--line); background: var(--surface); border-radius: var(--r-pill); padding: 10px 16px 10px 38px; font-size: 14.5px; outline: none; box-shadow: 0 1px 2px rgba(var(--shadow-rgb),.04); color: var(--ink); }
 .search-wrapper input:focus { border-color: var(--accent); }
-.clear-search { position: absolute; right: 12px; width: 22px; height: 22px; border-radius: 50%; background: var(--line); color: var(--ink-soft); font-size: 11px; display: flex; align-items: center; justify-content: center; transition: background 0.15s; }
+.clear-search { position: absolute; left: 12px; width: 22px; height: 22px; border-radius: 50%; background: var(--line); color: var(--ink-soft); font-size: 11px; display: flex; align-items: center; justify-content: center; transition: background 0.15s; }
 .clear-search:active { background: var(--ink-faint); color: var(--surface); }
 
 .tile-grid{overflow-y: auto; scrollbar-width: none; max-height: 67vh; display:grid; grid-template-columns:1fr 1fr; gap:12px; padding:18px var(--sp-5) 28px; }
@@ -2957,10 +2957,10 @@ function openWorkHourForm(existing) {
           currentExtras.forEach((ext, idx) => {
               const row = h('div', {style: 'display:flex; gap:8px; align-items:center; background:var(--surface-2); padding:8px; border-radius:var(--r-md); border:1px solid var(--line);'});
               
-              const nameInp = h('input', {type:'text', value: ext.name, placeholder:'Ex: Polimento Jet', style:'flex:2; border:none; background:transparent; border-bottom:1px solid var(--line); outline:none; font-size:14px; padding:4px 0;'});
+              const nameInp = h('input', {type:'text', value: ext.name, placeholder:'Ex: Polimento Jet', style:'flex:2; border:none; background:transparent; border-bottom:1px solid var(--line); outline:none; font-size:14px; padding:4px 0;margin: 0.1px;color: var(--ink);'});
               nameInp.onchange = (e) => currentExtras[idx].name = e.target.value;
               
-              const valInp = h('input', {type:'number', value: ext.value, placeholder:'R$', style:'flex:1; border:none; background:transparent; border-bottom:1px solid var(--line); outline:none; font-size:14px; padding:4px 0;'});
+              const valInp = h('input', {type:'number', value: ext.value, placeholder:'R$', style:'flex:1; border:none; background:transparent; border-bottom:1px solid var(--line); outline:none; font-size:14px; padding:4px 0;margin: 0.1px;color: var(--ink);'});
               valInp.onchange = (e) => currentExtras[idx].value = Number(e.target.value);
               
               const delBtn = h('button', {class:'icon-btn', style:'color:var(--danger);', onclick: (e) => { e.preventDefault(); currentExtras.splice(idx,1); drawExtras(); }}, '✕');
