@@ -325,7 +325,7 @@ body.dark-theme #app { box-shadow: 0 0 60px rgba(0,0,0,0.5); }
 .b-trails { font-size: 20px !important; }
 
 /* O Caminho de Migalhas Horizontal */
-.trail-breadcrumb { display: flex; overflow-x: auto; gap: 8px; padding: 12px 16px; background: var(--surface-2); border-bottom: 1px solid var(--line); scrollbar-width: none; align-items: center; }
+.trail-breadcrumb { display: flex; overflow-x: auto; gap: 2px; padding: 12px 16px; background: var(--surface-2); border-bottom: 1px solid var(--line); scrollbar-width: none; align-items: center; }
 .trail-crumb { flex: 0 0 auto; background: var(--surface); border: 1px solid var(--line); padding: 6px 12px; border-radius: var(--r-pill); font-size: 13px; font-weight: 700; color: var(--ink-soft); cursor: pointer; display: flex; align-items: center; gap: 6px; transition: 0.2s; }
 .trail-crumb.active { background: #8E44AD; color: #fff; border-color: #8E44AD; }
 </style>
@@ -698,14 +698,16 @@ body.dark-theme #app { box-shadow: 0 0 60px rgba(0,0,0,0.5); }
 <section id="screen-trails" class="screen module-screen">
   
   
-  <!-- Onde o caminho será desenhado -->
-  <div id="trail-breadcrumbs" class="trail-breadcrumb"></div>
+  
+  
   
   <div class="module-body" style="margin-top:0;padding-top:16px;">
     <div class="list" id="trails-list"></div>
   </div>
   
-  <button class="fab" id="trails-fab" onclick="openTrailForm()">+</button>
+  <button class="fab" id="trails-fab" onclick="openTrailForm()" style="bottom: calc(130px + env(safe-area-inset-bottom));">+</button>
+  <!-- Onde o caminho será desenhado -->
+  <div id="trail-breadcrumbs" class="trail-breadcrumb"></div>
   <div class="module-header" id="trails-header">
     <button class="back-btn" onclick="trailGoBack()">←</button>
     <h2 style="flex:1;">Trilhas Diagnóstico</h2>
