@@ -313,6 +313,21 @@ body.dark-theme #app { box-shadow: 0 0 60px rgba(0,0,0,0.5); }
     background:var(--paper-raised);
 }
 /* fim do css modo flashcard */
+/* ============================================================
+   ESTILO HORAS TRABALHADAS
+   ============================================================ */
+#workhours-header, #workhours-fab, .bubble.b-workhours { background: #E67E22; }
+.b-workhours { font-size: 20px !important; }
+/* ============================================================
+   ESTILO TRILHAS DIAGNÓSTICO
+   ============================================================ */
+#trails-header, #trails-fab, .bubble.b-trails { background: #8E44AD; }
+.b-trails { font-size: 20px !important; }
+
+/* O Caminho de Migalhas Horizontal */
+.trail-breadcrumb { display: flex; overflow-x: auto; gap: 8px; padding: 12px 16px; background: var(--surface-2); border-bottom: 1px solid var(--line); scrollbar-width: none; align-items: center; }
+.trail-crumb { flex: 0 0 auto; background: var(--surface); border: 1px solid var(--line); padding: 6px 12px; border-radius: var(--r-pill); font-size: 13px; font-weight: 700; color: var(--ink-soft); cursor: pointer; display: flex; align-items: center; gap: 6px; transition: 0.2s; }
+.trail-crumb.active { background: #8E44AD; color: #fff; border-color: #8E44AD; }
 </style>
 </head>
 <body>
@@ -633,7 +648,69 @@ body.dark-theme #app { box-shadow: 0 0 60px rgba(0,0,0,0.5); }
     <button class="header-action" onclick="toggleFCTts()" id="fc-tts-btn" title="Leitura Automática" style="width: 30px; height: 30px;">🔊</button>
   </div>
 </section>
+<!-- ===== HORAS TRABALHADAS ===== -->
+<section id="screen-workhours" class="screen module-screen">
+  
+  <div class="module-body" style="margin-top:0;padding-top:16px;">
+    
+    <!-- Seletor de Mês (Igual ao Diário/Gastos) -->
+    <div style="display:flex; align-items:center; background:var(--surface); border:1px solid var(--line); border-radius:var(--r-pill); margin-bottom:16px;">
+      <button class="btn btn-ghost" onclick="changeWorkMonth(-1)" style="padding:8px 8px; font-size:24px; border:none; background:transparent; line-height:1;">‹</button>
+      <input type="month" id="work-month-input" style="flex:1; text-align: -webkit-center; min-width: min-content; border:none; background:transparent; font-family:inherit; color:var(--ink); font-weight:700; text-align:center; font-size:15px; outline:none; padding:8px 0;">
+      <button class="btn btn-ghost" onclick="changeWorkMonth(1)" style="padding:8px 8px; font-size:24px; border:none; background:transparent; line-height:1;">›</button>
+    </div>
 
+    <!-- Dashboard Financeiro do Mês -->
+    <div id="work-summary" style="display:flex; flex-direction:column; gap:8px; margin-bottom:16px; background:var(--surface-2); padding:16px; border-radius:var(--r-md); border:1px solid var(--line);">
+      <div style="display:flex; justify-content:space-between; margin-bottom:8px; border-bottom:1px solid var(--line); padding-bottom:8px;">
+        <div style="font-size:12px; font-weight:700; color:var(--ink-soft); text-transform:uppercase;">Total de Horas</div>
+        <div id="work-tot-hours" style="font-size:16px; font-weight:700; color:var(--ink);">0h 00m</div>
+      </div>
+      <div style="display:flex; justify-content:space-between;">
+        <div style="font-size:12px; font-weight:700; color:var(--ink-soft); text-transform:uppercase;">Subtotal (Horas)</div>
+        <div id="work-tot-sub" style="font-size:14px; font-weight:700; color:var(--ink);">R$ 0,00</div>
+      </div>
+      <div style="display:flex; justify-content:space-between;">
+        <div style="font-size:12px; font-weight:700; color:var(--c-habits); text-transform:uppercase;">Extras + Saldo Ant.</div>
+        <div id="work-tot-add" style="font-size:14px; font-weight:700; color:var(--c-habits);">R$ 0,00</div>
+      </div>
+      <div style="display:flex; justify-content:space-between; border-bottom:1px solid var(--line); padding-bottom:8px; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:700; color:var(--danger); text-transform:uppercase;">Vales (Adiantamentos)</div>
+        <div id="work-tot-ded" style="font-size:14px; font-weight:700; color:var(--danger);">R$ 0,00</div>
+      </div>
+      <div style="display:flex; justify-content:space-between; margin-top:4px;">
+        <div style="font-size:14px; font-weight:800; color:var(--ink); text-transform:uppercase;">A Receber</div>
+        <div id="work-tot-final" style="font-size:18px; font-weight:800; color:#E67E22;">R$ 0,00</div>
+      </div>
+    </div>
+
+    <div class="list" id="workhours-list" style="overflow-y: auto; max-height: 40vh;"></div>
+  </div>
+  <button class="fab" id="workhours-fab" onclick="openWorkHourForm()">+</button>
+  <div class="module-header" id="workhours-header">
+    <button class="back-btn" onclick="goHome()">←</button>
+    <h2 style="flex:1;">Horas</h2>
+    <button class="header-action" onclick="openWorkSettings()" title="Padrões e Valores" style="width: 30px; height: 30px;">⚙️</button>
+    <button class="header-action" style="margin-left:8px; width: 30px; height: 30px;" onclick="exportWorkHours()" title="Enviar para o Chefe">📤</button>
+  </div>
+</section>
+<!-- ===== TRILHAS E DIAGNÓSTICOS ===== -->
+<section id="screen-trails" class="screen module-screen">
+  
+  
+  <!-- Onde o caminho será desenhado -->
+  <div id="trail-breadcrumbs" class="trail-breadcrumb"></div>
+  
+  <div class="module-body" style="margin-top:0;padding-top:16px;">
+    <div class="list" id="trails-list"></div>
+  </div>
+  
+  <button class="fab" id="trails-fab" onclick="openTrailForm()">+</button>
+  <div class="module-header" id="trails-header">
+    <button class="back-btn" onclick="trailGoBack()">←</button>
+    <h2 style="flex:1;">Trilhas Diagnóstico</h2>
+  </div>
+</section>
 <!-- FIM APP -->
 
 <!-- VISUALIZADOR DE MÍDIA EM TELA CHEIA -->
@@ -717,8 +794,8 @@ function toast(msg){
    INDEXEDDB LAYER (Versão 3 mantida, segura para atualizações)
    ============================================================ */
 const DB_NAME='centralPessoalDB';
-const DB_VERSION=5;
-const STORES=['tasks','notes','expenses','habits','habitLogs','shopping','journal','contacts','waterLogs','weight','passwords','gallery', 'quotes','flashcards'];
+const DB_VERSION=7;
+const STORES=['tasks','notes','expenses','habits','habitLogs','shopping','journal','contacts','waterLogs','weight','passwords','gallery', 'quotes','flashcards','workhours','trails'];
 let db;
 function openDatabase(){
   return new Promise((resolve,reject)=>{
@@ -873,6 +950,8 @@ function openSheet(cfg){
 function closeSheet(){ document.getElementById('sheet-overlay').classList.remove('open'); }
 
 const MODULES=[
+  {key:'workhours', title:'Ponto', icon:'⏱️', cls:'b-workhours'},
+  {key:'trails', title:'Trilhas (Diag)', icon:'🗺️', cls:'b-trails'},
   {key:'tasks', title:'Tarefas', icon:'✅', cls:'b-tasks'},
   {key:'notes', title:'Notas', icon:'📝', cls:'b-notes'},
   {key:'flashcards', title:'Flashcards', icon:'🧠', cls:'b-flashcards'},
@@ -907,22 +986,23 @@ function renderModule(key){
     if (list) { list.innerHTML = ''; list.appendChild(emptyState('🔒', 'Módulo Protegido', 'Toque no cadeado no topo para destravar.')); }
   } else {
     screen.classList.remove('is-locked');
-    ({tasks:renderTasks, notes:renderNotes, expenses:renderExpenses, habits:renderHabits, shopping:renderShopping, journal:renderJournal, contacts:renderContacts, water:renderWater, passwords:renderPasswords, gallery:renderGallery, quotes:renderQuotes, flashcards: renderFlashcards})[key]();
+    ({tasks:renderTasks, notes:renderNotes, expenses:renderExpenses, habits:renderHabits, shopping:renderShopping, journal:renderJournal, contacts:renderContacts, water:renderWater, passwords:renderPasswords, gallery:renderGallery, quotes:renderQuotes, flashcards: renderFlashcards,workhours: renderWorkHours,trails: renderTrails})[key]();
   }
 }
+
 function setSub(key, text){ const n=document.getElementById('sub-'+key); if(n) n.textContent=text; }
 
 async function updateHomeStats(){
-  // AGORA BUSCAMOS TODOS OS 12 MÓDULOS!
-  const [tasks, notes, expenses, habits, habitLogs, shopping, journal, contacts, waterLogs, passwords, gallery, quotes,flashcards] = await Promise.all(
-    ['tasks','notes','expenses','habits','habitLogs','shopping','journal','contacts','waterLogs','passwords','gallery','quotes','flashcards'].map(dbAll)
+  // AGORA BUSCAMOS TODOS OS 13 MÓDULOS! (workhours incluso)
+  const [tasks, notes, expenses, habits, habitLogs, shopping, journal, contacts, waterLogs, passwords, gallery, quotes, flashcards, workhours] = await Promise.all(
+    ['tasks','notes','expenses','habits','habitLogs','shopping','journal','contacts','waterLogs','passwords','gallery','quotes','flashcards','workhours'].map(dbAll)
   );
   
   const pending = tasks.filter(t=>!t.done && !t.isEncrypted);
   setSub('tasks', pending.length? pending.length+' pendente'+(pending.length>1?'s':'') : 'Tudo em dia 🎉');
   setSub('notes', notes.length? notes.length+' nota'+(notes.length>1?'s':'') : 'Nenhuma nota ainda');
 
-  const now=new Date(); const ym=now.getFullYear()+'-'+pad(now.getMonth()+1);
+  const now=new Date(); const ym=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2, '0');
   const monthExp=expenses.filter(e=>e.date && e.date.indexOf(ym)===0 && !e.isEncrypted);
   const income=monthExp.filter(e=>e.type==='receita').reduce((s,e)=>s+Number(e.amount),0);
   const outcome=monthExp.filter(e=>e.type==='despesa').reduce((s,e)=>s+Number(e.amount),0);
@@ -940,12 +1020,45 @@ async function updateHomeStats(){
   const wToday=waterLogs.find(w=>w.date===todayISO); const wCount=wToday?wToday.count:0; 
   setSub('water', wCount+'/8 copos');
   
-  // NOVOS CONTADORES 
   setSub('passwords', passwords.length ? passwords.length + ' salvas' : 'Cofre vazio');
   setSub('gallery', gallery.length ? gallery.length + ' mídias' : 'Galeria vazia');
   setSub('quotes', quotes.length ? quotes.length + ' frases' : 'Inspire-se');
-  const dueFC = flashcards.filter(f => !f.isEncrypted && (f.nextReview <= now));
+  
+  const dueFC = flashcards.filter(f => !f.isEncrypted && (f.nextReview <= Date.now()));
   setSub('flashcards', flashcards.length ? (dueFC.length > 0 ? `🚨 ${dueFC.length} revisões hoje` : 'Tudo em dia') : 'Monte seu deck');
+
+  // =====================================================
+  // NOVO: CÁLCULO FINANCEIRO DO PONTO NA TELA INICIAL
+  // =====================================================
+  const wSet = getWorkSettings();
+  const monthWork = workhours.filter(w => (w.date || '').startsWith(ym));
+  let totalMins = 0;
+  let globalDailyExtras = 0;
+  
+  const tToM = (t) => { const [h,m] = (t||'00:00').split(':').map(Number); return h*60 + m; };
+  
+  monthWork.forEach(w => {
+      const workedMins = (tToM(w.tOut) - tToM(w.tIn)) - (tToM(w.lIn) - tToM(w.lOut)) - Number(w.coffee);
+      totalMins += (workedMins > 0 ? workedMins : 0);
+      if (w.extras && w.extras.length > 0) {
+          w.extras.forEach(ex => { globalDailyExtras += Number(ex.value); });
+      }
+  });
+  
+  const subtotalWH = (totalMins / 60) * Number(wSet.rate);
+  const totalReceber = subtotalWH + Number(wSet.prevBalance) + Number(wSet.extras) + globalDailyExtras - Number(wSet.advance);
+  
+  const whSubEl = document.getElementById('sub-workhours');
+  if (monthWork.length > 0) {
+      setSub('workhours', 'A receber: ' + brl(totalReceber));
+      if (whSubEl) {
+          whSubEl.style.color = totalReceber >= 0 ? '#E67E22' : 'var(--danger)'; 
+          whSubEl.style.fontWeight = '700';
+      }
+  } else {
+      setSub('workhours', 'Nenhum ponto');
+      if (whSubEl) { whSubEl.style.color = ''; whSubEl.style.fontWeight = 'normal'; }
+  }
 
   buildStatChips(pending.length, income-outcome, wCount);
 
@@ -994,13 +1107,14 @@ function norm(str) { return (str || '').toString().normalize('NFD').replace(/[\u
 
 function renderGlobalSearchChips() {
   const container = document.getElementById('global-search-filters'); container.style.display = 'flex'; container.innerHTML = '';
-  const cats = ['Todos', 'Tarefas', 'Hábitos', 'Notas', 'Diário', 'Compras', 'Gastos', 'Senhas', 'Contatos', 'Galeria', 'Citações', 'Flashcards'];
+  // NOVO: 'Trilhas' adicionada no final da lista
+  const cats = ['Todos', 'Tarefas', 'Hábitos', 'Notas', 'Diário', 'Compras', 'Gastos', 'Senhas', 'Contatos', 'Galeria', 'Citações', 'Flashcards', 'Trilhas'];
   cats.forEach(c => { container.appendChild(h('button', { type: 'button', class: globalSearchFilter === c ? 'active' : '', style: 'flex: 0 0 auto;', onclick: () => { globalSearchFilter = c; handleGlobalSearch(); } }, c)); });
 }
 
 async function handleGlobalSearch() {
   const input = document.getElementById('global-search'); 
-  const q = norm(input.value.trim()); // Busca normalizada!
+  const q = norm(input.value.trim()); 
   
   const grid = document.getElementById('tile-grid'); const resBox = document.getElementById('search-results');
   const hint = document.querySelector('.hint-footer'); const clearBtn = document.getElementById('clear-search-btn');
@@ -1008,13 +1122,13 @@ async function handleGlobalSearch() {
   if (!isSearchMode && !q) { grid.style.display = 'grid'; hint.style.display = 'block'; resBox.style.display = 'none'; resBox.innerHTML = ''; clearBtn.style.display = 'none'; document.getElementById('global-search-filters').style.display = 'none'; return; }
   clearBtn.style.display = 'flex'; grid.style.display = 'none'; hint.style.display = 'none'; resBox.style.display = 'flex'; resBox.innerHTML = ''; renderGlobalSearchChips();
 
-  const [tasks, notes, contacts, expenses, shopping, journal, habits, habitLogs, passwords, gallery, quotes, flashcards] = await Promise.all([ 
-      dbAll('tasks'), dbAll('notes'), dbAll('contacts'), dbAll('expenses'), dbAll('shopping'), dbAll('journal'), dbAll('habits'), dbAll('habitLogs'), dbAll('passwords'), dbAll('gallery'), dbAll('quotes'), dbAll('flashcards') 
+  // NOVO: dbAll('trails') adicionado no Promise!
+  const [tasks, notes, contacts, expenses, shopping, journal, habits, habitLogs, passwords, gallery, quotes, flashcards, trails] = await Promise.all([ 
+      dbAll('tasks'), dbAll('notes'), dbAll('contacts'), dbAll('expenses'), dbAll('shopping'), dbAll('journal'), dbAll('habits'), dbAll('habitLogs'), dbAll('passwords'), dbAll('gallery'), dbAll('quotes'), dbAll('flashcards'), dbAll('trails') 
   ]);
   
   let results = []; const todayISO = todayIso(); const now = Date.now();
 
-  // Todos os itens agora usam a função norm() para comparar com a busca
   if (globalSearchFilter === 'Todos' || globalSearchFilter === 'Tarefas') tasks.forEach(t => { if (!t.isEncrypted && (!q || norm(t.text).includes(q))) results.push({ type: 'task', item: t, title: t.text, sub: t.done ? 'Concluída' : 'Pendente' }); });
   if (globalSearchFilter === 'Todos' || globalSearchFilter === 'Compras') shopping.forEach(s => { if (!s.isEncrypted && (!q || norm(s.name).includes(q))) results.push({ type: 'shopping', item: s, title: s.name, sub: 'Lista de compras' }); });
   
@@ -1041,22 +1155,38 @@ async function handleGlobalSearch() {
     });
   }
 
-if (globalSearchFilter === 'Todos' || globalSearchFilter === 'Notas') notes.forEach(n => { if (!n.isEncrypted && (!q || norm(n.title).includes(q) || norm(n.content).includes(q))) results.push({ type: 'note', item: n, title: n.title || '(sem título)', sub: (n.category || 'Geral') + ' · Nota' }); });
+  if (globalSearchFilter === 'Todos' || globalSearchFilter === 'Notas') notes.forEach(n => { if (!n.isEncrypted && (!q || norm(n.title).includes(q) || norm(n.content).includes(q))) results.push({ type: 'note', item: n, title: n.title || '(sem título)', sub: (n.category || 'Geral') + ' · Nota' }); });
   
-  if (globalSearchFilter === 'Todos' || globalSearchFilter === 'Diário') journal.forEach(j => { if (!j.isEncrypted && (!q || norm(j.text).includes(q))) { const raw = (j.text||'').replace(/\n/g,' '); const preview = raw.slice(0,60)+(raw.length>60?'…':''); results.push({ type: 'journal', item: j, title: humanDateFull(j.date), sub: (j.mood||'📔') + ' · ' + preview }); } });
+  if (globalSearchFilter === 'Todos' || globalSearchFilter === 'Diário') journal.forEach(j => { 
+    if (!j.isEncrypted) {
+      const matchText = !q || norm(j.text).includes(q);
+      const matchAudio = j.audios && j.audios.some(a => norm(a.name).includes(q)); 
+      if (matchText || matchAudio) { 
+        const raw = (j.text||'').replace(/\n/g,' '); 
+        const preview = raw.slice(0,60)+(raw.length>60?'…':''); 
+        results.push({ type: 'journal', item: j, title: humanDateFull(j.date), sub: (j.mood||'📔') + ' · ' + (preview || 'Registro em áudio') }); 
+      }
+    }
+  });
   
   if (globalSearchFilter === 'Todos' || globalSearchFilter === 'Contatos') contacts.forEach(c => { if (!c.isEncrypted && (!q || norm(c.name).includes(q) || norm(c.notes).includes(q) || norm(c.phone).includes(q))) results.push({ type: 'contact', item: c, title: c.name, sub: (c.category||'Contato') + (c.phone ? ' · ' + c.phone : '') }); });
-  
   if (globalSearchFilter === 'Todos' || globalSearchFilter === 'Gastos') expenses.forEach(e => { if (!e.isEncrypted && (!q || norm(e.description).includes(q) || norm(e.category).includes(q))) results.push({ type: 'expense', item: e, title: e.description || e.category, sub: `R$ ${e.amount} · ${humanDateFull(e.date)}` }); });
-  
   if (globalSearchFilter === 'Todos' || globalSearchFilter === 'Senhas') passwords.forEach(p => { if (!p.isEncrypted && (!q || norm(p.title).includes(q) || norm(p.username).includes(q))) results.push({ type: 'password', item: p, title: p.title, sub: (p.category||'Cofre') + (p.username ? ' · ' + p.username : '') }); });
-  
   if (globalSearchFilter === 'Todos' || globalSearchFilter === 'Galeria') gallery.forEach(g => { if (!g.isEncrypted && (!q || norm(g.title).includes(q))) results.push({ type: 'gallery', item: g, title: g.title || 'Mídia Secreta', sub: 'Galeria' }); });
-  
   if (globalSearchFilter === 'Todos' || globalSearchFilter === 'Citações') quotes.forEach(qt => { if (!qt.isEncrypted && (!q || norm(qt.text).includes(q) || norm(qt.author).includes(q))) results.push({ type: 'quote', item: qt, title: qt.author || 'Desconhecido', sub: `"${(qt.text || '').slice(0, 50)}..."` }); });
-  
   if (globalSearchFilter === 'Todos' || globalSearchFilter === 'Flashcards') flashcards.forEach(fc => { if (!fc.isEncrypted && (!q || norm(fc.front).includes(q) || norm(fc.back).includes(q))) results.push({ type: 'flashcard', item: fc, title: fc.front, sub: `Verso: ${(fc.back || '').slice(0, 40)}...` }); });
-  
+
+  // NOVO: Filtro para as Trilhas de Orçamento!
+  if (globalSearchFilter === 'Todos' || globalSearchFilter === 'Trilhas') trails.forEach(tr => { 
+      if (!q || norm(tr.title).includes(q) || norm(tr.desc).includes(q)) {
+          let subText = [];
+          if(tr.price > 0) subText.push(`💰 ${brl(tr.price)}`);
+          if(tr.hours > 0) subText.push(`⏱️ ${tr.hours}h`);
+          subText.push('Tocar para orçar');
+          results.push({ type: 'trail', item: tr, title: tr.title, sub: subText.join(' · ') }); 
+      } 
+  });
+
   if (results.length === 0) { resBox.appendChild(emptyState('🔍', 'Nada encontrado', 'Tente pesquisar por outros termos')); return; }
 
   results.forEach(r => {
@@ -1076,14 +1206,19 @@ if (globalSearchFilter === 'Todos' || globalSearchFilter === 'Notas') notes.forE
       if (r.type === 'journal') { icon = '📔'; color = 'var(--c-journal)'; } 
       if (r.type === 'password') { icon = '🔑'; color = '#505560'; } 
       if (r.type === 'quote') { icon = '💬'; color = 'var(--c-quotes)'; } 
-      if (r.type === 'flashcard') { icon = '🧠'; color = '#4A90E2'; } // Ícone dos flashcards
+      if (r.type === 'flashcard') { icon = '🧠'; color = '#4A90E2'; } 
       if (r.type === 'gallery') { icon = r.item.mediaType === 'audio' ? '🎵' : (r.item.mediaType === 'video' ? '🎬' : '🖼️'); color = '#8E543B'; }
+      if (r.type === 'trail') { icon = '🗺️'; color = '#8E44AD'; } // Ícone das trilhas
       if (icon) row.appendChild(h('div', { style: `background:${color}; color:#fff; width:34px; height:34px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:16px; flex: 0 0 auto;` }, icon));
     }
 
     const grow = h('div', { class: 'grow', onclick: () => {
+      // O clique nas trilhas invoca a função de orçamento e fecha a busca
+      if (r.type === 'trail') { clearSearch(); openQuoteModal(r.item); return; }
+      
       if (r.type === 'task') openTaskForm(r.item); else if (r.type === 'note') openNoteForm(r.item); else if (r.type === 'contact') openContactForm(r.item); else if (r.type === 'expense') openExpenseForm(r.item); else if (r.type === 'shopping') toggleShopping(r.item); else if (r.type === 'journal') openJournalForm(r.item); else if (r.type === 'habit') openHabitForm(r.item); else if (r.type === 'password') openPasswordForm(r.item); else if (r.type === 'gallery') openGalleryViewer(r.item); else if (r.type === 'quote') openQuoteForm(r.item); else if (r.type === 'flashcard') openFlashcardForm(r.item);
     }});
+    
     grow.appendChild(h('div', { class: 'i-title' }, r.title));
     
     if (r.type === 'task') {
@@ -1093,6 +1228,22 @@ if (globalSearchFilter === 'Todos' || globalSearchFilter === 'Notas') notes.forE
     } else if (r.type === 'habit' && r.hasTimer) {
       const cd = h('div',{class:'i-sub habit-timer', 'data-ready': r.readyAt, style:'color:var(--c-habits); font-weight:700;'}); cd.textContent = 'Calculando...'; grow.appendChild(cd);
     } else { grow.appendChild(h('div', { class: 'i-sub' }, r.sub)); }
+    
+    if (r.type === 'journal' && r.item.audios && r.item.audios.length > 0) {
+       const audioBox = h('div', {style: 'margin-top:8px; display:flex; flex-direction:column; gap:6px;'});
+       r.item.audios.forEach(aud => {
+           const matchText = !q || norm(r.item.text).includes(q);
+           if (matchText || norm(aud.name).includes(q)) {
+               const aWrap = h('div', {style: 'background:var(--surface-2); padding:6px; border-radius:var(--r-md); border:1px solid var(--line);', onclick: (e) => e.stopPropagation()});
+               aWrap.appendChild(h('div', {style: 'font-size:12px; font-weight:700; color:var(--ink); margin-bottom:4px;'}, '🎤 ' + aud.name));
+               const au = document.createElement('audio');
+               au.src = aud.data; au.controls = true; au.style.width = '100%'; au.style.height = '32px'; au.style.outline = 'none';
+               aWrap.appendChild(au); audioBox.appendChild(aWrap);
+           }
+       });
+       if (audioBox.childNodes.length > 0) grow.appendChild(audioBox);
+    }
+
     row.appendChild(grow); 
 
     if (r.type === 'password') {
@@ -1579,24 +1730,19 @@ async function renderJournal() {
   const list = document.getElementById('journal-list'); list.innerHTML = ''; 
   let items = await dbAll('journal');
 
-  // 1. Pega o mês atual automaticamente quando você abre a tela
   if (!journalMonthFilter) {
       const now = new Date();
       journalMonthFilter = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
   }
   
   const monthInput = document.getElementById('journal-month-input');
-  if (monthInput.value !== journalMonthFilter) monthInput.value = journalMonthFilter;
-  
-  // Atualiza a lista caso você mude o mês no calendário
-  monthInput.onchange = (e) => { journalMonthFilter = e.target.value; renderJournal(); };
+  if (monthInput && monthInput.value !== journalMonthFilter) monthInput.value = journalMonthFilter;
+  if (monthInput) monthInput.onchange = (e) => { journalMonthFilter = e.target.value; renderJournal(); };
 
-  // 2. Inteligência Artificial: Lê todo o banco e extrai as carinhas que você já usou!
   const usedMoods = Array.from(new Set(items.map(j => j.mood || '📔'))).filter(Boolean);
   const allMoods = ['Todos', ...usedMoods];
   if (!allMoods.includes(journalMoodFilter)) journalMoodFilter = 'Todos';
 
-  // 3. Constrói os Chips (Botões) com as Carinhas
   const filterBox = document.getElementById('journal-mood-filter'); filterBox.innerHTML = '';
   const chips = h('div', {class: 'chip-picker', style: 'display:flex; flex-wrap:nowrap; overflow-x:auto; scrollbar-width:none; padding-bottom:4px;'});
   
@@ -1604,22 +1750,25 @@ async function renderJournal() {
       chips.appendChild(h('button', {
          type: 'button',
          class: journalMoodFilter === m ? 'active' : '',
-         style: 'flex: 0 0 auto; font-size:20px; padding:6px 14px;', // Fonte maior para destacar os emojis
+         style: 'flex: 0 0 auto; font-size:20px; padding:6px 14px;',
          onclick: () => { journalMoodFilter = m; renderJournal(); }
       }, m));
   });
   filterBox.appendChild(chips);
 
-  // 4. Aplica os dois filtros ao mesmo tempo (Mês + Carinha)
   let filtered = items.filter(j => {
       const matchMonth = (j.date || '').startsWith(journalMonthFilter);
       const matchMood = journalMoodFilter === 'Todos' || (j.mood || '📔') === journalMoodFilter;
       return matchMonth && matchMood;
   });
 
-  filtered.sort((a,b) => (b.date||'').localeCompare(a.date||''));
+  // Ordena por data e depois pelo horário exato
+  filtered.sort((a,b) => {
+     const dateCmp = (b.date||'').localeCompare(a.date||'');
+     if (dateCmp !== 0) return dateCmp;
+     return (b.createdAt||0) - (a.createdAt||0);
+  });
 
-  // 5. Renderiza a lista filtrada
   if (!filtered.length) {
       list.appendChild(emptyState('📔', 'Diário Vazio', 'Nada escrito com este filtro.'));
   } else {
@@ -1627,10 +1776,17 @@ async function renderJournal() {
         const row = h('div',{class:'item'});
         const grow = h('div',{class:'grow', onclick: () => openJournalForm(j)});
         const raw = (j.text||'').replace(/\n/g,' ');
-        const preview = raw.slice(0, 60) + (raw.length > 60 ? '…' : '');
+        const preview = raw.slice(0, 40) + (raw.length > 40 ? '…' : '');
         
-        grow.appendChild(h('div',{class:'i-title'}, humanDateFull(j.date)));
-        grow.appendChild(h('div',{class:'i-sub'}, (j.mood||'📔') + ' · ' + preview));
+        // NOVO: Cálculo do Horário e contagem de áudios
+        const dateObj = new Date(j.createdAt || Date.now());
+        const timeStr = String(dateObj.getHours()).padStart(2, '0') + ':' + String(dateObj.getMinutes()).padStart(2, '0');
+        const audioCount = j.audios ? j.audios.length : 0;
+        const audioTag = audioCount > 0 ? ` · 🎤 ${audioCount} áudio(s)` : '';
+        
+        // Imprime a data completa + horário
+        grow.appendChild(h('div',{class:'i-title'}, humanDateFull(j.date) + ' às ' + timeStr));
+        grow.appendChild(h('div',{class:'i-sub'}, (j.mood||'📔') + ' · ' + (preview || 'Registro em áudio') + audioTag));
         
         row.appendChild(grow);
         row.appendChild(h('button',{class:'icon-btn', onclick:(e)=>{ e.stopPropagation(); confirmDelete('journal', j.id, ()=>{renderJournal();updateHomeStats();}); }},'✕'));
@@ -1639,17 +1795,159 @@ async function renderJournal() {
   }
   if(window.aplicarLazyLoading) window.aplicarLazyLoading();
 }
-function openJournalForm(existing){
-  const isEdit=!!existing; let mood=(existing&&existing.mood)||MOODS[0];
+function openJournalForm(existing) {
+  const isEdit = !!existing; 
+  let mood = existing ? (existing.mood || '📔') : '📔';
+  
+  // NOVO: Controle dos Áudios
+  let currentAudios = existing && existing.audios ? JSON.parse(JSON.stringify(existing.audios)) : [];
+  let mediaRecorder = null; let audioChunks = []; let isRecording = false;
+
   openSheet({
-    title: isEdit?'Editar registro':'Como foi seu dia?',
-    buildFields:(box)=>{
-      box.appendChild(fieldWrap('Data', h('input',{type:'date', id:'f-date', value:(existing&&existing.date)||todayIso()}))); const picker=h('div',{class:'emoji-picker'}); MOODS.forEach(m=>{ picker.appendChild(h('button',{type:'button', class:mood===m?'active':'', onclick:(e)=>{ mood=m; picker.querySelectorAll('button').forEach(b=>b.classList.remove('active')); e.currentTarget.classList.add('active'); }}, m)); }); box.appendChild(fieldWrap('Humor', picker)); const ta=h('textarea',{id:'f-text', style:'min-height:140px;'}); ta.value=(existing&&existing.text)||''; box.appendChild(fieldWrap('Anotação', ta));
+    title: isEdit ? 'Editar Diário' : 'Novo Registro',
+    buildFields: (box) => {
+      // 1. Emojis (Adicionei a chave de fenda 🔧 para o trabalho)
+      const emojis = ['📔','😀','🤩','😎','🤔','😴','😔','😡','😭','🤒','🎉','💡','🔧'];
+      const emojiWrap = h('div', {style:'display:flex; gap:8px; overflow-x:auto; padding-bottom:8px; margin-bottom:12px; scrollbar-width:none;'});
+      emojis.forEach(e => {
+        const btn = h('button', {type:'button', class: mood === e ? 'active' : '', style:'font-size:24px; padding:4px 8px; border-radius:8px; border:1px solid transparent; background:transparent;', onclick: (ev) => {
+          emojiWrap.querySelectorAll('button').forEach(b => { b.classList.remove('active'); b.style.background='transparent'; b.style.borderColor='transparent'; });
+          ev.currentTarget.classList.add('active'); ev.currentTarget.style.background='var(--surface-2)'; ev.currentTarget.style.borderColor='var(--line)';
+          mood = e;
+        }}, e);
+        if(mood === e) { btn.style.background='var(--surface-2)'; btn.style.borderColor='var(--line)'; }
+        emojiWrap.appendChild(btn);
+      });
+      box.appendChild(fieldWrap('Como foi o dia?', emojiWrap));
+
+      // 2. Data
+      const dInp = h('input', {type:'date', id:'f-j-date', value: existing ? existing.date : todayIso()});
+      box.appendChild(fieldWrap('Data', dInp));
+
+      // 3. Texto (Agora é opcional!)
+      const tInp = h('textarea', {id:'f-j-text', style:'min-height:100px;', placeholder:'O que aconteceu? (Opcional se você gravar um áudio)'});
+      tInp.value = existing ? (existing.text || '') : '';
+      box.appendChild(fieldWrap('Anotações', tInp));
+
+      // 4. MÓDULO DE ÁUDIOS (O Segredo da Ferramenta)
+      const audioWrap = h('div', {style: 'margin-top: 16px; border-top: 1px solid var(--line); padding-top: 16px;'});
+      audioWrap.innerHTML = `<div style="font-size:12.5px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;margin-bottom:8px;">🎙️ Áudios Anexados</div>`;
+      
+      const audioList = h('div', {id: 'j-audio-list', style: 'display:flex; flex-direction:column; gap:8px; margin-bottom:12px;'});
+      
+      const renderAudioList = () => {
+         audioList.innerHTML = '';
+         if(currentAudios.length === 0) {
+             audioList.innerHTML = `<div style="font-size:13px; color:var(--ink-faint); font-style:italic;">Nenhum áudio anexado.</div>`;
+         }
+         currentAudios.forEach((aud, idx) => {
+            const row = h('div', {style: 'display:flex; flex-direction:column; gap:8px; background:var(--surface-2); border:1px solid var(--line); padding:12px; border-radius:var(--r-md);'});
+            
+            const nameRow = h('div', {style:'display:flex; align-items:center; gap:8px; width:100%;'});
+            const nameInp = h('input', {type:'text', value: aud.name, style: 'flex:1; border:none; border-bottom:1px solid var(--line); background:transparent; font-size:15px; font-weight:700; color:var(--ink); padding:4px 0; outline:none;', placeholder:'Nome do áudio (ex: Barulho Motor)'});
+            nameInp.onchange = (e) => { currentAudios[idx].name = e.target.value; };
+            const delBtn = h('button', {class:'icon-btn', style:'color:var(--danger); font-size:18px;', onclick: (e) => { e.preventDefault(); currentAudios.splice(idx,1); renderAudioList(); }}, '🗑️');
+            
+            nameRow.appendChild(nameInp); 
+            nameRow.appendChild(delBtn);
+
+            const audioEl = document.createElement('audio');
+            audioEl.src = aud.data;
+            audioEl.controls = true;
+            audioEl.style.width = '100%';
+            audioEl.style.height = '40px';
+            audioEl.style.outline = 'none';
+
+            row.appendChild(nameRow);
+            row.appendChild(audioEl);
+            audioList.appendChild(row);
+         });
+      };
+      renderAudioList();
+      audioWrap.appendChild(audioList);
+
+      // Botões de Ação
+      const btnRow = h('div', {style:'display:flex; gap:8px;'});
+      
+      // Botão de Gravar (Microfone)
+      const recBtn = h('button', {class:'btn btn-ghost', id:'j-rec-btn', style:'flex:1; display:flex; align-items:center; justify-content:center; gap:6px; border:1px solid var(--line); background:var(--surface);', onclick: async (e) => {
+          e.preventDefault();
+          if (isRecording) {
+              mediaRecorder.stop();
+              isRecording = false;
+              document.getElementById('j-rec-btn').innerHTML = '🎙️ Gravar Áudio';
+              document.getElementById('j-rec-btn').style.color = 'var(--ink)';
+              document.getElementById('j-rec-btn').style.borderColor = 'var(--line)';
+          } else {
+              try {
+                  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                  mediaRecorder = new MediaRecorder(stream);
+                  audioChunks = [];
+                  mediaRecorder.ondataavailable = ev => { if(ev.data.size > 0) audioChunks.push(ev.data); };
+                  mediaRecorder.onstop = () => {
+                      const blob = new Blob(audioChunks, { type: 'audio/webm' });
+                      const reader = new FileReader();
+                      reader.readAsDataURL(blob); // Salva como Base64 no Banco Offline
+                      reader.onloadend = () => {
+                          currentAudios.push({ name: 'Gravação ' + (currentAudios.length + 1), data: reader.result });
+                          renderAudioList();
+                      };
+                      stream.getTracks().forEach(t => t.stop()); 
+                  };
+                  mediaRecorder.start();
+                  isRecording = true;
+                  document.getElementById('j-rec-btn').innerHTML = '⏹️ Parar Gravação';
+                  document.getElementById('j-rec-btn').style.color = 'var(--danger)';
+                  document.getElementById('j-rec-btn').style.borderColor = 'var(--danger)';
+              } catch(err) {
+                  toast('Erro: Microfone não autorizado pelo navegador.');
+              }
+          }
+      }}, '🎙️ Gravar Áudio');
+
+      // Botão de Upload
+      const upInput = h('input', {type:'file', accept:'audio/*', style:'display:none;', onchange: (e) => {
+          const file = e.target.files[0];
+          if(!file) return;
+          const reader = new FileReader();
+          reader.readAsDataURL(file);
+          reader.onloadend = () => {
+              currentAudios.push({ name: file.name.replace(/\.[^/.]+$/, ""), data: reader.result });
+              renderAudioList();
+          };
+      }});
+      const upBtn = h('button', {class:'btn btn-ghost', style:'flex:1; display:flex; align-items:center; justify-content:center; gap:6px; border:1px solid var(--line); background:var(--surface);', onclick: (e) => { e.preventDefault(); upInput.click(); }}, '📁 Enviar Arquivo');
+      
+      btnRow.appendChild(recBtn);
+      btnRow.appendChild(upBtn);
+      btnRow.appendChild(upInput);
+      audioWrap.appendChild(btnRow);
+      
+      box.appendChild(audioWrap);
     },
-    onSubmit: async ()=>{ const date=document.getElementById('f-date').value || todayIso(); const text=document.getElementById('f-text').value.trim(); const obj=existing || {createdAt:Date.now()}; obj.date=date; obj.mood=mood; obj.text=text; if(existing) await dbPut('journal',obj); else await dbAdd('journal',obj); renderJournal(); updateHomeStats(); toast('Salvo'); }, onDelete: isEdit? ()=>confirmDelete('journal', existing.id, ()=>{renderJournal();updateHomeStats();}) : null
+    onSubmit: async () => {
+      if (isRecording) { toast('Pare a gravação antes de salvar!'); return false; } 
+      
+      const txt = document.getElementById('f-j-text').value.trim();
+      const dt = document.getElementById('f-j-date').value;
+      
+      // Inteligência: O texto e o áudio são opcionais, mas pelo menos UM tem que existir
+      if (!txt && currentAudios.length === 0) { toast('Adicione um texto ou grave um áudio!'); return false; }
+      if (!dt) { toast('Data inválida'); return false; }
+      
+      // Se já existir, herda o horário original, senão, crava o horário de agora.
+      const obj = existing || { createdAt: Date.now() }; 
+      obj.mood = mood;
+      obj.date = dt;
+      obj.text = txt;
+      obj.audios = currentAudios;
+      
+      if(existing) await dbPut('journal', obj); else await dbAdd('journal', obj);
+      renderJournal(); updateHomeStats(); toast('Diário salvo!');
+    },
+    onDelete: isEdit ? ()=>confirmDelete('journal', existing.id, ()=>{renderJournal();updateHomeStats();}) : null
   });
 }
-
 async function renderContacts(){
   const list=document.getElementById('contacts-list'); list.innerHTML=''; let contacts=await dbAll('contacts');
   buildCategoryFilter('contacts-cat-filter', CONTACT_CATS, contacts, contactFilter, (val) => { contactFilter = val; renderContacts(); });
@@ -2502,6 +2800,527 @@ function openFlashcardForm(existing) {
         else { renderFlashcards(); updateHomeStats(); }
     }) : null
   });
+}
+/* ============================================================
+   HORAS TRABALHADAS (Ponto e Fechamento)
+   ============================================================ */
+let workMonthFilter = '';
+
+// Valores e Padrões Pessoais (Salvos na memória do celular)
+function getWorkSettings() {
+    const defaultSet = { rate: 0, advance: 0, prevBalance: 0, extras: 0, tIn: '08:00', lOut: '12:00', lIn: '13:00', tOut: '18:00', coffee: 15 };
+    const saved = localStorage.getItem('work-settings');
+    return saved ? { ...defaultSet, ...JSON.parse(saved) } : defaultSet;
+}
+
+function changeWorkMonth(offset) {
+  if (!workMonthFilter) return; let [y, m] = workMonthFilter.split('-').map(Number);
+  m += offset; if (m > 12) { m = 1; y++; } else if (m < 1) { m = 12; y--; }
+  workMonthFilter = y + '-' + String(m).padStart(2, '0'); renderWorkHours();
+}
+
+// Transformar "08:30" em minutos (Facilita a matemática)
+function timeToMins(t) { const [h,m] = (t||'00:00').split(':').map(Number); return h*60 + m; }
+function minsToTimeStr(m) { const h = Math.floor(m/60); const mm = m%60; return `${h}h ${String(mm).padStart(2,'0')}m`; }
+
+async function renderWorkHours() {
+  const list = document.getElementById('workhours-list'); list.innerHTML = ''; 
+  let items = await dbAll('workhours');
+
+  if (!workMonthFilter) { const now = new Date(); workMonthFilter = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0'); }
+  const monthInput = document.getElementById('work-month-input');
+  if (monthInput && monthInput.value !== workMonthFilter) monthInput.value = workMonthFilter;
+  if (monthInput) monthInput.onchange = (e) => { workMonthFilter = e.target.value; renderWorkHours(); };
+
+  let filtered = items.filter(w => (w.date || '').startsWith(workMonthFilter));
+  filtered.sort((a,b) => (b.date||'').localeCompare(a.date||'')); 
+
+  const settings = getWorkSettings();
+  let totalMins = 0;
+  let sumDailyExtras = 0; // Somador de todos os bicos do mês
+
+  if (!filtered.length) {
+      list.appendChild(emptyState('⏱️', 'Nenhum registro', 'Adicione um dia de trabalho no +'));
+  } else {
+      filtered.forEach(w => {
+          const row = h('div',{class:'item'});
+          const grow = h('div',{class:'grow', onclick: () => openWorkHourForm(w)});
+          
+          const workedMins = (timeToMins(w.tOut) - timeToMins(w.tIn)) - (timeToMins(w.lIn) - timeToMins(w.lOut)) - Number(w.coffee);
+          const finalMins = workedMins > 0 ? workedMins : 0;
+          totalMins += finalMins;
+          
+          let dayExtraTotal = 0;
+          let extraTags = [];
+          if(w.extras && w.extras.length > 0) {
+              w.extras.forEach(ex => { dayExtraTotal += Number(ex.value); extraTags.push(ex.name); });
+          }
+          sumDailyExtras += dayExtraTotal;
+          
+          grow.appendChild(h('div',{class:'i-title'}, humanDateFull(w.date)));
+          
+          let subText = `Das ${w.tIn} às ${w.tOut} · ${minsToTimeStr(finalMins)}`;
+          if (dayExtraTotal > 0) subText += ` · 🛠️ +${brl(dayExtraTotal)}`;
+          grow.appendChild(h('div',{class:'i-sub'}, subText));
+          
+          row.appendChild(grow);
+          row.appendChild(h('button',{class:'icon-btn', onclick:(ev)=>{ ev.stopPropagation(); confirmDelete('workhours', w.id, ()=>{renderWorkHours();updateHomeStats();}); }},'✕'));
+          list.appendChild(row);
+      });
+  }
+
+  const subtotal = (totalMins / 60) * Number(settings.rate);
+  const totalReceber = subtotal + Number(settings.prevBalance) + Number(settings.extras) + sumDailyExtras - Number(settings.advance);
+
+  document.getElementById('work-tot-hours').textContent = minsToTimeStr(totalMins);
+  document.getElementById('work-tot-sub').textContent = brl(subtotal);
+  // Agora a linha de Extras soma o que tá no Padrão Mensal + Todos os bicos do dia a dia
+  document.getElementById('work-tot-add').textContent = brl(Number(settings.prevBalance) + Number(settings.extras) + sumDailyExtras);
+  document.getElementById('work-tot-ded').textContent = brl(Number(settings.advance));
+  document.getElementById('work-tot-final').textContent = brl(totalReceber);
+}
+
+// ⚙️ Tela de Padrões e Valores Mensais
+function openWorkSettings() {
+    const s = getWorkSettings();
+    openSheet({
+        title: 'Padrões e Fechamento',
+        buildFields: (box) => {
+            box.appendChild(h('div',{style:'font-size:12px; font-weight:700; color:var(--ink-soft); margin-bottom:8px; text-transform:uppercase;'}, 'Valores do Mês Atual'));
+            box.appendChild(fieldWrap('Valor da Hora (R$)', h('input',{type:'number', id:'f-ws-rate', value:s.rate})));
+            box.appendChild(fieldWrap('Vales / Adiantamentos (R$)', h('input',{type:'number', id:'f-ws-adv', value:s.advance})));
+            box.appendChild(fieldWrap('Serviços Extras (R$)', h('input',{type:'number', id:'f-ws-ext', value:s.extras})));
+            box.appendChild(fieldWrap('Saldo Anterior (R$)', h('input',{type:'number', id:'f-ws-prev', value:s.prevBalance})));
+            
+            box.appendChild(h('div',{style:'font-size:12px; font-weight:700; color:var(--ink-soft); margin:16px 0 8px; text-transform:uppercase;'}, 'Horários Padrão Diários'));
+            const row1 = h('div',{style:'display:flex; gap:8px;'});
+            row1.appendChild(h('div',{style:'flex:1'}, fieldWrap('Entrada', h('input',{type:'time', id:'f-ws-tin', value:s.tIn}))));
+            row1.appendChild(h('div',{style:'flex:1'}, fieldWrap('Saída', h('input',{type:'time', id:'f-ws-tout', value:s.tOut}))));
+            box.appendChild(row1);
+            
+            const row2 = h('div',{style:'display:flex; gap:8px;'});
+            row2.appendChild(h('div',{style:'flex:1'}, fieldWrap('Saída Almoço', h('input',{type:'time', id:'f-ws-lout', value:s.lOut}))));
+            row2.appendChild(h('div',{style:'flex:1'}, fieldWrap('Volta Almoço', h('input',{type:'time', id:'f-ws-lin', value:s.lIn}))));
+            box.appendChild(row2);
+            
+            box.appendChild(fieldWrap('Tempo de Café (Minutos)', h('input',{type:'number', id:'f-ws-cof', value:s.coffee})));
+        },
+        onSubmit: () => {
+            const newSet = {
+                rate: document.getElementById('f-ws-rate').value || 0,
+                advance: document.getElementById('f-ws-adv').value || 0,
+                extras: document.getElementById('f-ws-ext').value || 0,
+                prevBalance: document.getElementById('f-ws-prev').value || 0,
+                tIn: document.getElementById('f-ws-tin').value, tOut: document.getElementById('f-ws-tout').value,
+                lOut: document.getElementById('f-ws-lout').value, lIn: document.getElementById('f-ws-lin').value,
+                coffee: document.getElementById('f-ws-cof').value || 0
+            };
+            localStorage.setItem('work-settings', JSON.stringify(newSet));
+            renderWorkHours(); toast('Padrões salvos!');
+        }
+    });
+}
+
+// ⏱️ Registrar um dia novo (Puxa os padrões sozinho)
+// ⏱️ Registrar um dia novo (Agora com Serviços Extras Dinâmicos!)
+function openWorkHourForm(existing) {
+  const isEdit = !!existing; const s = getWorkSettings();
+  let currentExtras = existing && existing.extras ? JSON.parse(JSON.stringify(existing.extras)) : [];
+
+  openSheet({
+    title: isEdit ? 'Editar Ponto' : 'Bater Ponto',
+    buildFields: (box) => {
+      box.appendChild(fieldWrap('Data', h('input', {type:'date', id:'f-wh-date', value: existing ? existing.date : todayIso()})));
+      
+      const row1 = h('div',{style:'display:flex; gap:8px;'});
+      row1.appendChild(h('div',{style:'flex:1'}, fieldWrap('Entrada', h('input',{type:'time', id:'f-wh-tin', value: existing?existing.tIn:s.tIn}))));
+      row1.appendChild(h('div',{style:'flex:1'}, fieldWrap('Saída', h('input',{type:'time', id:'f-wh-tout', value: existing?existing.tOut:s.tOut}))));
+      box.appendChild(row1);
+      
+      const row2 = h('div',{style:'display:flex; gap:8px;'});
+      row2.appendChild(h('div',{style:'flex:1'}, fieldWrap('Saída Almoço', h('input',{type:'time', id:'f-wh-lout', value: existing?existing.lOut:s.lOut}))));
+      row2.appendChild(h('div',{style:'flex:1'}, fieldWrap('Volta Almoço', h('input',{type:'time', id:'f-wh-lin', value: existing?existing.lIn:s.lIn}))));
+      box.appendChild(row2);
+      
+      box.appendChild(fieldWrap('Café/Pausas Extras (Minutos)', h('input',{type:'number', id:'f-wh-cof', value: existing?existing.coffee:s.coffee})));
+      
+      // MÓDULO DE EXTRAS DIÁRIOS
+      const extrasWrap = h('div', {style: 'margin-top: 16px; border-top: 1px solid var(--line); padding-top: 16px;'});
+      extrasWrap.innerHTML = `<div style="font-size:12.5px;font-weight:700;color:var(--c-habits);text-transform:uppercase;margin-bottom:8px;">🛠️ Serviços Extras do Dia</div>`;
+      
+      const extrasList = h('div', {style: 'display:flex; flex-direction:column; gap:8px; margin-bottom:12px;'});
+      
+      const drawExtras = () => {
+          extrasList.innerHTML = '';
+          currentExtras.forEach((ext, idx) => {
+              const row = h('div', {style: 'display:flex; gap:8px; align-items:center; background:var(--surface-2); padding:8px; border-radius:var(--r-md); border:1px solid var(--line);'});
+              
+              const nameInp = h('input', {type:'text', value: ext.name, placeholder:'Ex: Polimento Jet', style:'flex:2; border:none; background:transparent; border-bottom:1px solid var(--line); outline:none; font-size:14px; padding:4px 0;'});
+              nameInp.onchange = (e) => currentExtras[idx].name = e.target.value;
+              
+              const valInp = h('input', {type:'number', value: ext.value, placeholder:'R$', style:'flex:1; border:none; background:transparent; border-bottom:1px solid var(--line); outline:none; font-size:14px; padding:4px 0;'});
+              valInp.onchange = (e) => currentExtras[idx].value = Number(e.target.value);
+              
+              const delBtn = h('button', {class:'icon-btn', style:'color:var(--danger);', onclick: (e) => { e.preventDefault(); currentExtras.splice(idx,1); drawExtras(); }}, '✕');
+              
+              row.appendChild(nameInp); row.appendChild(valInp); row.appendChild(delBtn);
+              extrasList.appendChild(row);
+          });
+      };
+      drawExtras();
+      extrasWrap.appendChild(extrasList);
+      
+      const addBtn = h('button', {class:'btn btn-ghost', style:'width:100%; border:1px dashed var(--line); font-size:13px; padding:10px;', onclick: (e) => { e.preventDefault(); currentExtras.push({name:'', value:''}); drawExtras(); }}, '➕ Adicionar serviço extra');
+      extrasWrap.appendChild(addBtn);
+      box.appendChild(extrasWrap);
+
+      box.appendChild(h('div', {style:'margin-top:16px;'}, fieldWrap('Observação do dia (Opcional)', h('input',{type:'text', id:'f-wh-obs', value: existing?existing.obs:'', placeholder:'Ex: Fiquei até mais tarde no jet azul'}))));
+    },
+    onSubmit: async () => {
+      const dt = document.getElementById('f-wh-date').value; if(!dt) return false;
+      const obj = existing || { createdAt: Date.now() }; 
+      obj.date = dt;
+      obj.tIn = document.getElementById('f-wh-tin').value; obj.tOut = document.getElementById('f-wh-tout').value;
+      obj.lOut = document.getElementById('f-wh-lout').value; obj.lIn = document.getElementById('f-wh-lin').value;
+      obj.coffee = document.getElementById('f-wh-cof').value || 0;
+      obj.obs = document.getElementById('f-wh-obs').value.trim();
+      
+      // Salva apenas os extras que foram preenchidos
+      obj.extras = currentExtras.filter(e => e.name.trim() !== '' && Number(e.value) > 0);
+      
+      if(existing) await dbPut('workhours', obj); else await dbAdd('workhours', obj);
+      renderWorkHours(); updateHomeStats(); toast('Dia registrado!');
+    }
+  });
+}
+
+// 📤 Gerar relatório do WhatsApp para o Chefe!
+// 📤 Gerar relatório detalhado para o Chefe!
+async function exportWorkHours() {
+    let items = await dbAll('workhours');
+    let filtered = items.filter(w => (w.date || '').startsWith(workMonthFilter));
+    filtered.sort((a,b) => (a.date||'').localeCompare(b.date||'')); 
+    
+    if(filtered.length === 0) { toast('Nenhum registro neste mês.'); return; }
+    
+    const s = getWorkSettings();
+    let totalMins = 0;
+    let sumDailyExtras = 0;
+    
+    let report = `🗓️ *Fechamento de Horas - ${workMonthFilter.split('-').reverse().join('/')}*\n\n`;
+    
+    filtered.forEach(w => {
+        const dStr = w.date.split('-').reverse().slice(0,2).join('/'); 
+        const workedMins = (timeToMins(w.tOut) - timeToMins(w.tIn)) - (timeToMins(w.lIn) - timeToMins(w.lOut)) - Number(w.coffee);
+        const finalMins = workedMins > 0 ? workedMins : 0;
+        totalMins += finalMins;
+        
+        report += `🔹 *${dStr}*: ${w.tIn} às ${w.tOut} (${minsToTimeStr(finalMins)})\n`;
+        
+        if (w.obs) report += `   ↳ 📝 Obs: _${w.obs}_\n`;
+        
+        if (w.extras && w.extras.length > 0) {
+            w.extras.forEach(ex => {
+                sumDailyExtras += Number(ex.value);
+                report += `   ↳ 🛠️ Extra: ${ex.name} (+${brl(Number(ex.value))})\n`;
+            });
+        }
+    });
+    
+    const subtotal = (totalMins / 60) * Number(s.rate);
+    const globalExtras = Number(s.extras) + sumDailyExtras;
+    const totalReceber = subtotal + Number(s.prevBalance) + globalExtras - Number(s.advance);
+    
+    report += `\n⏱️ *Total Trabalhado:* ${minsToTimeStr(totalMins)}\n`;
+    report += `💰 Valor da Hora: ${brl(Number(s.rate))}\n`;
+    report += `💵 Subtotal das Horas: ${brl(subtotal)}\n`;
+    if(globalExtras > 0) report += `➕ Serviços Extras (Total): ${brl(globalExtras)}\n`;
+    if(Number(s.prevBalance)>0) report += `➕ Saldo Anterior: ${brl(Number(s.prevBalance))}\n`;
+    if(Number(s.advance)>0) report += `➖ Vales/Adiantamentos: ${brl(Number(s.advance))}\n`;
+    
+    report += `\n✅ *TOTAL A RECEBER: ${brl(totalReceber)}*`;
+
+    try {
+        await navigator.clipboard.writeText(report);
+        toast('Copiado! Só colar no WhatsApp.');
+        if (confirm("Relatório copiado! Deseja abrir o WhatsApp agora?")) {
+            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(report)}`, '_blank');
+        }
+    } catch(err) { toast('Erro ao copiar.'); }
+}
+/* ============================================================
+   TRILHAS E DIAGNÓSTICOS (Decision Trees)
+   ============================================================ */
+let currentTrailPath = []; // Guarda as pastas que você entrou
+
+// Botão voltar do topo: Volta uma raiz, ou volta pra Home se estiver no início
+function trailGoBack() {
+    if (currentTrailPath.length > 0) {
+        currentTrailPath.pop();
+        renderTrails();
+    } else {
+        goHome();
+    }
+}
+
+// Entra em uma raiz
+function trailNavigate(id, title) {
+    currentTrailPath.push({id, title});
+    renderTrails();
+}
+
+// Clicou no scroll horizontal lá no topo
+function trailBreadcrumbClick(index) {
+    if (index === -1) currentTrailPath = [];
+    else currentTrailPath = currentTrailPath.slice(0, index + 1);
+    renderTrails();
+}
+
+async function renderTrails() {
+    const list = document.getElementById('trails-list'); list.innerHTML = '';
+    const bcBox = document.getElementById('trail-breadcrumbs'); bcBox.innerHTML = '';
+
+    // 1. Desenha o Breadcrumb
+    bcBox.appendChild(h('div', {class: 'trail-crumb ' + (currentTrailPath.length===0?'active':''), onclick: ()=>trailBreadcrumbClick(-1)}, '🏠 Início'));
+    currentTrailPath.forEach((p, idx) => {
+        bcBox.appendChild(h('div', {style: 'color:var(--line); font-weight:bold; font-size:12px;'}, '▶'));
+        bcBox.appendChild(h('div', {class: 'trail-crumb ' + (idx===currentTrailPath.length-1?'active':''), onclick: ()=>trailBreadcrumbClick(idx)}, p.title));
+    });
+    setTimeout(() => bcBox.scrollLeft = bcBox.scrollWidth, 50); // Rola sempre pro final
+
+    const allTrails = await dbAll('trails');
+    
+    // Pega o ID da pasta atual (null = raiz principal)
+    const parentId = currentTrailPath.length > 0 ? currentTrailPath[currentTrailPath.length - 1].id : null;
+    
+    let nodes = allTrails.filter(t => t.parentId === parentId);
+    nodes.sort((a, b) => (a.order || 0) - (b.order || 0)); // Ordena pela sua escolha
+
+    if (nodes.length === 0) {
+        list.appendChild(emptyState('🗺️', 'Nenhuma etapa', 'Adicione a primeira raiz no +'));
+        return;
+    }
+
+    nodes.forEach((node, idx) => {
+        const row = h('div', {class: 'item', style: 'align-items: flex-start;'});
+        
+        // Botões de subir e descer (Ordem)
+        const orderCol = h('div', {style: 'display:flex; flex-direction:column; gap:4px; margin-right:8px; padding-top:4px;'});
+        const upBtn = h('button', {class:'icon-btn', style: 'padding:2px; font-size:16px;', onclick: (e)=>{e.stopPropagation(); moveTrailNode(node, nodes[idx-1])}}, '▲');
+        const downBtn = h('button', {class:'icon-btn', style: 'padding:2px; font-size:16px;', onclick: (e)=>{e.stopPropagation(); moveTrailNode(node, nodes[idx+1])}}, '▼');
+        if (idx > 0) orderCol.appendChild(upBtn);
+        if (idx < nodes.length - 1) orderCol.appendChild(downBtn);
+        row.appendChild(orderCol);
+
+        // Corpo clicável (Entra na raiz)
+        const grow = h('div', {class: 'grow', onclick: () => trailNavigate(node.id, node.title)});
+        grow.appendChild(h('div', {class: 'i-title'}, node.title));
+        
+        let subParts = [];
+        if (node.price > 0) subParts.push('💰 ' + brl(node.price));
+        if (node.hours > 0) subParts.push('⏱️ ' + node.hours + 'h');
+        if (node.desc) subParts.push(node.desc.slice(0,40) + (node.desc.length>40?'…':''));
+        
+        const childCount = allTrails.filter(t => t.parentId === node.id).length;
+        if (childCount > 0) subParts.push(`📂 ${childCount} sub-etapas`);
+
+        if (subParts.length > 0) grow.appendChild(h('div', {class: 'i-sub'}, subParts.join(' · ')));
+        row.appendChild(grow);
+
+        // Ações (Editar, Apagar e Orçar)
+        const actCol = h('div', {style: 'display:flex; flex-direction:column; align-items:center;'});
+        
+        // NOVO: Botão de Gerar Orçamento
+        actCol.appendChild(h('button', {class:'icon-btn', style:'color:#25D366; margin-bottom:6px;', title:'Gerar Orçamento até aqui', onclick: (e)=>{e.stopPropagation(); openQuoteModal(node)}}, '💲'));
+        
+        actCol.appendChild(h('button', {class:'icon-btn', style:'color:var(--c-quotes);', onclick: (e)=>{e.stopPropagation(); openTrailForm(node)}}, '✏️'));
+        actCol.appendChild(h('button', {class:'icon-btn', style:'color:var(--danger); margin-top:6px;', onclick: (e)=>{e.stopPropagation(); confirmDeleteTrail(node.id)}}, '✕'));
+        row.appendChild(actCol);
+
+        list.appendChild(row);
+    });
+}
+
+// Troca a posição de dois itens
+async function moveTrailNode(nodeA, nodeB) {
+    if (!nodeA || !nodeB) return;
+    const temp = nodeA.order || 0;
+    nodeA.order = nodeB.order || 0;
+    nodeB.order = temp;
+    await dbPut('trails', nodeA); await dbPut('trails', nodeB);
+    renderTrails();
+}
+
+function openTrailForm(existing) {
+    const isEdit = !!existing;
+    const parentId = currentTrailPath.length > 0 ? currentTrailPath[currentTrailPath.length - 1].id : null;
+
+    openSheet({
+        title: isEdit ? 'Editar Etapa' : 'Nova Etapa',
+        buildFields: (box) => {
+            box.appendChild(fieldWrap('Título / Falha', h('input', {type:'text', id:'f-tr-title', value: existing?existing.title:'', placeholder:'Ex: Jet não liga / Testar bateria'})));
+            box.appendChild(fieldWrap('Descrição / Detalhes (Opcional)', h('textarea', {id:'f-tr-desc', style:'min-height:80px;', placeholder:'Ex: Usar multímetro. Voltagem deve ser maior que 11.5v.'}, existing?existing.desc:'')));
+            
+            const row = h('div', {style: 'display:flex; gap:8px;'});
+            row.appendChild(h('div',{style:'flex:1'}, fieldWrap('Valor (R$)', h('input',{type:'number', id:'f-tr-price', value: existing?existing.price:''}))));
+            row.appendChild(h('div',{style:'flex:1'}, fieldWrap('Tempo (Horas)', h('input',{type:'number', step:'0.1', id:'f-tr-hours', value: existing?existing.hours:''}))));
+            box.appendChild(row);
+        },
+        onSubmit: async () => {
+            const title = document.getElementById('f-tr-title').value.trim();
+            if (!title) { toast('Dê um título para a etapa!'); return false; }
+            
+            let obj = existing || { id: Date.now().toString(), parentId: parentId, order: Date.now() };
+            obj.title = title;
+            obj.desc = document.getElementById('f-tr-desc').value.trim();
+            obj.price = Number(document.getElementById('f-tr-price').value) || 0;
+            obj.hours = Number(document.getElementById('f-tr-hours').value) || 0;
+
+            await dbPut('trails', obj);
+            renderTrails(); toast('Salvo!');
+        }
+    });
+}
+
+// O Apagador "Cascata" Inteligente
+async function confirmDeleteTrail(id) {
+    const all = await dbAll('trails');
+    const hasChildren = all.some(t => t.parentId === id);
+    
+    const msg = hasChildren 
+        ? '⚠️ Esta etapa tem sub-etapas dentro dela! Excluir apagará TUDO. Tem certeza?'
+        : 'Excluir esta etapa?';
+        
+    if (confirm(msg)) {
+        const toDelete = [id];
+        
+        // Procura todos os filhos e netos infinitamente
+        const collectChildren = (pId) => {
+            all.filter(t => t.parentId === pId).forEach(child => {
+                toDelete.push(child.id);
+                collectChildren(child.id);
+            });
+        };
+        collectChildren(id);
+        
+        toast('Apagando etapa e sub-etapas...');
+        for (let did of toDelete) { await dbDelete('trails', did); }
+        renderTrails(); updateHomeStats();
+    }
+}
+// 💲 GERADOR DE ORÇAMENTOS (Checklist Dinâmico para WhatsApp)
+async function openQuoteModal(targetNode) {
+    const allTrails = await dbAll('trails');
+    let path = [];
+    let curr = targetNode;
+    
+    // A MÁGICA: Sobe a árvore puxando o "pai" do "pai" até chegar na raiz 0!
+    while(curr) {
+        path.unshift(curr);
+        curr = allTrails.find(t => t.id === curr.parentId);
+    }
+
+    // Marca todas as etapas como selecionadas por padrão
+    let selectedItems = path.map(p => ({ ...p, checked: true }));
+
+    openSheet({
+        title: 'Gerar Orçamento',
+        buildFields: (box) => {
+            const info = h('div', {style:'font-size:13px; color:var(--ink-soft); margin-bottom:16px; text-align:center;'});
+            info.textContent = 'Desmarque as etapas que NÃO serão realizadas/cobradas no serviço do cliente:';
+            box.appendChild(info);
+
+            const listWrap = h('div', {style:'display:flex; flex-direction:column; gap:8px; margin-bottom:16px;'});
+            
+            // Placar de Totais no final do Modal
+            const totalBox = h('div', {style:'background:var(--surface-2); padding:16px; border-radius:var(--r-md); border:1px solid var(--line); margin-top:16px; text-align:right; display:flex; justify-content:space-between; align-items:center;'});
+            const tHours = h('div', {style:'font-size:14px; color:var(--ink-soft); font-weight:700;'});
+            const tPrice = h('div', {style:'font-size:22px; color:#25D366; font-weight:900;'});
+            totalBox.appendChild(tHours); totalBox.appendChild(tPrice);
+
+            // Função que recalcula tudo quando você desmarca a caixinha
+            const updateTotals = () => {
+                let sumP = 0, sumH = 0;
+                selectedItems.forEach(item => {
+                    if (item.checked) { sumP += Number(item.price) || 0; sumH += Number(item.hours) || 0; }
+                });
+                tHours.textContent = `⏱️ ${sumH}h`;
+                tPrice.textContent = `Total: ${brl(sumP)}`;
+            };
+
+            // Desenha as etapas no Modal
+            selectedItems.forEach((item, idx) => {
+                const row = h('div', {style:'display:flex; align-items:center; gap:12px; background:var(--surface); padding:12px; border:1px solid var(--line); border-radius:var(--r-md);'});
+
+                const chk = h('input', {type:'checkbox', style:'width:22px; height:22px; accent-color:#25D366; flex:0 0 auto;'});
+                chk.checked = true;
+                chk.onchange = (e) => { item.checked = e.target.checked; updateTotals(); };
+                row.appendChild(chk);
+
+                const txtWrap = h('div', {style:'flex:1;'});
+                txtWrap.appendChild(h('div', {style:'font-size:15px; font-weight:700; color:var(--ink);'}, `${idx+1}. ${item.title}`));
+
+                let details = [];
+                if (item.price > 0) details.push(`💰 ${brl(item.price)}`);
+                if (item.hours > 0) details.push(`⏱️ ${item.hours}h`);
+                if (details.length > 0) txtWrap.appendChild(h('div', {style:'font-size:13px; color:var(--ink-soft); margin-top:4px; font-weight:600;'}, details.join(' · ')));
+
+                row.appendChild(txtWrap);
+                listWrap.appendChild(row);
+            });
+
+            box.appendChild(listWrap);
+            box.appendChild(totalBox);
+            updateTotals();
+
+            // Pinta o botão de salvar de "Verde WhatsApp"
+            setTimeout(() => {
+                const btn = document.getElementById('sheet-save-btn');
+                if(btn) {
+                    btn.innerHTML = '🟢 Enviar no WhatsApp';
+                    btn.style.background = '#25D366';
+                    btn.style.borderColor = '#25D366';
+                    btn.style.color = '#fff';
+                    btn.style.fontSize = '16px';
+                }
+            }, 10);
+        },
+        onSubmit: async () => {
+            const checkedItems = selectedItems.filter(i => i.checked);
+            if(checkedItems.length === 0) { toast('Selecione pelo menos uma etapa para o orçamento!'); return false; }
+
+            let sumP = 0, sumH = 0;
+            let report = `🛠️ *Orçamento de Serviço e Diagnóstico*\n\n`;
+            report += `Abaixo estão as etapas, peças ou serviços necessários:\n\n`;
+
+            checkedItems.forEach((item, idx) => {
+                sumP += Number(item.price) || 0;
+                sumH += Number(item.hours) || 0;
+                
+                report += `🔹 *${idx+1}. ${item.title}*\n`;
+                if(item.desc) report += `   📝 _${item.desc}_\n`;
+
+                let vals = [];
+                if(item.hours > 0) vals.push(`⏱️ ${item.hours}h`);
+                if(item.price > 0) vals.push(`💰 ${brl(item.price)}`);
+                if(vals.length > 0) report += `   ↳ ${vals.join(' | ')}\n`;
+                report += `\n`;
+            });
+
+            report += `➖➖➖➖➖➖➖➖➖➖\n`;
+            if(sumH > 0) report += `⏱️ *Tempo Total Estimado:* ${sumH}h\n`;
+            report += `✅ *VALOR TOTAL: ${brl(sumP)}*`;
+
+            try {
+                await navigator.clipboard.writeText(report);
+                toast('Orçamento copiado!');
+                const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(report)}`;
+                window.open(url, '_blank');
+            } catch(e) { toast('Erro ao copiar.'); }
+            
+            return true; // Fecha a janela do modal
+        }
+    });
 }
 /* ============================================================
    LAZY LOADING VIRTUAL
