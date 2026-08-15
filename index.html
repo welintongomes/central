@@ -328,6 +328,9 @@ body.dark-theme #app { box-shadow: 0 0 60px rgba(0,0,0,0.5); }
 .trail-breadcrumb { display: flex; overflow-x: auto; gap: 2px; padding: 12px 16px; background: var(--surface-2); border-bottom: 1px solid var(--line); scrollbar-width: none; align-items: center; }
 .trail-crumb { flex: 0 0 auto; background: var(--surface); border: 1px solid var(--line); padding: 6px 12px; border-radius: var(--r-pill); font-size: 13px; font-weight: 700; color: var(--ink-soft); cursor: pointer; display: flex; align-items: center; gap: 6px; transition: 0.2s; }
 .trail-crumb.active { background: #8E44AD; color: #fff; border-color: #8E44AD; }
+/* codigos para a calculadora os chips com estilos de codigo */
+.var-chip { background: #E8F8F5; border: 1px solid #1ABC9C; color: #16A085; padding: 4px 8px; border-radius: 6px; font-family: monospace; font-size: 13px; font-weight: bold; cursor: pointer; white-space: nowrap; }
+.var-chip:active { background: #1ABC9C; color: #fff; }
 </style>
 </head>
 <body>
@@ -714,6 +717,34 @@ body.dark-theme #app { box-shadow: 0 0 60px rgba(0,0,0,0.5); }
     <button class="header-action" onclick="toggleTrailTts()" id="trail-tts-btn" title="Leitura Automática">🔊</button>
   </div>
 </section>
+<!-- ===== BIBLIOTECA / COLEÇÕES ===== -->
+<section id="screen-library" class="screen module-screen">
+  
+  <div class="module-body" style="margin-top:0;">
+    <!-- Filtros em formato de Chips -->
+    <div id="library-filters" style="display:flex; gap:8px; overflow-x:auto; padding: 12px 16px; background:var(--surface-2); border-bottom:1px solid var(--line); scrollbar-width:none; align-items:center;"></div>
+    
+    <div class="list" id="library-list" style="margin-top:12px;"></div>
+  </div>
+  <button class="fab" style="background:#d32700;" onclick="openLibraryForm()">+</button>
+  <div class="module-header" id="library-header" style="background:#d32700;">
+    <button class="back-btn" onclick="goHome()">←</button>
+    <h2 style="flex:1;">Biblioteca</h2>
+  </div>
+</section>
+<!-- ===== CALCULADORAS CUSTOMIZADAS ===== -->
+<section id="screen-calculators" class="screen module-screen">
+  
+  <div class="module-body" style="margin-top:0;">
+    <div id="calculators-filters" style="display:flex; gap:8px; overflow-x:auto; padding: 12px 16px; background:var(--surface-2); border-bottom:1px solid var(--line); scrollbar-width:none; align-items:center;"></div>
+    <div class="list" id="calculators-list" style="margin-top:12px;"></div>
+  </div>
+  <button class="fab" style="background:#0f7328;" onclick="openCalculatorBuilder()">+</button>
+  <div class="module-header" id="calculators-header" style="background:#0f7328;">
+    <button class="back-btn" onclick="goHome()">←</button>
+    <h2 style="flex:1;">Fórmulas e Cálculos</h2>
+  </div>
+</section>
 <!-- FIM APP -->
 
 <!-- VISUALIZADOR DE MÍDIA EM TELA CHEIA -->
@@ -797,8 +828,8 @@ function toast(msg){
    INDEXEDDB LAYER (Versão 3 mantida, segura para atualizações)
    ============================================================ */
 const DB_NAME='centralPessoalDB';
-const DB_VERSION=7;
-const STORES=['tasks','notes','expenses','habits','habitLogs','shopping','journal','contacts','waterLogs','weight','passwords','gallery', 'quotes','flashcards','workhours','trails'];
+const DB_VERSION=9;
+const STORES=['tasks','notes','expenses','habits','habitLogs','shopping','journal','contacts','waterLogs','weight','passwords','gallery', 'quotes','flashcards','workhours','trails','library','calculators'];
 let db;
 function openDatabase(){
   return new Promise((resolve,reject)=>{
@@ -966,7 +997,9 @@ const MODULES=[
   {key:'contacts', title:'Contatos', icon:'📇', cls:'b-contacts'},
   {key:'water', title:'Água e saúde', icon:'💧', cls:'b-water'},
   {key:'passwords', title:'Senhas', icon:'🔑', cls:'b-passwords'},
-  {key:'gallery', title:'Galeria', icon:'🖼️', cls:'b-gallery'}
+  {key:'gallery', title:'Galeria', icon:'🖼️', cls:'b-gallery'},
+  {key:'library', title:'Biblioteca', icon:'📚', cls:'b-library'},
+  {key:'calculators', title:'Calculadoras', icon:'🧮', cls:'b-calculators'}
 ];
 
 function buildTileGrid(){
@@ -989,7 +1022,7 @@ function renderModule(key){
     if (list) { list.innerHTML = ''; list.appendChild(emptyState('🔒', 'Módulo Protegido', 'Toque no cadeado no topo para destravar.')); }
   } else {
     screen.classList.remove('is-locked');
-    ({tasks:renderTasks, notes:renderNotes, expenses:renderExpenses, habits:renderHabits, shopping:renderShopping, journal:renderJournal, contacts:renderContacts, water:renderWater, passwords:renderPasswords, gallery:renderGallery, quotes:renderQuotes, flashcards: renderFlashcards,workhours: renderWorkHours,trails: renderTrails})[key]();
+    ({tasks:renderTasks, notes:renderNotes, expenses:renderExpenses, habits:renderHabits, shopping:renderShopping, journal:renderJournal, contacts:renderContacts, water:renderWater, passwords:renderPasswords, gallery:renderGallery, quotes:renderQuotes, flashcards: renderFlashcards,workhours: renderWorkHours,trails: renderTrails, library: renderLibrary, calculators: renderCalculators})[key]();
   }
 }
 
@@ -997,14 +1030,16 @@ function setSub(key, text){ const n=document.getElementById('sub-'+key); if(n) n
 
 async function updateHomeStats(){
   // AGORA BUSCAMOS TODOS OS 13 MÓDULOS! (workhours incluso)
-  const [tasks, notes, expenses, habits, habitLogs, shopping, journal, contacts, waterLogs, passwords, gallery, quotes, flashcards, workhours, trails] = await Promise.all(
-    ['tasks','notes','expenses','habits','habitLogs','shopping','journal','contacts','waterLogs','passwords','gallery','quotes','flashcards','workhours','trails'].map(dbAll)
+// 👇 Copie e cole este bloco EXATAMENTE assim na sua função handleGlobalSearch 👇
+  const [tasks, notes, expenses, habits, habitLogs, shopping, journal, contacts, waterLogs, passwords, gallery, quotes, flashcards, workhours, trails, library, calculators] = await Promise.all(
+    ['tasks','notes','expenses','habits','habitLogs','shopping','journal','contacts','waterLogs','passwords','gallery','quotes','flashcards','workhours','trails','library','calculators'].map(dbAll)
   );
   
   const pending = tasks.filter(t=>!t.done && !t.isEncrypted);
   setSub('tasks', pending.length? pending.length+' pendente'+(pending.length>1?'s':'') : 'Tudo em dia 🎉');
   setSub('notes', notes.length? notes.length+' nota'+(notes.length>1?'s':'') : 'Nenhuma nota ainda');
-
+  setSub('library', library.length ? library.length + ' iten(s)' + (library.length > 1 ? 's' : '') + ' ' : 'Acervo vazio');
+  setSub('calculators', calculators.length ? calculators.length + ' criadas' : 'Crie sua fórmula');
   const now=new Date(); const ym=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2, '0');
   const monthExp=expenses.filter(e=>e.date && e.date.indexOf(ym)===0 && !e.isEncrypted);
   const income=monthExp.filter(e=>e.type==='receita').reduce((s,e)=>s+Number(e.amount),0);
@@ -1140,7 +1175,7 @@ function norm(str) { return (str || '').toString().normalize('NFD').replace(/[\u
 function renderGlobalSearchChips() {
   const container = document.getElementById('global-search-filters'); container.style.display = 'flex'; container.innerHTML = '';
   // NOVO: 'Trilhas' adicionada no final da lista
-  const cats = ['Todos', 'Tarefas', 'Hábitos', 'Notas', 'Diário', 'Compras', 'Gastos', 'Senhas', 'Contatos', 'Galeria', 'Citações', 'Flashcards', 'Trilhas'];
+  const cats = ['Todos', 'Tarefas', 'Hábitos', 'Notas', 'Diário', 'Compras', 'Gastos', 'Senhas', 'Contatos', 'Galeria', 'Citações', 'Flashcards', 'Trilhas','Biblioteca','Calculadoras'];
   cats.forEach(c => { container.appendChild(h('button', { type: 'button', class: globalSearchFilter === c ? 'active' : '', style: 'flex: 0 0 auto;', onclick: () => { globalSearchFilter = c; handleGlobalSearch(); } }, c)); });
 }
 
@@ -1154,13 +1189,48 @@ async function handleGlobalSearch() {
   if (!isSearchMode && !q) { grid.style.display = 'grid'; hint.style.display = 'block'; resBox.style.display = 'none'; resBox.innerHTML = ''; clearBtn.style.display = 'none'; document.getElementById('global-search-filters').style.display = 'none'; return; }
   clearBtn.style.display = 'flex'; grid.style.display = 'none'; hint.style.display = 'none'; resBox.style.display = 'flex'; resBox.innerHTML = ''; renderGlobalSearchChips();
 
-  // NOVO: dbAll('trails') adicionado no Promise!
-  const [tasks, notes, contacts, expenses, shopping, journal, habits, habitLogs, passwords, gallery, quotes, flashcards, trails] = await Promise.all([ 
-      dbAll('tasks'), dbAll('notes'), dbAll('contacts'), dbAll('expenses'), dbAll('shopping'), dbAll('journal'), dbAll('habits'), dbAll('habitLogs'), dbAll('passwords'), dbAll('gallery'), dbAll('quotes'), dbAll('flashcards'), dbAll('trails') 
+  // NOVO: dbAll('trails') adicionado no Promise! sempre que criar um novo modo adicione o nome ex: , library e abaixo o , dball(library)
+  const [tasks, notes, contacts, expenses, shopping, journal, habits, habitLogs, passwords, gallery, quotes, flashcards, trails, library, calculators] = await Promise.all([ 
+      dbAll('tasks'), dbAll('notes'), dbAll('contacts'), dbAll('expenses'), dbAll('shopping'), dbAll('journal'), dbAll('habits'), dbAll('habitLogs'), dbAll('passwords'), dbAll('gallery'), dbAll('quotes'), dbAll('flashcards'), dbAll('trails'), dbAll('library') 
   ]);
   
   let results = []; const todayISO = todayIso(); const now = Date.now();
+  // sempre que adicionar um novo modo deve adicionar aqui o if para a busca global funcionar
+  if (globalSearchFilter === 'Todos' || globalSearchFilter === 'Biblioteca') library.forEach(lib => { 
+      if (!q || norm(lib.title).includes(q) || norm(lib.review||'').includes(q) || norm(lib.platform||'').includes(q)) {
+          let subText = lib.type;
+          if (lib.platform) subText += ` (${lib.platform})`;
+          
+          const ph = Number(lib.price)||0; const hs = (Number(lib.hours)||0) + ((Number(lib.mins)||0)/60);
+          if (ph > 0 && hs > 0) subText += ` · 📊 ${brl(ph/hs)}/h`;
+          else if (!lib.played) subText += ` · 🆕 Não iniciado`;
+          
+          results.push({ type: 'library', item: lib, title: lib.title, sub: subText }); 
+      } 
+  });
+  
+  // 👇 COLE ISSO LOGO ABAIXO DO SEU IF DA BIBLIOTECA 👇
 
+  // TÁTICA DE ISOLAMENTO: Busca as calculadoras direto do banco, blindado contra erros!
+  const dbCalculadoras = await dbAll('calculators'); 
+  
+  if (globalSearchFilter === 'Todos' || globalSearchFilter === 'Calculadoras') {
+      
+      (dbCalculadoras || []).forEach(calc => { 
+          const titulo = calc.title || '';
+          const desc = calc.desc || '';
+          const cat = calc.category || '';
+          
+          if (!calc.isEncrypted && (!q || norm(titulo).includes(q) || norm(desc).includes(q) || norm(cat).includes(q))) {
+              let subText = cat || 'Fórmula';
+              if (calc.inputs && calc.inputs.length) subText += ` · ${calc.inputs.length} campos`;
+              subText += ' · Toque para calcular';
+              
+              results.push({ type: 'calculator', item: calc, title: titulo, sub: subText }); 
+          } 
+      });
+  }
+  
   if (globalSearchFilter === 'Todos' || globalSearchFilter === 'Tarefas') tasks.forEach(t => { if (!t.isEncrypted && (!q || norm(t.text).includes(q))) results.push({ type: 'task', item: t, title: t.text, sub: t.done ? 'Concluída' : 'Pendente' }); });
   if (globalSearchFilter === 'Todos' || globalSearchFilter === 'Compras') shopping.forEach(s => { if (!s.isEncrypted && (!q || norm(s.name).includes(q))) results.push({ type: 'shopping', item: s, title: s.name, sub: 'Lista de compras' }); });
   
@@ -1201,6 +1271,7 @@ async function handleGlobalSearch() {
     }
   });
   
+  
   if (globalSearchFilter === 'Todos' || globalSearchFilter === 'Contatos') contacts.forEach(c => { if (!c.isEncrypted && (!q || norm(c.name).includes(q) || norm(c.notes).includes(q) || norm(c.phone).includes(q))) results.push({ type: 'contact', item: c, title: c.name, sub: (c.category||'Contato') + (c.phone ? ' · ' + c.phone : '') }); });
   if (globalSearchFilter === 'Todos' || globalSearchFilter === 'Gastos') expenses.forEach(e => { if (!e.isEncrypted && (!q || norm(e.description).includes(q) || norm(e.category).includes(q))) results.push({ type: 'expense', item: e, title: e.description || e.category, sub: `R$ ${e.amount} · ${humanDateFull(e.date)}` }); });
   if (globalSearchFilter === 'Todos' || globalSearchFilter === 'Senhas') passwords.forEach(p => { if (!p.isEncrypted && (!q || norm(p.title).includes(q) || norm(p.username).includes(q))) results.push({ type: 'password', item: p, title: p.title, sub: (p.category||'Cofre') + (p.username ? ' · ' + p.username : '') }); });
@@ -1236,6 +1307,7 @@ if (globalSearchFilter === 'Todos' || globalSearchFilter === 'Trilhas') trails.f
     } else if (r.type === 'habit') {
       const cp = r.checkProps; row.appendChild(h('div', { class: 'check' + cp.extraClass, style: cp.extraStyle, onclick: cp.action }, cp.checkText));
     } else {
+      // obrigatorio se quiser ver o icone e a cor do novo modo
       let icon = '', color = '';
       if (r.type === 'note') { icon = '📝'; color = 'var(--c-notes)'; } 
       if (r.type === 'contact') { icon = '📇'; color = 'var(--c-contacts)'; } 
@@ -1246,6 +1318,8 @@ if (globalSearchFilter === 'Todos' || globalSearchFilter === 'Trilhas') trails.f
       if (r.type === 'flashcard') { icon = '🧠'; color = '#4A90E2'; } 
       if (r.type === 'gallery') { icon = r.item.mediaType === 'audio' ? '🎵' : (r.item.mediaType === 'video' ? '🎬' : '🖼️'); color = '#8E543B'; }
       if (r.type === 'trail') { icon = '🗺️'; color = '#8E44AD'; } // Ícone das trilhas
+      if (r.type === 'library') { icon = '📚'; color = '#D35400'; }
+      if (r.type === 'calculator') { icon = '🧮'; color = '#2980B9'; }
       if (icon) row.appendChild(h('div', { style: `background:${color}; color:#fff; width:34px; height:34px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:16px; flex: 0 0 auto;` }, icon));
     }
 
@@ -1253,7 +1327,20 @@ if (globalSearchFilter === 'Todos' || globalSearchFilter === 'Trilhas') trails.f
       // O clique nas trilhas invoca a função de orçamento e fecha a busca
       if (r.type === 'trail') { clearSearch(); openQuoteModal(r.item); return; }
       
-      if (r.type === 'task') openTaskForm(r.item); else if (r.type === 'note') openNoteForm(r.item); else if (r.type === 'contact') openContactForm(r.item); else if (r.type === 'expense') openExpenseForm(r.item); else if (r.type === 'shopping') toggleShopping(r.item); else if (r.type === 'journal') openJournalForm(r.item); else if (r.type === 'habit') openHabitForm(r.item); else if (r.type === 'password') openPasswordForm(r.item); else if (r.type === 'gallery') openGalleryViewer(r.item); else if (r.type === 'quote') openQuoteForm(r.item); else if (r.type === 'flashcard') openFlashcardForm(r.item);
+      
+      if (r.type === 'task') openTaskForm(r.item); 
+else if (r.type === 'library') openLibraryForm(r.item); 
+else if (r.type === 'note') openNoteForm(r.item); 
+else if (r.type === 'contact') openContactForm(r.item); 
+else if (r.type === 'expense') openExpenseForm(r.item); 
+else if (r.type === 'shopping') toggleShopping(r.item); 
+else if (r.type === 'journal') openJournalForm(r.item); 
+else if (r.type === 'habit') openHabitForm(r.item); 
+else if (r.type === 'password') openPasswordForm(r.item); 
+else if (r.type === 'gallery') openGalleryViewer(r.item); 
+else if (r.type === 'quote') openQuoteForm(r.item); 
+else if (r.type === 'flashcard') openFlashcardForm(r.item);
+else if (r.type === 'calculator') openCalculatorRunner(r.item);
     }});
     
     grow.appendChild(h('div', { class: 'i-title' }, r.title));
@@ -1293,7 +1380,7 @@ if (globalSearchFilter === 'Todos' || globalSearchFilter === 'Trilhas') trails.f
 }
 
 /* ============================================================
-   BACKUP E DADOS (Atualizado para suportar Arquivos Brutos)
+   BACKUP E DADOS (Com Seleção de Módulos e Mesclagem Inteligente)
    ============================================================ */
 function openSettings() {
   openSheet({
@@ -1322,33 +1409,77 @@ async function base64ToBlob(base64) {
   return await res.blob();
 }
 
+// 📤 EXPORTAR DADOS (Agora com tela de Seleção)
 async function exportAllData() {
-  toast('Preparando backup... aguarde.');
-  try {
-    const data = {}; 
-    for (const store of STORES) {
-      const items = await dbAll(store);
-      // Vasculha os itens procurando arquivos brutos para converter antes de salvar
-      for (const item of items) {
-        if (item.mediaEncrypted instanceof Blob) {
-          item.mediaEncrypted = await blobToBase64(item.mediaEncrypted);
+    const storesMap = {
+        tasks: '✅ Tarefas', notes: '📝 Notas', expenses: '💰 Gastos', habits: '⭐ Hábitos',
+        habitLogs: '📅 Histórico de Hábitos', shopping: '🛒 Compras', journal: '📔 Diário',
+        contacts: '📇 Contatos', waterLogs: '💧 Água', passwords: '🔑 Senhas', gallery: '🖼️ Galeria (Mídia)',
+        quotes: '💬 Citações', flashcards: '🧠 Flashcards', workhours: '⏱️ Ponto', trails: '🗺️ Trilhas', library: '📚 Biblioteca', calculators: '🧮 Calculadoras'
+    };
+
+    openSheet({
+        title: 'Exportar Backup',
+        buildFields: (box) => {
+            box.appendChild(h('div', {style:'font-size:13px; color:var(--ink-soft); margin-bottom:16px;'}, 'Selecione o que deseja salvar:'));
+
+            const listWrap = h('div', {style:'display:flex; flex-direction:column; gap:2px; max-height:55vh; overflow-y:auto; padding-right:8px;'});
+
+            const rowAll = h('div', {style:'display:flex; align-items:center; gap:12px; padding:12px; background:var(--surface-2); border-radius:var(--r-md); margin-bottom:8px; border:1px solid var(--line);'});
+            const chkAll = h('input', {type:'checkbox', checked:true, style:'width:22px; height:22px; accent-color:var(--c-tasks); flex:0 0 auto;'});
+            rowAll.appendChild(chkAll);
+            rowAll.appendChild(h('div', {style:'font-weight:700; font-size:15px;'}, 'Selecionar Tudo'));
+            listWrap.appendChild(rowAll);
+
+            const keys = Object.keys(storesMap);
+            keys.forEach(st => {
+                const row = h('div', {style:'display:flex; align-items:center; gap:12px; padding:10px 8px; border-bottom:1px solid var(--surface-2);'});
+                const chk = h('input', {type:'checkbox', class:'chk-exp-store', value: st, checked:true, style:'width:20px; height:20px; accent-color:var(--c-tasks); flex:0 0 auto;'});
+                row.appendChild(chk);
+                row.appendChild(h('div', {style:'font-size:15px; color:var(--ink);'}, storesMap[st]));
+                listWrap.appendChild(row);
+
+                chk.onchange = () => {
+                    if (!chk.checked) chkAll.checked = false;
+                    const allChecked = Array.from(document.querySelectorAll('.chk-exp-store')).every(c => c.checked);
+                    if (allChecked) chkAll.checked = true;
+                };
+            });
+
+            chkAll.onchange = (e) => { document.querySelectorAll('.chk-exp-store').forEach(c => c.checked = e.target.checked); };
+            box.appendChild(listWrap);
+        },
+        onSubmit: async () => {
+            const selectedStores = Array.from(document.querySelectorAll('.chk-exp-store')).filter(c => c.checked).map(c => c.value);
+            if (selectedStores.length === 0) { toast('Selecione pelo menos um módulo!'); return false; }
+
+            toast('Preparando backup... aguarde.');
+            try {
+                const data = {}; 
+                for (const store of selectedStores) {
+                    const items = await dbAll(store);
+                    
+                    // SEU CÓDIGO INTACTO: Vasculha procurando arquivos para converter
+                    for (const item of items) {
+                        if (item.mediaEncrypted instanceof Blob) item.mediaEncrypted = await blobToBase64(item.mediaEncrypted);
+                        if (item.mediaData instanceof Blob) item.mediaData = await blobToBase64(item.mediaData);
+                    }
+                    data[store] = items;
+                }
+                data['_settings'] = { masterHash: localStorage.getItem('master-hash'), lockedModules: localStorage.getItem('locked-modules') };
+                
+                const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob); 
+                const a = document.createElement('a'); a.href = url;
+                a.download = `central-backup-${todayIso()}.json`; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); 
+                toast('Backup salvo com sucesso!');
+                return true;
+            } catch (e) { toast('Erro ao salvar backup.'); console.error(e); return false; }
         }
-        if (item.mediaData instanceof Blob) {
-          item.mediaData = await blobToBase64(item.mediaData);
-        }
-      }
-      data[store] = items;
-    }
-    data['_settings'] = { masterHash: localStorage.getItem('master-hash'), lockedModules: localStorage.getItem('locked-modules') };
-    
-    const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob); 
-    const a = document.createElement('a'); a.href = url;
-    a.download = `central-backup-${todayIso()}.json`; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); 
-    toast('Backup salvo com sucesso!');
-  } catch (e) { toast('Erro ao salvar backup.'); console.error(e); }
+    });
 }
 
+// 📥 IMPORTAR DADOS (Agora com opções: Mesclar ou Substituir)
 function triggerImport() {
   const input = document.createElement('input'); input.type = 'file'; input.accept = '.json';
   input.onchange = (e) => {
@@ -1357,36 +1488,69 @@ function triggerImport() {
     reader.onload = async (ev) => {
       try {
         const data = JSON.parse(ev.target.result);
-        if (confirm('⚠️ ATENÇÃO: Isso vai substituir TUDO. Deseja continuar?')) {
-          toast('Restaurando e processando mídias...');
-          if(data['_settings']) { localStorage.setItem('master-hash', data['_settings'].masterHash || ''); localStorage.setItem('locked-modules', data['_settings'].lockedModules || '[]'); }
-          
-          for (const store of STORES) { 
-            if (data[store]) { 
-              const items = await dbAll(store); 
-              for (const item of items) await dbDel(store, item.id); 
-              
-              for (const item of data[store]) {
-                // Se o backup contiver mídias em texto, converte de volta para Blob
-                if (typeof item.mediaEncrypted === 'string' && item.mediaEncrypted.startsWith('data:')) {
-                  item.mediaEncrypted = await base64ToBlob(item.mediaEncrypted);
-                }
-                if (typeof item.mediaData === 'string' && item.mediaData.startsWith('data:')) {
-                  item.mediaData = await base64ToBlob(item.mediaData);
-                }
-                await dbPut(store, item); 
-              } 
-            } 
-          }
-          toast('Tudo pronto! Recarregando...'); setTimeout(() => location.reload(), 1200);
-        }
+        
+        openSheet({
+            title: 'Modo de Importação',
+            buildFields: (box) => {
+                box.appendChild(h('div', {style:'font-size:14px; color:var(--ink); margin-bottom:16px; text-align:center;'}, 'Como você deseja restaurar estes dados?'));
+
+                const btnMerge = h('button', {class:'btn', style:'width:100%; margin-bottom:12px; background:var(--c-habits); color:#fff; border:none; padding:14px; font-size:15px;'}, '➕ Mesclar Arquivos\n(Atualiza o que mudou e adiciona os novos)');
+                btnMerge.onclick = async () => { document.querySelector('.sheet-overlay').click(); await processImport(data, 'merge'); };
+                box.appendChild(btnMerge);
+
+                const btnReplace = h('button', {class:'btn', style:'width:100%; background:var(--danger); color:#fff; border:none; padding:14px; font-size:15px;'}, '⚠️ Substituir Tudo\n(Apaga os atuais e usa só os do backup)');
+                btnReplace.onclick = async () => {
+                    if (confirm('ATENÇÃO: Isso vai APAGAR os dados atuais e usar apenas os do arquivo. Tem certeza?')) {
+                        document.querySelector('.sheet-overlay').click(); await processImport(data, 'replace');
+                    }
+                };
+                box.appendChild(btnReplace);
+                
+                setTimeout(() => { const saveBtn = document.getElementById('sheet-save-btn'); if(saveBtn) saveBtn.style.display = 'none'; }, 10);
+            },
+            onSubmit: () => { return true; } 
+        });
       } catch (err) { toast('Arquivo inválido ou corrompido.'); console.error(err); }
     }; reader.readAsText(file);
   }; input.click();
 }
-/* ============================================================
-   TAREFAS
-   ============================================================ */
+
+// ⚙️ O Motor que processa a Restauração Mídia por Mídia
+async function processImport(data, mode) {
+    toast(mode === 'replace' ? 'Restaurando e processando mídias...' : 'Mesclando e processando mídias...');
+    try {
+        if(data['_settings']) { 
+            localStorage.setItem('master-hash', data['_settings'].masterHash || ''); 
+            localStorage.setItem('locked-modules', data['_settings'].lockedModules || '[]'); 
+        }
+         
+        for (const store of STORES) { 
+            // Só processa se o módulo existir no backup
+            if (data[store]) { 
+                
+                if (mode === 'replace') {
+                    // SEU CÓDIGO INTACTO: Limpa a tabela atual antes de colocar as novas
+                    const items = await dbAll(store); 
+                    for (const item of items) await dbDel(store, item.id); 
+                }
+              
+                for (const item of data[store]) {
+                    // SEU CÓDIGO INTACTO: Converte de Texto de volta para Imagem/Áudio (Blob)
+                    if (typeof item.mediaEncrypted === 'string' && item.mediaEncrypted.startsWith('data:')) {
+                        item.mediaEncrypted = await base64ToBlob(item.mediaEncrypted);
+                    }
+                    if (typeof item.mediaData === 'string' && item.mediaData.startsWith('data:')) {
+                        item.mediaData = await base64ToBlob(item.mediaData);
+                    }
+                    
+                    // Insere o dado. Se já existir (Mesclar), ele apenas atualiza usando o mesmo ID!
+                    await dbPut(store, item); 
+                } 
+            } 
+        }
+        toast('Tudo pronto! Recarregando...'); setTimeout(() => location.reload(), 1200);
+    } catch (e) { toast('Erro na importação.'); console.error(e); }
+}
 async function renderTasks(){
   const list = document.getElementById('tasks-list'); list.innerHTML = ''; let tasks = await dbAll('tasks');
   buildCategoryFilter('tasks-cat-filter', TASK_CATS, tasks, taskCatFilter, (val) => { taskCatFilter = val; renderTasks(); });
@@ -3805,6 +3969,454 @@ setInterval(async () => {
        }
    });
 }, 1000);
+/* ============================================================
+   BIBLIOTECA E COLEÇÕES (Jogos, Livros, Filmes)
+   ============================================================ */
+let libFilter = 'Todos';
+const LIB_TYPES = ['Todos', '🎮 Jogo', '📚 Livro', '🎬 Filme/Série', '🎵 Música', '🧩 Outro'];
+
+async function renderLibrary() {
+    const list = document.getElementById('library-list'); list.innerHTML = '';
+    const filtBox = document.getElementById('library-filters');
+    
+    if (filtBox.innerHTML === '') {
+        LIB_TYPES.forEach(t => {
+            const b = h('button', {style: `padding:6px 12px; border-radius:16px; border:1px solid var(--line); font-size:13px; font-weight:700; white-space:nowrap; cursor:pointer; background:${libFilter===t ? '#D35400':'var(--surface)'}; color:${libFilter===t ? '#fff':'var(--ink)'};`, onclick:()=>{libFilter=t; filtBox.innerHTML=''; renderLibrary();}}, t);
+            filtBox.appendChild(b);
+        });
+    }
+
+    let items = await dbAll('library');
+    if (libFilter !== 'Todos') items = items.filter(i => (i.type === libFilter || (!i.type && libFilter === '🧩 Outro')));
+    items.sort((a,b) => (b.createdAt||0) - (a.createdAt||0)); // Mais recentes primeiro
+
+    if (!items.length) { list.appendChild(emptyState('📚', 'Coleção vazia', 'Adicione jogos, livros ou filmes no +')); return; }
+
+    items.forEach(item => {
+        const row = h('div', {class: 'item', style:'align-items:flex-start;'});
+        const grow = h('div', {class: 'grow', onclick: () => openLibraryForm(item)});
+
+        // Título e Estrelas
+        let titleWrap = h('div', {class:'i-title', style:'display:flex; justify-content:space-between; align-items:center;'});
+        titleWrap.appendChild(h('span', {}, item.title));
+        if (item.rating && item.rating > 0) {
+            titleWrap.appendChild(h('span', {style:'color:#F1C40F; font-size:12px; letter-spacing:2px;'}, '★'.repeat(item.rating)));
+        }
+        grow.appendChild(titleWrap);
+
+        // Subtítulo Inteligente
+        let subs = [];
+        subs.push(item.type || '🧩 Outro');
+        if (item.platform) subs.push(item.platform);
+
+        const price = Number(item.price) || 0;
+        const hCount = Number(item.hours) || 0;
+        const mCount = Number(item.mins) || 0;
+        const totalTimeHours = hCount + (mCount / 60);
+
+        if (price > 0) subs.push(`💰 ${brl(price)}`);
+        
+        let timeStr = [];
+        if (hCount > 0) timeStr.push(`${hCount}h`);
+        if (mCount > 0) timeStr.push(`${mCount}m`);
+        if (timeStr.length > 0) subs.push(`⏱️ ${timeStr.join(' ')}`);
+
+        // Mágica do Custo-Benefício
+        if (totalTimeHours > 0 && price > 0) {
+            const cph = price / totalTimeHours;
+            subs.push(`📊 ${brl(cph)}/h`); // Ex: R$ 1,50/h
+        }
+
+        // Status 
+        if (!item.played) subs.push('🆕 Não iniciado');
+        else if (item.played && totalTimeHours === 0) subs.push('✅ Concluído');
+
+        grow.appendChild(h('div', {class:'i-sub', style:'margin-top:4px; font-weight:600;'}, subs.join(' · ')));
+        
+        // Análise
+        if (item.review) grow.appendChild(h('div', {style:'font-size:13px; color:var(--ink-soft); font-style:italic; margin-top:6px; line-height:1.4; border-left:2px solid #D35400; padding-left:8px;'}, `"${item.review}"`));
+
+        row.appendChild(grow);
+        row.appendChild(h('button', {class:'icon-btn', onclick:(e)=>{e.stopPropagation(); confirmDelete('library', item.id, ()=>{renderLibrary(); updateHomeStats();});}}, '✕'));
+        list.appendChild(row);
+    });
+}
+
+function openLibraryForm(existing) {
+    openSheet({
+        title: existing ? 'Editar Coleção' : 'Novo na Coleção',
+        buildFields: (box) => {
+            box.appendChild(fieldWrap('Título (Obrigatório)', h('input', {type:'text', id:'f-lib-title', value: existing?existing.title:'', placeholder:'Ex: The Witcher 3, A Arte da Guerra'})));
+            
+            const row1 = h('div', {style:'display:flex; gap:8px;'});
+            const selType = h('select', {id:'f-lib-type', style:'width:100%; padding:10px; border-radius:var(--r-md); border:1px solid var(--line); background:var(--surface);'});
+            LIB_TYPES.filter(t=>t!=='Todos').forEach(t => {
+                const opt = h('option', {value: t}, t);
+                if (existing && existing.type === t) opt.selected = true;
+                selType.appendChild(opt);
+            });
+            row1.appendChild(h('div', {style:'flex:1'}, fieldWrap('Tipo', selType)));
+            row1.appendChild(h('div', {style:'flex:1'}, fieldWrap('Plataforma/Local', h('input', {type:'text', id:'f-lib-plat', value: existing?existing.platform:'', placeholder:'Ex: Steam, Estante, PS5'}))));
+            box.appendChild(row1);
+
+            const row2 = h('div', {style:'display:flex; gap:8px; align-items:center;'});
+            const chkPlayed = h('input', {type:'checkbox', id:'f-lib-played', style:'width:20px;height:20px;accent-color:#D35400;'});
+            if (existing && existing.played) chkPlayed.checked = true;
+            row2.appendChild(chkPlayed);
+            row2.appendChild(h('div', {style:'font-size:14px; font-weight:700; color:var(--ink);'}, 'Já consumi (Joguei/Li/Assisti)'));
+            box.appendChild(h('div', {style:'margin: 12px 0; padding:12px; background:var(--surface-2); border-radius:var(--r-md); border:1px solid var(--line);'}, row2));
+
+            // Área de Preço e Tempo dividida igual nas Trilhas
+            const row3 = h('div', {style:'display:flex; gap:8px;'});
+            row3.appendChild(h('div', {style:'flex:1'}, fieldWrap('Valor Pago (R$)', h('input', {type:'number', step:'0.01', id:'f-lib-price', value: existing?existing.price:''}))));
+            row3.appendChild(h('div', {style:'flex:1'}, fieldWrap('Horas', h('input', {type:'number', id:'f-lib-hours', value: existing?existing.hours:''} ))));
+            row3.appendChild(h('div', {style:'flex:1'}, fieldWrap('Minutos', h('input', {type:'number', id:'f-lib-mins', value: existing?existing.mins:''} ))));
+            box.appendChild(row3);
+
+            const selRating = h('select', {id:'f-lib-rating', style:'width:100%; padding:10px; border-radius:var(--r-md); border:1px solid var(--line); background:var(--surface);'});
+            [0,1,2,3,4,5].forEach(r => {
+                const opt = h('option', {value: r}, r === 0 ? 'Sem nota' : '★'.repeat(r) + ' ' + r);
+                if (existing && Number(existing.rating) === r) opt.selected = true;
+                selRating.appendChild(opt);
+            });
+            box.appendChild(fieldWrap('Sua Nota Pessoal', selRating));
+
+            box.appendChild(fieldWrap('Análise ou Review Breve (Opcional)', h('textarea', {id:'f-lib-review', style:'min-height:60px;', placeholder:'O que achou da experiência? Valeu a pena?'}, existing?existing.review:'')));
+        },
+        onSubmit: async () => {
+            const title = document.getElementById('f-lib-title').value.trim();
+            if (!title) { toast('O título é obrigatório!'); return false; }
+
+            const obj = existing || { id: Date.now().toString(), createdAt: Date.now() };
+            obj.title = title;
+            obj.type = document.getElementById('f-lib-type').value;
+            obj.platform = document.getElementById('f-lib-plat').value.trim();
+            obj.played = document.getElementById('f-lib-played').checked;
+            obj.price = document.getElementById('f-lib-price').value;
+            obj.hours = document.getElementById('f-lib-hours').value;
+            obj.mins = document.getElementById('f-lib-mins').value;
+            obj.rating = document.getElementById('f-lib-rating').value;
+            obj.review = document.getElementById('f-lib-review').value.trim();
+
+            await dbPut('library', obj);
+            renderLibrary(); updateHomeStats(); toast('Salvo na Biblioteca!');
+        }
+    });
+}
+/* ============================================================
+   GERENCIADOR DE FÓRMULAS E CALCULADORAS
+   ============================================================ */
+let calcFilter = 'Todos';
+
+async function renderCalculators() {
+    const list = document.getElementById('calculators-list'); list.innerHTML = '';
+    const filtBox = document.getElementById('calculators-filters'); filtBox.innerHTML = '';
+    
+    let items = await dbAll('calculators');
+    
+    // Filtros dinâmicos pegando as categorias que você já usou
+    let cats = ['Todos'];
+    items.forEach(i => { if (i.category && !cats.includes(i.category)) cats.push(i.category); });
+    
+    cats.forEach(c => {
+        const b = h('button', {style: `padding:6px 12px; border-radius:16px; border:1px solid var(--line); font-size:13px; font-weight:700; white-space:nowrap; cursor:pointer; background:${calcFilter===c ? '#2980B9':'var(--surface)'}; color:${calcFilter===c ? '#fff':'var(--ink)'};`, onclick:()=>{calcFilter=c; renderCalculators();}}, c);
+        filtBox.appendChild(b);
+    });
+
+    if (calcFilter !== 'Todos') items = items.filter(i => i.category === calcFilter);
+    items.sort((a,b) => (a.title||'').localeCompare(b.title||'')); 
+
+    if (!items.length) { list.appendChild(emptyState('🧮', 'Nenhuma calculadora', 'Crie sua primeira fórmula no +')); return; }
+
+    items.forEach(item => {
+        const row = h('div', {class: 'item', style:'align-items:flex-start;'});
+        const grow = h('div', {class: 'grow', onclick: () => openCalculatorRunner(item)}); // Abre pra USAR!
+
+        grow.appendChild(h('div', {class:'i-title', style:'color:#2980B9; font-weight:900;'}, item.title));
+        
+        let sub = [];
+        if (item.category) sub.push(item.category);
+        if (item.inputs && item.inputs.length) sub.push(`${item.inputs.length} campos`);
+        grow.appendChild(h('div', {class:'i-sub'}, sub.join(' · ')));
+        
+        if (item.desc) grow.appendChild(h('div', {style:'font-size:12px; color:var(--ink-soft); margin-top:4px;'}, item.desc));
+
+        row.appendChild(grow);
+        
+        // Ações: Lápis pra Editar a fórmula, X pra apagar
+        const actBox = h('div', {style:'display:flex; flex-direction:column; gap:8px;'});
+        actBox.appendChild(h('button', {class:'icon-btn', style:'color:var(--c-quotes);', onclick:(e)=>{e.stopPropagation(); openCalculatorBuilder(item);}}, '✏️'));
+        actBox.appendChild(h('button', {class:'icon-btn', style:'color:var(--danger);', onclick:(e)=>{e.stopPropagation(); confirmDelete('calculators', item.id, ()=>{renderCalculators(); updateHomeStats();});}}, '✕'));
+        row.appendChild(actBox);
+        
+        list.appendChild(row);
+    });
+}
+
+// 🛠️ O CONSTRUTOR DE CALCULADORAS (Modo Criação)
+// 🛠️ O CONSTRUTOR DE CALCULADORAS (Modo Avançado e Reordenável)
+async function openCalculatorBuilder(existing) {
+    let calc = existing ? JSON.parse(JSON.stringify(existing)) : { id: Date.now().toString(), title:'', desc:'', category:'', inputs:[], results:[] };
+    
+    let allItems = await dbAll('calculators');
+    let dbCats = [...new Set(allItems.map(i => i.category).filter(Boolean))];
+
+    const swap = (arr, i, j) => { const temp = arr[i]; arr[i] = arr[j]; arr[j] = temp; };
+
+    openSheet({
+        title: existing ? 'Editar Calculadora' : 'Criar Calculadora',
+        buildFields: (box) => {
+            const drawBuilder = () => {
+                box.innerHTML = '';
+                
+                box.appendChild(fieldWrap('Nome da calculadora', h('input', {type:'text', value:calc.title, placeholder:'Ex: Consumo de combustível', onchange:(e)=>calc.title=e.target.value})));
+                box.appendChild(fieldWrap('Descrição (Opcional)', h('textarea', {style:'min-height:60px;', value:calc.desc, placeholder:'Para que serve essa calculadora?', onchange:(e)=>calc.desc=e.target.value})));
+                
+                const catInp = h('input', {type:'text', list:'dl-calc-cats', value:calc.category, placeholder:'Ex: Veículos, Finanças...', onchange:(e)=>calc.category=e.target.value});
+                const dList = document.createElement('datalist'); dList.id = 'dl-calc-cats';
+                dbCats.forEach(c => dList.appendChild(h('option', {value:c})));
+                box.appendChild(dList); box.appendChild(fieldWrap('Categoria', catInp));
+
+                // ==========================================
+                // SEÇÃO: CAMPOS DE ENTRADA
+                // ==========================================
+                const inBox = h('div', {style:'background:rgba(41, 128, 185, 0.05); padding:12px; border-radius:12px; border:1px solid rgba(41, 128, 185, 0.2); margin-top:16px;'});
+                inBox.appendChild(h('div', {style:'font-size:13px; font-weight:800; color:#2980B9; letter-spacing:1px; margin-bottom:4px;'}, 'CAMPOS DE ENTRADA'));
+                inBox.appendChild(h('div', {style:'font-size:12px; color:var(--ink-soft); margin-bottom:12px;'}, 'O que você vai preencher toda vez que usar essa calculadora.'));
+                
+                if (calc.inputs.length === 0) inBox.appendChild(h('div', {style:'font-size:13px; font-style:italic; margin-bottom:12px;'}, 'Nenhum campo ainda. Adicione o primeiro campo abaixo.'));
+                
+                calc.inputs.forEach((inp, idx) => {
+                    if(!inp.type) inp.type = 'number';
+                    const cCard = h('div', {style:'background:var(--surface); padding:12px; border:1px solid var(--line); border-radius:8px; margin-bottom:12px;'});
+                    
+                    // Cabeçalho do Card (Campo X ↑ ↓ ✕)
+                    const cHead = h('div', {style:'display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; border-bottom:1px solid var(--line); padding-bottom:8px;'});
+                    cHead.appendChild(h('div', {style:'font-weight:800; font-size:14px; color:var(--ink);'}, `Campo ${idx+1}`));
+                    
+                    const acts = h('div', {style:'display:flex; gap:4px;'});
+                    acts.appendChild(h('button', {class:'icon-btn', style:`font-size:16px; padding:2px; opacity:${idx>0?'1':'0.3'};`, onclick:(e)=>{e.preventDefault(); if(idx>0){ swap(calc.inputs, idx, idx-1); drawBuilder(); }}}, '↑'));
+                    acts.appendChild(h('button', {class:'icon-btn', style:`font-size:16px; padding:2px; opacity:${idx<calc.inputs.length-1?'1':'0.3'};`, onclick:(e)=>{e.preventDefault(); if(idx<calc.inputs.length-1){ swap(calc.inputs, idx, idx+1); drawBuilder(); }}}, '↓'));
+                    acts.appendChild(h('button', {class:'icon-btn', style:'color:var(--danger); font-size:16px; padding:2px; margin-left:8px;', onclick:(e)=>{e.preventDefault(); calc.inputs.splice(idx,1); drawBuilder();}}, '✕'));
+                    cHead.appendChild(acts);
+                    cCard.appendChild(cHead);
+
+                    // Badge de Variável
+                    cCard.appendChild(h('div', {style:'font-size:12px; color:var(--ink-soft); margin-bottom:8px;'}, `Variável na fórmula: <b style="color:#2980B9; background:rgba(41,128,185,0.1); padding:2px 6px; border-radius:4px;">v${idx+1}</b>`));
+
+                    cCard.appendChild(fieldWrap('Rótulo (o que a pessoa vê)', h('input', {type:'text', value:inp.label, placeholder:'Ex.: Distância percorrida', oninput:(e)=>inp.label=e.target.value})));
+                    
+                    // Seletor de Tipo
+                    const selType = h('select', {style:'width:100%; padding:10px; border-radius:var(--r-md); border:1px solid var(--line); background:var(--surface);', onchange:(e)=>{inp.type=e.target.value; drawBuilder();}});
+                    ['number:Número padrão', 'select:Lista (seleção)', 'text:Texto Livre'].forEach(op => {
+                        const [val, txt] = op.split(':');
+                        const opt = h('option', {value:val}, txt);
+                        if(inp.type === val) opt.selected = true;
+                        selType.appendChild(opt);
+                    });
+                    cCard.appendChild(fieldWrap('Tipo', selType));
+
+                    // Construtor de Lista
+                    if(inp.type === 'select') {
+                        inp.options = inp.options || [];
+                        const optBox = h('div', {style:'background:var(--surface-2); padding:8px; border-radius:8px; margin-bottom:12px; border:1px dashed var(--line);'});
+                        inp.options.forEach((opt, oIdx) => {
+                            const oRow = h('div', {style:'display:flex; gap:4px; margin-bottom:4px;'});
+                            oRow.appendChild(h('input', {type:'text', placeholder:'Rótulo (Ex: 10%)', value:opt.label, style:'flex:1; font-size:13px;', oninput:e=>opt.label=e.target.value}));
+                            oRow.appendChild(h('input', {type:'number', placeholder:'Valor (Ex: 10)', value:opt.value, style:'flex:1; font-size:13px;', oninput:e=>opt.value=e.target.value}));
+                            oRow.appendChild(h('button', {class:'icon-btn', style:'color:var(--danger);', onclick:e=>{e.preventDefault(); inp.options.splice(oIdx,1); drawBuilder();}}, '✕'));
+                            optBox.appendChild(oRow);
+                        });
+                        optBox.appendChild(h('button', {class:'btn btn-ghost', style:'width:100%; font-size:12px; padding:6px;', onclick:e=>{e.preventDefault(); inp.options.push({label:'', value:''}); drawBuilder();}}, '➕ Adicionar opção'));
+                        cCard.appendChild(optBox);
+                    }
+
+                    const r2 = h('div', {style:'display:flex; gap:8px;'});
+                    r2.appendChild(h('div', {style:'flex:1'}, fieldWrap('Unidade (opcional)', h('input', {type:'text', value:inp.unit||'', placeholder:'Ex: km, L', oninput:e=>inp.unit=e.target.value}))));
+                    r2.appendChild(h('div', {style:'flex:1'}, fieldWrap('Valor padrão (opcional)', h('input', {type: inp.type==='number'?'number':'text', value:inp.defaultValue||'', placeholder:'Ex: 0', oninput:e=>inp.defaultValue=e.target.value}))));
+                    cCard.appendChild(r2);
+
+                    inBox.appendChild(cCard);
+                });
+                
+                inBox.appendChild(h('button', {class:'btn btn-ghost', style:'width:100%; font-size:13px; padding:10px; border:1px dashed #2980B9; color:#2980B9;', onclick:(e)=>{e.preventDefault(); calc.inputs.push({label:'', type:'number'}); drawBuilder();}}, '➕ Adicionar campo'));
+                box.appendChild(inBox);
+
+                // ==========================================
+                // SEÇÃO: RESULTADOS
+                // ==========================================
+                const resBox = h('div', {style:'background:var(--surface-2); padding:12px; border-radius:12px; border:1px solid var(--line); margin-top:16px;'});
+                resBox.appendChild(h('div', {style:'font-size:13px; font-weight:800; color:var(--ink); letter-spacing:1px; margin-bottom:4px;'}, 'RESULTADOS E FÓRMULAS'));
+                resBox.appendChild(h('div', {style:'font-size:12px; color:var(--ink-soft); margin-bottom:12px;'}, 'O que a calculadora vai calcular. Toque nos chips para inserir. Funções Math() funcionam!'));
+                
+                if (calc.results.length === 0) resBox.appendChild(h('div', {style:'font-size:13px; font-style:italic; margin-bottom:12px;'}, 'Nenhum resultado ainda. Adicione o primeiro abaixo.'));
+
+                calc.results.forEach((res, idx) => {
+                    const rCard = h('div', {style:'background:var(--surface); padding:12px; border:1px solid var(--line); border-radius:8px; margin-bottom:12px;'});
+                    
+                    const rHead = h('div', {style:'display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; border-bottom:1px solid var(--line); padding-bottom:8px;'});
+                    rHead.appendChild(h('div', {style:'font-weight:800; font-size:14px; color:var(--ink);'}, `Resultado ${idx+1}`));
+                    
+                    const acts = h('div', {style:'display:flex; gap:4px;'});
+                    acts.appendChild(h('button', {class:'icon-btn', style:`font-size:16px; padding:2px; opacity:${idx>0?'1':'0.3'};`, onclick:(e)=>{e.preventDefault(); if(idx>0){ swap(calc.results, idx, idx-1); drawBuilder(); }}}, '↑'));
+                    acts.appendChild(h('button', {class:'icon-btn', style:`font-size:16px; padding:2px; opacity:${idx<calc.results.length-1?'1':'0.3'};`, onclick:(e)=>{e.preventDefault(); if(idx<calc.results.length-1){ swap(calc.results, idx, idx+1); drawBuilder(); }}}, '↓'));
+                    acts.appendChild(h('button', {class:'icon-btn', style:'color:var(--danger); font-size:16px; padding:2px; margin-left:8px;', onclick:(e)=>{e.preventDefault(); calc.results.splice(idx,1); drawBuilder();}}, '✕'));
+                    rHead.appendChild(acts);
+                    rCard.appendChild(rHead);
+
+                    rCard.appendChild(h('div', {style:'font-size:12px; color:var(--ink-soft); margin-bottom:8px;'}, `Variável: <b style="color:#16A085; background:rgba(26,188,156,0.1); padding:2px 6px; border-radius:4px;">r${idx+1}</b> (para usar em outros resultados)`));
+
+                    rCard.appendChild(fieldWrap('Rótulo do resultado', h('input', {type:'text', value:res.label, placeholder:'Ex: Custo da viagem', oninput:(e)=>res.label=e.target.value})));
+
+                    const chipBar = h('div', {style:'display:flex; flex-wrap:wrap; gap:6px; margin-bottom:8px; background:var(--surface-2); padding:8px; border-radius:6px;'});
+                    if(calc.inputs.length===0 && idx===0) chipBar.appendChild(h('div', {style:'font-size:11px; color:var(--ink-soft); width:100%;'}, 'Adicione campos acima para usá-los aqui.'));
+                    
+                    // Chips de Entradas (v1, v2...)
+                    calc.inputs.forEach((inp, i) => {
+                        const chip = h('button', {class:'var-chip', onclick:(e)=>{e.preventDefault(); const fInp = document.getElementById('formu-'+idx); fInp.value += ` v${i+1} `; res.formula = fInp.value; fInp.focus();}}, `v${i+1} (${inp.label||'?'})`);
+                        chipBar.appendChild(chip);
+                    });
+                    
+                    // Chips de Resultados Anteriores (r1, r2...)
+                    for(let i=0; i<idx; i++) {
+                        const chip = h('button', {class:'var-chip', style:'background:#FDEDEC; color:#C0392B; border-color:#E74C3C;', onclick:(e)=>{e.preventDefault(); const fInp = document.getElementById('formu-'+idx); fInp.value += ` r${i+1} `; res.formula = fInp.value; fInp.focus();}}, `r${i+1} (${calc.results[i].label||'?'})`);
+                        chipBar.appendChild(chip);
+                    }
+                    rCard.appendChild(chipBar);
+
+                    rCard.appendChild(fieldWrap('Fórmula', h('textarea', {id:'formu-'+idx, rows:2, style:'font-family:monospace; font-size:15px; font-weight:bold;', value:res.formula, placeholder:'Ex: v1 / v2', oninput:(e)=>res.formula=e.target.value})));
+                    
+                    // Formatação Visual (Unidade e Posição)
+                    const fRow = h('div', {style:'display:flex; gap:6px; align-items:flex-end;'});
+                    fRow.appendChild(h('div', {style:'flex:2;'}, fieldWrap('Unidade', h('input', {type:'text', placeholder:'Ex: R$, km/l', value:res.unit||'', oninput:e=>res.unit=e.target.value}))));
+                    
+                    const selPos = h('select', {style:'width:100%; padding:10px; border-radius:var(--r-md); border:1px solid var(--line); background:var(--surface);', onchange:e=>res.unitPos=e.target.value});
+                    ['antes:Antes (ex: R$ 10)', 'depois:Depois (ex: 10 km)'].forEach(op => {
+                        const [val, txt] = op.split(':'); const o = h('option', {value:val}, txt);
+                        if((res.unitPos||'antes') === val) o.selected = true; selPos.appendChild(o);
+                    });
+                    fRow.appendChild(h('div', {style:'flex:2;'}, fieldWrap('Posição', selPos)));
+
+                    const decInp = h('input', {type:'number', value: res.decimals !== undefined ? res.decimals : 2, oninput:e=>res.decimals=parseInt(e.target.value)});
+                    fRow.appendChild(h('div', {style:'flex:1;'}, fieldWrap('Casas dec.', decInp)));
+                    rCard.appendChild(fRow);
+
+                    resBox.appendChild(rCard);
+                });
+
+                resBox.appendChild(h('button', {class:'btn btn-ghost', style:'width:100%; font-size:13px; padding:10px; border:1px dashed var(--ink);', onclick:(e)=>{e.preventDefault(); calc.results.push({label:'', formula:'', unitPos:'antes', decimals:2}); drawBuilder();}}, '➕ Adicionar resultado'));
+                box.appendChild(resBox);
+                
+                const testBtn = h('button', {class:'btn', style:'width:100%; margin-top:16px; background:#F39C12; color:#fff; border:none; padding:14px; font-size:16px;', onclick:(e)=>{e.preventDefault(); openCalculatorRunner(calc, true);}}, '🧪 TESTAR');
+                box.appendChild(testBtn);
+            };
+            
+            drawBuilder();
+        },
+        onSubmit: async () => {
+            if (!calc.title.trim()) { toast('Dê um nome para a calculadora!'); return false; }
+            await dbPut('calculators', calc);
+            renderCalculators(); updateHomeStats(); toast('Fórmula Salva!');
+        }
+    });
+}
+
+// 🚀 O EXECUTOR DE CÁLCULOS (Motor com Variáveis Inteligentes)
+function openCalculatorRunner(calc, isTest = false) {
+    if (!calc.inputs || calc.inputs.length === 0) { toast('Essa calculadora não tem campos de entrada!'); return; }
+
+    openSheet({
+        title: isTest ? '🧪 TESTE: ' + calc.title : calc.title,
+        buildFields: (box) => {
+            if (calc.desc) box.appendChild(h('div', {style:'font-size:14px; color:var(--ink-soft); margin-bottom:16px; font-style:italic; border-left:3px solid #2980B9; padding-left:8px;'}, calc.desc));
+
+            const resultBox = h('div', {style:'background:#E8F8F5; border:1px solid #1ABC9C; padding:16px; border-radius:12px; margin-bottom:24px; min-height:80px;'});
+            box.appendChild(resultBox);
+
+            const valStore = {}; // Guarda tudo: v1, v2, r1, r2...
+
+            const doMath = () => {
+                resultBox.innerHTML = '';
+                calc.results.forEach((res, idx) => {
+                    const row = h('div', {style:'display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(26,188,156,0.2); padding:8px 0;'});
+                    row.appendChild(h('div', {style:'font-size:14px; color:#16A085; font-weight:700;'}, res.label || `Resultado ${idx+1}`));
+                    
+                    let finalVal = 0;
+                    
+                    try {
+                        // Passa TODAS as variáveis dinamicamente para o motor do JavaScript
+                        const keys = Object.keys(valStore);
+                        const vals = Object.values(valStore);
+                        const execFunc = new Function(...keys, `return ${res.formula || '0'}`);
+                        finalVal = execFunc(...vals);
+                        
+                        if (typeof finalVal === 'number' && (!isFinite(finalVal) || isNaN(finalVal))) finalVal = 0;
+                    } catch(e) { finalVal = 'Erro na fórmula'; }
+
+                    // Salva o resultado no valStore para a PRÓXIMA fórmula poder usar! (ex: r1)
+                    valStore[`r${idx+1}`] = finalVal;
+
+                    // Formatação Final Visual
+                    let dVal = finalVal;
+                    if (typeof finalVal === 'number') {
+                        const decs = res.decimals !== undefined ? res.decimals : 2;
+                        // Usa formatação nativa do Brasil (Ex: 1.000,50)
+                        dVal = finalVal.toLocaleString('pt-BR', { minimumFractionDigits: decs, maximumFractionDigits: decs });
+                    }
+                    
+                    let outStr = dVal;
+                    if (res.unit && typeof finalVal !== 'string') {
+                        outStr = (res.unitPos === 'antes') ? `${res.unit} ${dVal}` : `${dVal} ${res.unit}`;
+                    }
+                    
+                    row.appendChild(h('div', {style:'font-size:22px; font-weight:900; color:#0E6655; text-align:right; max-width:60%; word-break:break-word;'}, outStr));
+                    resultBox.appendChild(row);
+                });
+            };
+
+            // Desenha os inputs na tela
+            calc.inputs.forEach((inp, idx) => {
+                const varName = `v${idx+1}`;
+                
+                // Trata o Valor Padrão
+                let def = inp.defaultValue || '';
+                if(inp.type === 'number') valStore[varName] = Number(def) || 0;
+                else valStore[varName] = def; // Texto puro
+
+                const w = h('div', {style:'margin-bottom:12px;'});
+                const lblWrap = h('div', {style:'display:flex; justify-content:space-between; margin-bottom:4px;'});
+                lblWrap.appendChild(h('div', {style:'font-size:13px; font-weight:700; color:var(--ink);'}, inp.label || `Campo ${idx+1}`));
+                if (inp.unit) lblWrap.appendChild(h('div', {style:'font-size:12px; color:var(--ink-soft);'}, inp.unit));
+                w.appendChild(lblWrap);
+                
+                let f;
+                if (inp.type === 'select') {
+                    f = h('select', {style:'font-size:16px; padding:12px; width:100%; border-radius:var(--r-md); border:1px solid var(--line); background:var(--surface);'});
+                    (inp.options || []).forEach(opt => {
+                        f.appendChild(h('option', {value:opt.value}, opt.label));
+                    });
+                    f.onchange = (e) => { valStore[varName] = Number(e.target.value.replace(',','.')) || 0; doMath(); };
+                    // Seta o valor inicial do primeiro item
+                    if(inp.options && inp.options.length > 0) valStore[varName] = Number(inp.options[0].value) || 0;
+
+                } else if (inp.type === 'text') {
+                    f = h('input', {type:'text', placeholder:'Digite o texto...', value:def, style:'font-size:16px; padding:12px;'});
+                    f.oninput = (e) => { valStore[varName] = e.target.value; doMath(); };
+                } else {
+                    f = h('input', {type:'number', step:'any', placeholder:'Digite o número...', value:def, style:'font-size:18px; padding:12px;'});
+                    f.oninput = (e) => { valStore[varName] = Number(e.target.value.replace(',','.')) || 0; doMath(); };
+                }
+                
+                w.appendChild(f); box.appendChild(w);
+            });
+            
+            doMath(); 
+
+            if(isTest) setTimeout(() => { const b = document.getElementById('sheet-save-btn'); if(b) b.style.display='none'; }, 10);
+        },
+        onSubmit: () => { return true; }
+    });
+}
 async function init(){
   loadTheme();
   try{ await openDatabase(); }catch(err){ toast('Não foi possível abrir o banco local.'); console.error(err); return; }
