@@ -3719,6 +3719,9 @@ function wireFilterTabs(){
 // ============================================================
 // VIGIA DOS CRONÔMETROS DE HÁBITOS E SOM
 // ============================================================
+// ============================================================
+// VIGIA DOS CRONÔMETROS DE HÁBITOS E SOM (ALARME DE OFICINA)
+// ============================================================
 setInterval(async () => {
    const now = Date.now();
    let needsUpdate = false;
@@ -3728,23 +3731,33 @@ setInterval(async () => {
        for (let hb of habits) {
            if (hb.readyAt && hb.readyAt > 0 && hb.readyAt <= now && !hb.notified) {
                
-               // Emite 1 bipe eletrônico no celular usando o destravador
+               // NOVO SOM: ALARME DE OFICINA (Mais longo, mais repetitivo)
                if (habitAudioCtx) {
                    try {
-                       const osc = habitAudioCtx.createOscillator();
-                       const gain = habitAudioCtx.createGain();
-                       osc.connect(gain); gain.connect(habitAudioCtx.destination);
-                       osc.type = 'square';
-                       osc.frequency.setValueAtTime(800, habitAudioCtx.currentTime);
-                       gain.gain.setValueAtTime(0.1, habitAudioCtx.currentTime);
-                       gain.gain.exponentialRampToValueAtTime(0.001, habitAudioCtx.currentTime + 0.3);
-                       osc.start(habitAudioCtx.currentTime);
-                       osc.stop(habitAudioCtx.currentTime + 0.3);
+                       const playTone = (freq, startTime, dur) => {
+                           const osc = habitAudioCtx.createOscillator();
+                           const gain = habitAudioCtx.createGain();
+                           osc.connect(gain); gain.connect(habitAudioCtx.destination);
+                           osc.type = 'square'; // Onda quadrada é áspera, corta o barulho
+                           osc.frequency.setValueAtTime(freq, habitAudioCtx.currentTime + startTime);
+                           gain.gain.setValueAtTime(0.3, habitAudioCtx.currentTime + startTime); // Volume mais alto
+                           gain.gain.exponentialRampToValueAtTime(0.001, habitAudioCtx.currentTime + startTime + dur);
+                           osc.start(habitAudioCtx.currentTime + startTime);
+                           osc.stop(habitAudioCtx.currentTime + startTime + dur);
+                       };
+                       
+                       // 6 Bipes fortes e espaçados (tipo aviso de ré de caminhão/máquina)
+                       playTone(1000, 0.0, 0.3);
+                       playTone(1000, 0.4, 0.3);
+                       playTone(1000, 0.8, 0.3);
+                       playTone(1000, 1.2, 0.3);
+                       playTone(1000, 1.6, 0.3);
+                       playTone(1000, 2.0, 0.3);
                    } catch(e) {}
                }
                
                toast(`🔔 O tempo do hábito acabou!`);
-               hb.notified = true; // Desarma o som para não ficar apitando sem parar
+               hb.notified = true; // Desarma o som 
                await dbPut('habits', hb);
                needsUpdate = true;
            }
@@ -3768,7 +3781,6 @@ setInterval(async () => {
        }
    });
 }, 1000);
-
 async function init(){
   loadTheme();
   try{ await openDatabase(); }catch(err){ toast('Não foi possível abrir o banco local.'); console.error(err); return; }
