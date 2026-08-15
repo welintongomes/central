@@ -2929,6 +2929,7 @@ function changeWorkMonth(offset) {
 function timeToMins(t) { const [h,m] = (t||'00:00').split(':').map(Number); return h*60 + m; }
 function minsToTimeStr(m) { const h = Math.floor(m/60); const mm = m%60; return `${h}h ${String(mm).padStart(2,'0')}m`; }
 
+
 async function renderWorkHours() {
   const list = document.getElementById('workhours-list'); list.innerHTML = ''; 
   let items = await dbAll('workhours');
@@ -2953,7 +2954,11 @@ async function renderWorkHours() {
           const grow = h('div',{class:'grow', onclick: () => openWorkHourForm(w)});
           
           const coffeeMins = Number(w.coffee) || 0;
-          const workedMins = (timeToMins(w.tOut) - timeToMins(w.tIn)) - (timeToMins(w.lIn) - timeToMins(w.lOut)) - coffeeMins;
+          
+          // Calcula os minutos de almoço
+          const lunchMins = timeToMins(w.lIn) - timeToMins(w.lOut);
+          
+          const workedMins = (timeToMins(w.tOut) - timeToMins(w.tIn)) - lunchMins - coffeeMins;
           const finalMins = workedMins > 0 ? workedMins : 0;
           totalMins += finalMins;
           
@@ -2965,9 +2970,23 @@ async function renderWorkHours() {
           
           grow.appendChild(h('div',{class:'i-title'}, humanDateFull(w.date)));
           
-          // NOVO: Adicionado o café no subtítulo da tela (Ex: Das 08:00 às 18:00 · 8h 35m · Café: 15m)
-          let subText = `Das ${w.tIn} às ${w.tOut} · ${minsToTimeStr(finalMins)}`;
+          // NOVO: Construindo a linha exatamente na ordem pedida!
+          let subText = `Das ${w.tIn} às ${w.tOut}`;
+          
+          // 1. Almoço
+          if (lunchMins > 0) {
+              const lH = String(Math.floor(lunchMins/60)).padStart(2, '0');
+              const lM = String(lunchMins%60).padStart(2, '0');
+              subText += ` · 🍴 ${lH}:${lM}`;
+          }
+          
+          // 2. Café
           if (coffeeMins > 0) subText += ` · ☕ ${coffeeMins}m`;
+          
+          // 3. Total Trabalhado
+          subText += ` · ⏱️ ${minsToTimeStr(finalMins)}`;
+          
+          // 4. Extras do dia
           if (dayExtraTotal > 0) subText += ` · 🛠️ +${brl(dayExtraTotal)}`;
           
           grow.appendChild(h('div',{class:'i-sub'}, subText));
@@ -2987,7 +3006,6 @@ async function renderWorkHours() {
   document.getElementById('work-tot-ded').textContent = brl(Number(settings.advance));
   document.getElementById('work-tot-final').textContent = brl(totalReceber);
 }
-
 // ⚙️ Tela de Padrões e Valores Mensais
 function openWorkSettings() {
     const s = getWorkSettings();
@@ -3186,7 +3204,7 @@ function openWorkHourForm(existing) {
   });
 }
 
-// 📤 Gerar relatório detalhado para o Chefe (Com o café e almoço compactos em duas linhas)
+// 📤 Gerar relatório detalhado para o Chefe (MÉTODO BLINDADO: Almoço antes do Café)
 async function exportWorkHours() {
     let items = await dbAll('workhours');
     let filtered = items.filter(w => (w.date || '').startsWith(workMonthFilter));
@@ -3203,8 +3221,6 @@ async function exportWorkHours() {
     filtered.forEach(w => {
         const dStr = w.date.split('-').reverse().slice(0,2).join('/'); 
         const coffeeMins = Number(w.coffee) || 0;
-        
-        // Calcula os minutos do almoço
         const lunchMins = timeToMins(w.lIn) - timeToMins(w.lOut);
         
         const workedMins = (timeToMins(w.tOut) - timeToMins(w.tIn)) - lunchMins - coffeeMins;
@@ -3214,18 +3230,27 @@ async function exportWorkHours() {
         // LINHA 1: Dia, Entrada, Saída e Total de Horas
         report += `🔹 *${dStr}*: ${w.tIn} às ${w.tOut} (${minsToTimeStr(finalMins)})\n`;
         
-        // LINHA 2: Intervalos (Café e Almoço compactos)
-        let breaks = `   `; // Espaço para alinhar debaixo do texto
-        if (coffeeMins > 0) breaks += `[☕: ${coffeeMins}m]`;
+        // LINHA 2: Intervalos (Fila organizada à prova de falhas)
+        let breaksList = [];
+        
+        // 1º da fila: Almoço
         if (lunchMins > 0) {
-            // Formata o almoço para ficar no padrão 01:22
             const lH = String(Math.floor(lunchMins/60)).padStart(2, '0');
             const lM = String(lunchMins%60).padStart(2, '0');
-            breaks += `[🍴: ${lH}:${lM}]`;
+            breaksList.push(`[🍴: ${lH}:${lM}]`);
         }
-        if (coffeeMins > 0 || lunchMins > 0) report += breaks + `\n`;
         
-        // LINHA 3 em diante: Observações e Serviços Extras (Se houver)
+        // 2º da fila: Café
+        if (coffeeMins > 0) {
+            breaksList.push(`[☕: ${coffeeMins}m]`);
+        }
+        
+        // Imprime a fila (se tiver alguém nela)
+        if (breaksList.length > 0) {
+            report += `   ${breaksList.join('')}\n`;
+        }
+        
+        // LINHA 3 em diante: Observações e Serviços Extras
         if (w.obs) report += `   ↳ 📝 Obs: _${w.obs}_\n`;
         
         if (w.extras && w.extras.length > 0) {
@@ -3257,7 +3282,6 @@ async function exportWorkHours() {
         }
     } catch(err) { toast('Erro ao copiar.'); }
 }
-
 /* ============================================================
    TRILHAS E DIAGNÓSTICOS (Decision Trees + Atalhos Inteligentes)
    ============================================================ */
