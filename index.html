@@ -510,7 +510,7 @@ body.dark-theme #app { box-shadow: 0 0 60px rgba(0,0,0,0.5); }
         <strong style="font-size:14px;">Peso</strong>
         <button class="icon-btn" style="color:var(--c-water)" onclick="openWeightForm()">＋</button>
       </div>
-      <div class="list" id="weight-list"></div>
+      <div class="list" id="weight-list" style="overflow-y: auto; max-height: 29.1vh; min-height: 29vh;"></div>
     </div>
     <div class="summary-card" style="text-align:center;">
       <div id="water-progress-wrap" class="progress-ring-wrap"></div>
@@ -710,7 +710,7 @@ body.dark-theme #app { box-shadow: 0 0 60px rgba(0,0,0,0.5); }
   <div id="trail-breadcrumbs" class="trail-breadcrumb"></div>
   <div class="module-header" id="trails-header">
     <button class="back-btn" onclick="trailGoBack(); if(window.speechSynthesis)window.speechSynthesis.cancel();">←</button>
-    <h2 style="flex:1;">Trilhas Diagnóstico</h2>
+    <h2 style="flex:1;">Trilhas</h2>
     <button class="header-action" onclick="toggleTrailTts()" id="trail-tts-btn" title="Leitura Automática">🔊</button>
   </div>
 </section>
@@ -954,7 +954,7 @@ function closeSheet(){ document.getElementById('sheet-overlay').classList.remove
 
 const MODULES=[
   {key:'workhours', title:'Ponto', icon:'⏱️', cls:'b-workhours'},
-  {key:'trails', title:'Trilhas (Diag)', icon:'🗺️', cls:'b-trails'},
+  {key:'trails', title:'Trilhas', icon:'🗺️', cls:'b-trails'},
   {key:'tasks', title:'Tarefas', icon:'✅', cls:'b-tasks'},
   {key:'notes', title:'Notas', icon:'📝', cls:'b-notes'},
   {key:'flashcards', title:'Flashcards', icon:'🧠', cls:'b-flashcards'},
@@ -1054,7 +1054,7 @@ async function updateHomeStats(){
   
   const whSubEl = document.getElementById('sub-workhours');
   if (monthWork.length > 0) {
-      setSub('workhours', 'A receber: ' + brl(totalReceber));
+      setSub('workhours', 'Total: ' + brl(totalReceber));
       if (whSubEl) {
           whSubEl.style.color = totalReceber >= 0 ? '#E67E22' : 'var(--danger)'; 
           whSubEl.style.fontWeight = '700';
@@ -1099,17 +1099,17 @@ function buildStatChips(pendingCount, balance, wCount, habitsDone = 0, habitsTot
       h('span', {class:'dot', style:'background:var(--c-expenses)'}), 
       brl(balance) + ' no mês' 
   ]));
-  
-  // 3. Água
-  row.appendChild(h('button', {class:'stat-chip', onclick:()=>openModule('water')}, [
-      h('span', {class:'dot', style:'background:var(--c-water)'}), 
-      '💧 ' + (wCount || 0) + '/8' 
-  ]));
 
   // 4. Hábitos (Agora fixo igual os outros, com o Foguinho 🔥)
   row.appendChild(h('button', {class:'stat-chip', onclick:()=>openModule('habits')}, [
       h('span', {class:'dot', style:'background:var(--c-habits)'}), 
       '🔥 ' + habitsDone + '/' + habitsTotal 
+  ]));
+
+  // 3. Água
+  row.appendChild(h('button', {class:'stat-chip', onclick:()=>openModule('water')}, [
+      h('span', {class:'dot', style:'background:var(--c-water)'}), 
+      '💧 ' + (wCount || 0) + '/8' 
   ]));
 
   // 5. Tema Claro/Escuro
@@ -3377,7 +3377,7 @@ async function renderTrails() {
                     toast('🔊 Repetindo instrução');
                 }
             });
-            audioArea.innerHTML = '🔊 Tocar instrução novamente';
+            audioArea.innerHTML = '🔊 Ler novamente';
             grow.appendChild(audioArea);
         }
 
