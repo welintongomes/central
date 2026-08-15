@@ -709,8 +709,9 @@ body.dark-theme #app { box-shadow: 0 0 60px rgba(0,0,0,0.5); }
   <!-- Onde o caminho será desenhado -->
   <div id="trail-breadcrumbs" class="trail-breadcrumb"></div>
   <div class="module-header" id="trails-header">
-    <button class="back-btn" onclick="trailGoBack()">←</button>
+    <button class="back-btn" onclick="trailGoBack(); if(window.speechSynthesis)window.speechSynthesis.cancel();">←</button>
     <h2 style="flex:1;">Trilhas Diagnóstico</h2>
+    <button class="header-action" onclick="toggleTrailTts()" id="trail-tts-btn" title="Leitura Automática">🔊</button>
   </div>
 </section>
 <!-- FIM APP -->
@@ -996,8 +997,8 @@ function setSub(key, text){ const n=document.getElementById('sub-'+key); if(n) n
 
 async function updateHomeStats(){
   // AGORA BUSCAMOS TODOS OS 13 MÓDULOS! (workhours incluso)
-  const [tasks, notes, expenses, habits, habitLogs, shopping, journal, contacts, waterLogs, passwords, gallery, quotes, flashcards, workhours] = await Promise.all(
-    ['tasks','notes','expenses','habits','habitLogs','shopping','journal','contacts','waterLogs','passwords','gallery','quotes','flashcards','workhours'].map(dbAll)
+  const [tasks, notes, expenses, habits, habitLogs, shopping, journal, contacts, waterLogs, passwords, gallery, quotes, flashcards, workhours, trails] = await Promise.all(
+    ['tasks','notes','expenses','habits','habitLogs','shopping','journal','contacts','waterLogs','passwords','gallery','quotes','flashcards','workhours','trails'].map(dbAll)
   );
   
   const pending = tasks.filter(t=>!t.done && !t.isEncrypted);
@@ -1030,8 +1031,9 @@ async function updateHomeStats(){
   setSub('flashcards', flashcards.length ? (dueFC.length > 0 ? `🚨 ${dueFC.length} revisões hoje` : 'Tudo em dia') : 'Monte seu deck');
 
   // =====================================================
-  // NOVO: CÁLCULO FINANCEIRO DO PONTO NA TELA INICIAL
+  // NOVO: CÁLCULO FINANCEIRO DO PONTO NA TELA INICIAL, quantidade de trilhas
   // =====================================================
+  setSub('trails', trails.length ? trails.length + ' etapa' + (trails.length > 1 ? 's' : '') : 'Crie diagnósticos');
   const wSet = getWorkSettings();
   const monthWork = workhours.filter(w => (w.date || '').startsWith(ym));
   let totalMins = 0;
@@ -1062,7 +1064,7 @@ async function updateHomeStats(){
       if (whSubEl) { whSubEl.style.color = ''; whSubEl.style.fontWeight = 'normal'; }
   }
 
-  buildStatChips(pending.length, income-outcome, wCount);
+  buildStatChips(pending.length, income-outcome, wCount, doneToday.size, habits.length);
 
   // Alertas
   const alertsBox = document.getElementById('home-alerts'); alertsBox.innerHTML = ''; 
@@ -1080,14 +1082,42 @@ async function updateHomeStats(){
   if (typeof isSearchMode !== 'undefined' && isSearchMode) { handleGlobalSearch(); }
 }
 
-function buildStatChips(pendingCount, balance, wCount){
-  const row=document.getElementById('stat-row'); row.innerHTML='';
-  row.appendChild(h('button',{class:'stat-chip', onclick:()=>openModule('tasks')},[ h('span',{class:'dot', style:'background:var(--c-tasks)'}), pendingCount+' tarefa'+(pendingCount!==1?'s':'') ]));
-  row.appendChild(h('button',{class:'stat-chip', onclick:()=>openModule('expenses')},[ h('span',{class:'dot', style:'background:var(--c-expenses)'}), brl(balance)+' no mês' ]));
-  row.appendChild(h('button',{class:'stat-chip', onclick:()=>openModule('water')},[ h('span',{class:'dot', style:'background:var(--c-water)'}), '💧 '+wCount+'/8' ]));
+// Desenha os Chips na Home (Com atalhos, Configurações e o Foguinho 🔥 dos Hábitos)
+function buildStatChips(pendingCount, balance, wCount, habitsDone = 0, habitsTotal = 0) {
+  const row = document.getElementById('stat-row'); 
+  if (!row) return;
+  row.innerHTML = '';
+  
+  // 1. Tarefas
+  row.appendChild(h('button', {class:'stat-chip', onclick:()=>openModule('tasks')}, [
+      h('span', {class:'dot', style:'background:var(--c-tasks)'}), 
+      pendingCount + ' tarefa' + (pendingCount !== 1 ? 's' : '') 
+  ]));
+  
+  // 2. Gastos
+  row.appendChild(h('button', {class:'stat-chip', onclick:()=>openModule('expenses')}, [
+      h('span', {class:'dot', style:'background:var(--c-expenses)'}), 
+      brl(balance) + ' no mês' 
+  ]));
+  
+  // 3. Água
+  row.appendChild(h('button', {class:'stat-chip', onclick:()=>openModule('water')}, [
+      h('span', {class:'dot', style:'background:var(--c-water)'}), 
+      '💧 ' + (wCount || 0) + '/8' 
+  ]));
+
+  // 4. Hábitos (Agora fixo igual os outros, com o Foguinho 🔥)
+  row.appendChild(h('button', {class:'stat-chip', onclick:()=>openModule('habits')}, [
+      h('span', {class:'dot', style:'background:var(--c-habits)'}), 
+      '🔥 ' + habitsDone + '/' + habitsTotal 
+  ]));
+
+  // 5. Tema Claro/Escuro
   const isDark = document.body.classList.contains('dark-theme');
-  row.appendChild(h('button',{ id: 'theme-toggle-btn', class:'stat-chip', style: 'padding-left: 12px; padding-right: 12px; font-size: 16px;', onclick: toggleTheme }, isDark ? '🌙' : '☀️'));
-  row.appendChild(h('button',{ class:'stat-chip', style: 'padding-left: 12px; padding-right: 12px; font-size: 16px;', onclick: openSettings }, '⚙️'));
+  row.appendChild(h('button', {id: 'theme-toggle-btn', class:'stat-chip', style: 'padding-left: 12px; padding-right: 12px; font-size: 16px;', onclick: toggleTheme}, isDark ? '🌙' : '☀️'));
+  
+  // 6. Engrenagem de Configurações
+  row.appendChild(h('button', {class:'stat-chip', style: 'padding-left: 12px; padding-right: 12px; font-size: 16px;', onclick: openSettings}, '⚙️'));
 }
 
 function setupGreeting(){
@@ -1145,7 +1175,7 @@ async function handleGlobalSearch() {
           else if (currentStep > 0) { checkText = currentStep; extraStyle = 'border-color: var(--c-habits); color: var(--c-habits); font-size: 13px; font-weight: 700; background: rgba(62,122,93,0.12);'; sub = target > 0 ? `${currentStep} de ${target}` : `${currentStep} feitos`; } else { sub = target > 0 ? `Meta: ${target} reps` : 'Pronto para iniciar'; }
           action = (e) => { e.stopPropagation(); if(!isWaiting) toggleHabitTimer(hb); else toast('Aguarde o tempo'); };
         } else {
-          const target = hb.target || 1; const todayLog = habitLogs.find(l => l.habitId === hb.id && l.date === todayISO); const countToday = todayLog ? (todayLog.count || 1) : 0; const doneToday = countToday >= target; const duration = hb.duration || 0; const logDates = new Set(habitLogs.filter(l => l.habitId === hb.id && (l.count || 1) >= target).map(l => l.date)); const isTotallyFinished = duration > 0 && logDates.size >= duration; const isWaitingInterval = (!doneToday && countToday > 0 && countToday < target && hb.readyAt && hb.readyAt > now);
+          const target = hb.target || 1; const todayLog = habitLogs.find(l => l.habitId === hb.id && l.date === todayISO); const countToday = todayLog ? (todayLog.count || 1) : 0; const doneToday = countToday >= target; const duration = hb.duration || 0; const logDates = new Set(habitLogs.filter(l => l.habitId === hb.id && (l.count || 1) >= target).map(l => l.date)); const isTotallyFinished = duration > 0 && logDates.size >= duration; const isWaitingInterval = (hb.readyAt && hb.readyAt > now);
           if (isWaitingInterval) { checkText = '⏳'; extraStyle = 'opacity: 0.8; font-size: 11px;'; hasTimer = true; } 
           else if (isTotallyFinished && doneToday) { checkText = '🌟'; extraClass = ' on ck-habits'; extraStyle = 'background: var(--c-expenses); border-color: var(--c-expenses); font-size: 14px;'; sub = 'Concluído!'; } 
           else if (doneToday) { checkText = '✓'; extraClass = ' on ck-habits'; sub = 'Concluído hoje'; } 
@@ -1178,12 +1208,17 @@ async function handleGlobalSearch() {
   if (globalSearchFilter === 'Todos' || globalSearchFilter === 'Citações') quotes.forEach(qt => { if (!qt.isEncrypted && (!q || norm(qt.text).includes(q) || norm(qt.author).includes(q))) results.push({ type: 'quote', item: qt, title: qt.author || 'Desconhecido', sub: `"${(qt.text || '').slice(0, 50)}..."` }); });
   if (globalSearchFilter === 'Todos' || globalSearchFilter === 'Flashcards') flashcards.forEach(fc => { if (!fc.isEncrypted && (!q || norm(fc.front).includes(q) || norm(fc.back).includes(q))) results.push({ type: 'flashcard', item: fc, title: fc.front, sub: `Verso: ${(fc.back || '').slice(0, 40)}...` }); });
 
-  // NOVO: Filtro para as Trilhas de Orçamento!
-  if (globalSearchFilter === 'Todos' || globalSearchFilter === 'Trilhas') trails.forEach(tr => { 
-      if (!q || norm(tr.title).includes(q) || norm(tr.desc).includes(q)) {
+  // NOVO: Filtro para as Trilhas de Orçamento (Ignorando os Atalhos!)
+if (globalSearchFilter === 'Todos' || globalSearchFilter === 'Trilhas') trails.forEach(tr => { 
+      if (!tr.isShortcut && (!q || norm(tr.title).includes(q) || norm(tr.desc).includes(q))) {
           let subText = [];
           if(tr.price > 0) subText.push(`💰 ${brl(tr.price)}`);
-          if(tr.hours > 0) subText.push(`⏱️ ${tr.hours}h`);
+          
+          let timeStr = [];
+          if (tr.hours > 0) timeStr.push(tr.hours + 'h');
+          if (tr.mins > 0) timeStr.push(tr.mins + 'm');
+          if (timeStr.length > 0) subText.push(`⏱️ ${timeStr.join(' ')}`);
+          
           subText.push('Tocar para orçar');
           results.push({ type: 'trail', item: tr, title: tr.title, sub: subText.join(' · ') }); 
       } 
@@ -1529,7 +1564,7 @@ async function renderHabits(){
       row.appendChild(h('div',{class: 'check' + extraClass, style: extraStyle, onclick: (e)=>{ e.stopPropagation(); if(!isWaiting) toggleHabitTimer(hb); else toast('Aguarde o tempo'); }}, checkText)); grow.appendChild(h('div',{class:'i-title'}, hb.name));
       if (isWaiting) { const cd = h('div',{class:'i-sub habit-timer', 'data-ready': hb.readyAt, style:'color:var(--c-habits); font-weight:700;'}); cd.textContent = 'Calculando...'; grow.appendChild(cd); } else if (isDone) { grow.appendChild(h('div',{class:'i-sub', style:'color:var(--c-habits); font-weight:500;'}, (hb.category||HABIT_CATS[0]) + ' · Série concluída!')); } else { let subText = target > 0 ? (currentStep > 0 ? `Progresso: ${currentStep} de ${target}` : `Meta: ${target} reps`) : (currentStep > 0 ? `${currentStep} feitos` : 'Pronto para iniciar'); grow.appendChild(h('div',{class:'i-sub'}, (hb.category||HABIT_CATS[0]) + ' · ' + subText)); }
     } else {
-      const target = hb.target || 1; const duration = hb.duration || 0; const logDates = new Set(logs.filter(l => l.habitId === hb.id && (l.count || 1) >= target).map(l => l.date)); const totalCompletedDays = logDates.size; const todayLog = logs.find(l => l.habitId === hb.id && l.date === todayISO); const countToday = todayLog ? (todayLog.count || 1) : 0; const doneToday = countToday >= target; const isTotallyFinished = duration > 0 && totalCompletedDays >= duration; const isWaitingInterval = (!doneToday && countToday > 0 && countToday < target && hb.readyAt && hb.readyAt > now); let checkText = '', extraClass = '', extraStyle = '';
+      const target = hb.target || 1; const duration = hb.duration || 0; const logDates = new Set(logs.filter(l => l.habitId === hb.id && (l.count || 1) >= target).map(l => l.date)); const totalCompletedDays = logDates.size; const todayLog = logs.find(l => l.habitId === hb.id && l.date === todayISO); const countToday = todayLog ? (todayLog.count || 1) : 0; const doneToday = countToday >= target; const isTotallyFinished = duration > 0 && totalCompletedDays >= duration; const isWaitingInterval = (hb.readyAt && hb.readyAt > now); let checkText = '', extraClass = '', extraStyle = '';
       if (isWaitingInterval) { checkText = '⏳'; extraStyle = 'opacity: 0.8; font-size: 11px;'; } else if (isTotallyFinished && doneToday) { checkText = '🌟'; extraClass = ' on ck-habits'; extraStyle = 'background: var(--c-expenses); border-color: var(--c-expenses); font-size: 14px;'; } else if (doneToday) { checkText = '✓'; extraClass = ' on ck-habits'; } else if (countToday > 0) { checkText = countToday; extraStyle = 'border-color: var(--c-habits); color: var(--c-habits); font-size: 13px; font-weight: 700; background: rgba(62,122,93,0.12);'; }
       row.appendChild(h('div',{class: 'check' + extraClass, style: extraStyle, onclick: (e)=>{ e.stopPropagation(); stepHabitToday(hb); }}, checkText)); grow.appendChild(h('div',{class:'i-title'}, hb.name)); const catPrefix = (hb.category||HABIT_CATS[0]) + ' · ';
       if (isWaitingInterval) { const cd = h('div',{class:'i-sub habit-timer', 'data-ready': hb.readyAt, style:'color:var(--c-habits); font-weight:700;'}); cd.textContent = 'Calculando intervalo...'; grow.appendChild(cd); } else {
@@ -1542,17 +1577,86 @@ async function renderHabits(){
   });
   if(window.aplicarLazyLoading) window.aplicarLazyLoading();
 }
+// Destravador de Som (Obrigatório para celulares modernos tocarem o bipe)
+let habitAudioCtx = null;
+function initHabitAudio() {
+    try {
+        if (!habitAudioCtx) habitAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (habitAudioCtx.state === 'suspended') habitAudioCtx.resume();
+    } catch(e) {}
+}
+
 async function stepHabitToday(habit) {
-  const now = Date.now(); if (habit.readyAt && habit.readyAt > now) { toast('Aguarde o intervalo terminar!'); return; } const todayISO = todayIso(); const logs = await dbAll('habitLogs'); let existing = logs.find(l => l.habitId === habit.id && l.date === todayISO); const target = habit.target || 1; 
-  if (!existing) { await dbAdd('habitLogs', { habitId: habit.id, date: todayISO, count: 1 }); existing = { count: 1 }; } else { if (existing.count >= target) { await dbDel('habitLogs', existing.id); existing = { count: 0 }; habit.readyAt = 0; await dbPut('habits', habit); } else { existing.count++; await dbPut('habitLogs', existing); } }
-  if (existing.count > 0 && existing.count < target && habit.interval > 0) { habit.readyAt = now + (habit.interval * 60000); await dbPut('habits', habit); } else if (existing.count >= target) { habit.readyAt = 0; await dbPut('habits', habit); }
-  renderHabits(); updateHomeStats();
+    initHabitAudio(); // Pede permissão pro celular tocar o som depois
+    const now = Date.now(); 
+    if (habit.readyAt && habit.readyAt > now) { toast('Aguarde o intervalo terminar!'); return; } 
+    
+    const todayISO = todayIso(); 
+    const logs = await dbAll('habitLogs'); 
+    let existing = logs.find(l => l.habitId === habit.id && l.date === todayISO); 
+    const target = habit.target || 1; 
+
+    if (!existing) { 
+        await dbAdd('habitLogs', { habitId: habit.id, date: todayISO, count: 1 }); 
+        existing = { count: 1 }; 
+    } else { 
+        if (existing.count >= target && (!habit.readyAt || habit.readyAt <= now)) { 
+            await dbDel('habitLogs', existing.id); 
+            existing = { count: 0 }; 
+            habit.readyAt = 0; 
+            await dbPut('habits', habit); 
+            renderHabits(); updateHomeStats();
+            return;
+        } else { 
+            existing.count++; 
+            await dbPut('habitLogs', existing); 
+        } 
+    }
+
+    // A MÁGICA: Liga o cronômetro SEMPRE se tiver intervalo
+    if (existing.count > 0 && habit.interval > 0) { 
+        habit.readyAt = now + (habit.interval * 60000); 
+        habit.notified = false; // Arma o som!
+        await dbPut('habits', habit); 
+    } else if (existing.count >= target) { 
+        habit.readyAt = 0; 
+        await dbPut('habits', habit); 
+    }
+    
+    renderHabits(); updateHomeStats();
 }
+
 async function toggleHabitTimer(hb) {
-  const now = Date.now(); const target = parseInt(hb.target) || 0; hb.currentStep = hb.currentStep || 0;
-  if (target > 0 && hb.currentStep >= target) { hb.currentStep = 0; hb.readyAt = 0; } else { hb.currentStep++; await dbAdd('habitLogs', {habitId: hb.id, date: todayIso(), timestamp: now, step: hb.currentStep}); if (target === 0 || hb.currentStep < target) { hb.readyAt = now + (hb.interval * 60000); } else { hb.readyAt = 0; } }
-  await dbPut('habits', hb); renderHabits(); updateHomeStats(); if (hb.readyAt > 0) toast('Cronômetro iniciado!'); else if (target > 0 && hb.currentStep >= target) toast('Série concluída! 🎉');
+    initHabitAudio(); // Pede permissão pro celular tocar o som
+    const now = Date.now(); 
+    if (hb.readyAt && hb.readyAt > now) { toast('Aguarde o cronômetro!'); return; }
+    
+    const target = parseInt(hb.target) || 0; 
+    hb.currentStep = hb.currentStep || 0;
+    
+    // Se o cronômetro já bateu a meta, o próximo clique ZERA tudo
+    if (target > 0 && hb.currentStep >= target) { 
+        hb.currentStep = 0; 
+    } 
+    
+    hb.currentStep++; 
+    await dbAdd('habitLogs', {habitId: hb.id, date: todayIso(), timestamp: now, step: hb.currentStep}); 
+    
+    // A MÁGICA: SEMPRE seta o tempo de espera para mostrar o relógio na última etapa
+    if (hb.interval > 0) {
+        hb.readyAt = now + (hb.interval * 60000);
+        hb.notified = false; // Arma o som!
+    } else { 
+        hb.readyAt = 0; 
+    }
+    
+    await dbPut('habits', hb); 
+    renderHabits(); updateHomeStats(); 
+    
+    if (hb.readyAt > 0) toast('Cronômetro iniciado!'); 
+    else if (target > 0 && hb.currentStep >= target) toast('Série concluída! 🎉');
 }
+
 function openHabitForm(existing){
   const isEdit = !!existing; let type = (existing && existing.type) || 'diario'; let target = existing && existing.target !== undefined ? existing.target : 1; let duration = (existing && existing.duration) || ''; let cat = (existing && existing.category) || HABIT_CATS[0]; let interval = (existing && existing.interval) || 0; let intH = interval >= 60 ? Math.floor(interval / 60) : ''; let intM = interval % 60 > 0 ? interval % 60 : (interval > 0 && interval < 60 ? interval : '');
   openSheet({
@@ -2839,7 +2943,7 @@ async function renderWorkHours() {
 
   const settings = getWorkSettings();
   let totalMins = 0;
-  let sumDailyExtras = 0; // Somador de todos os bicos do mês
+  let sumDailyExtras = 0; 
 
   if (!filtered.length) {
       list.appendChild(emptyState('⏱️', 'Nenhum registro', 'Adicione um dia de trabalho no +'));
@@ -2848,21 +2952,24 @@ async function renderWorkHours() {
           const row = h('div',{class:'item'});
           const grow = h('div',{class:'grow', onclick: () => openWorkHourForm(w)});
           
-          const workedMins = (timeToMins(w.tOut) - timeToMins(w.tIn)) - (timeToMins(w.lIn) - timeToMins(w.lOut)) - Number(w.coffee);
+          const coffeeMins = Number(w.coffee) || 0;
+          const workedMins = (timeToMins(w.tOut) - timeToMins(w.tIn)) - (timeToMins(w.lIn) - timeToMins(w.lOut)) - coffeeMins;
           const finalMins = workedMins > 0 ? workedMins : 0;
           totalMins += finalMins;
           
           let dayExtraTotal = 0;
-          let extraTags = [];
           if(w.extras && w.extras.length > 0) {
-              w.extras.forEach(ex => { dayExtraTotal += Number(ex.value); extraTags.push(ex.name); });
+              w.extras.forEach(ex => { dayExtraTotal += Number(ex.value); });
           }
           sumDailyExtras += dayExtraTotal;
           
           grow.appendChild(h('div',{class:'i-title'}, humanDateFull(w.date)));
           
+          // NOVO: Adicionado o café no subtítulo da tela (Ex: Das 08:00 às 18:00 · 8h 35m · Café: 15m)
           let subText = `Das ${w.tIn} às ${w.tOut} · ${minsToTimeStr(finalMins)}`;
+          if (coffeeMins > 0) subText += ` · ☕ ${coffeeMins}m`;
           if (dayExtraTotal > 0) subText += ` · 🛠️ +${brl(dayExtraTotal)}`;
+          
           grow.appendChild(h('div',{class:'i-sub'}, subText));
           
           row.appendChild(grow);
@@ -2876,7 +2983,6 @@ async function renderWorkHours() {
 
   document.getElementById('work-tot-hours').textContent = minsToTimeStr(totalMins);
   document.getElementById('work-tot-sub').textContent = brl(subtotal);
-  // Agora a linha de Extras soma o que tá no Padrão Mensal + Todos os bicos do dia a dia
   document.getElementById('work-tot-add').textContent = brl(Number(settings.prevBalance) + Number(settings.extras) + sumDailyExtras);
   document.getElementById('work-tot-ded').textContent = brl(Number(settings.advance));
   document.getElementById('work-tot-final').textContent = brl(totalReceber);
@@ -3080,8 +3186,7 @@ function openWorkHourForm(existing) {
   });
 }
 
-// 📤 Gerar relatório do WhatsApp para o Chefe!
-// 📤 Gerar relatório detalhado para o Chefe!
+// 📤 Gerar relatório detalhado para o Chefe (Com o café e almoço compactos em duas linhas)
 async function exportWorkHours() {
     let items = await dbAll('workhours');
     let filtered = items.filter(w => (w.date || '').startsWith(workMonthFilter));
@@ -3097,12 +3202,30 @@ async function exportWorkHours() {
     
     filtered.forEach(w => {
         const dStr = w.date.split('-').reverse().slice(0,2).join('/'); 
-        const workedMins = (timeToMins(w.tOut) - timeToMins(w.tIn)) - (timeToMins(w.lIn) - timeToMins(w.lOut)) - Number(w.coffee);
+        const coffeeMins = Number(w.coffee) || 0;
+        
+        // Calcula os minutos do almoço
+        const lunchMins = timeToMins(w.lIn) - timeToMins(w.lOut);
+        
+        const workedMins = (timeToMins(w.tOut) - timeToMins(w.tIn)) - lunchMins - coffeeMins;
         const finalMins = workedMins > 0 ? workedMins : 0;
         totalMins += finalMins;
         
+        // LINHA 1: Dia, Entrada, Saída e Total de Horas
         report += `🔹 *${dStr}*: ${w.tIn} às ${w.tOut} (${minsToTimeStr(finalMins)})\n`;
         
+        // LINHA 2: Intervalos (Café e Almoço compactos)
+        let breaks = `   `; // Espaço para alinhar debaixo do texto
+        if (coffeeMins > 0) breaks += `[☕: ${coffeeMins}m]`;
+        if (lunchMins > 0) {
+            // Formata o almoço para ficar no padrão 01:22
+            const lH = String(Math.floor(lunchMins/60)).padStart(2, '0');
+            const lM = String(lunchMins%60).padStart(2, '0');
+            breaks += `[🍴: ${lH}:${lM}]`;
+        }
+        if (coffeeMins > 0 || lunchMins > 0) report += breaks + `\n`;
+        
+        // LINHA 3 em diante: Observações e Serviços Extras (Se houver)
         if (w.obs) report += `   ↳ 📝 Obs: _${w.obs}_\n`;
         
         if (w.extras && w.extras.length > 0) {
@@ -3134,63 +3257,87 @@ async function exportWorkHours() {
         }
     } catch(err) { toast('Erro ao copiar.'); }
 }
-/* ============================================================
-   TRILHAS E DIAGNÓSTICOS (Decision Trees)
-   ============================================================ */
-let currentTrailPath = []; // Guarda as pastas que você entrou
 
-// Botão voltar do topo: Volta uma raiz, ou volta pra Home se estiver no início
-function trailGoBack() {
-    if (currentTrailPath.length > 0) {
-        currentTrailPath.pop();
-        renderTrails();
-    } else {
-        goHome();
+/* ============================================================
+   TRILHAS E DIAGNÓSTICOS (Decision Trees + Atalhos Inteligentes)
+   ============================================================ */
+let currentTrailPath = []; 
+let trailTtsEnabled = localStorage.getItem('trail-tts') !== 'off';
+
+function toggleTrailTts() {
+  trailTtsEnabled = !trailTtsEnabled; 
+  localStorage.setItem('trail-tts', trailTtsEnabled ? 'on' : 'off');
+  document.getElementById('trail-tts-btn').style.opacity = trailTtsEnabled ? '1' : '0.4';
+  toast(trailTtsEnabled ? 'Leitura de diagnóstico ligada' : 'Leitura desligada');
+}
+
+function playTrailVoice(text) {
+    if (window.speechSynthesis) window.speechSynthesis.cancel();
+    if (!text || !trailTtsEnabled) return;
+    if (window.speechSynthesis) {
+        const u = new SpeechSynthesisUtterance(text);
+        u.lang = 'pt-BR'; 
+        window.speechSynthesis.speak(u);
     }
 }
 
-// Entra em uma raiz
-function trailNavigate(id, title) {
-    currentTrailPath.push({id, title});
-    renderTrails();
+function trailGoBack() {
+    if (window.speechSynthesis) window.speechSynthesis.cancel();
+    if (currentTrailPath.length > 0) { currentTrailPath.pop(); renderTrails(); } 
+    else { goHome(); }
 }
 
-// Clicou no scroll horizontal lá no topo
 function trailBreadcrumbClick(index) {
+    if (window.speechSynthesis) window.speechSynthesis.cancel();
     if (index === -1) currentTrailPath = [];
     else currentTrailPath = currentTrailPath.slice(0, index + 1);
     renderTrails();
 }
 
+function trailNavigate(node) {
+    playTrailVoice(`${node.title}. ${node.desc || ''}`);
+    currentTrailPath.push({id: node.id, title: node.title});
+    renderTrails();
+}
+
+async function jumpToTrailNode(targetId) {
+    const allTrails = await dbAll('trails');
+    let path = [];
+    let curr = allTrails.find(t => t.id === targetId);
+    
+    if (curr) playTrailVoice(`${curr.title}. ${curr.desc || ''}`);
+
+    while(curr) {
+        path.unshift({id: curr.id, title: curr.title});
+        curr = allTrails.find(t => t.id === curr.parentId);
+    }
+    currentTrailPath = path;
+    renderTrails();
+}
+
 async function renderTrails() {
+    document.getElementById('trail-tts-btn').style.opacity = trailTtsEnabled ? '1' : '0.4';
     const list = document.getElementById('trails-list'); list.innerHTML = '';
     const bcBox = document.getElementById('trail-breadcrumbs'); bcBox.innerHTML = '';
 
-    // 1. Desenha o Breadcrumb
     bcBox.appendChild(h('div', {class: 'trail-crumb ' + (currentTrailPath.length===0?'active':''), onclick: ()=>trailBreadcrumbClick(-1)}, '🏠 Início'));
     currentTrailPath.forEach((p, idx) => {
         bcBox.appendChild(h('div', {style: 'color:var(--line); font-weight:bold; font-size:12px;'}, '▶'));
         bcBox.appendChild(h('div', {class: 'trail-crumb ' + (idx===currentTrailPath.length-1?'active':''), onclick: ()=>trailBreadcrumbClick(idx)}, p.title));
     });
-    setTimeout(() => bcBox.scrollLeft = bcBox.scrollWidth, 50); // Rola sempre pro final
+    setTimeout(() => bcBox.scrollLeft = bcBox.scrollWidth, 50); 
 
     const allTrails = await dbAll('trails');
-    
-    // Pega o ID da pasta atual (null = raiz principal)
     const parentId = currentTrailPath.length > 0 ? currentTrailPath[currentTrailPath.length - 1].id : null;
-    
     let nodes = allTrails.filter(t => t.parentId === parentId);
-    nodes.sort((a, b) => (a.order || 0) - (b.order || 0)); // Ordena pela sua escolha
+    nodes.sort((a, b) => (a.order || 0) - (b.order || 0)); 
 
-    if (nodes.length === 0) {
-        list.appendChild(emptyState('🗺️', 'Nenhuma etapa', 'Adicione a primeira raiz no +'));
-        return;
-    }
+    if (nodes.length === 0) { list.appendChild(emptyState('🗺️', 'Nenhuma etapa', 'Adicione a primeira raiz no +')); return; }
 
     nodes.forEach((node, idx) => {
         const row = h('div', {class: 'item', style: 'align-items: flex-start;'});
+        const isShortcut = node.isShortcut;
         
-        // Botões de subir e descer (Ordem)
         const orderCol = h('div', {style: 'display:flex; flex-direction:column; gap:4px; margin-right:8px; padding-top:4px;'});
         const upBtn = h('button', {class:'icon-btn', style: 'padding:2px; font-size:16px;', onclick: (e)=>{e.stopPropagation(); moveTrailNode(node, nodes[idx-1])}}, '▲');
         const downBtn = h('button', {class:'icon-btn', style: 'padding:2px; font-size:16px;', onclick: (e)=>{e.stopPropagation(); moveTrailNode(node, nodes[idx+1])}}, '▼');
@@ -3198,32 +3345,151 @@ async function renderTrails() {
         if (idx < nodes.length - 1) orderCol.appendChild(downBtn);
         row.appendChild(orderCol);
 
-        // Corpo clicável (Entra na raiz)
-        const grow = h('div', {class: 'grow', onclick: () => trailNavigate(node.id, node.title)});
-        grow.appendChild(h('div', {class: 'i-title'}, node.title));
+        const grow = h('div', {class: 'grow'});
+        
+        const navArea = h('div', {onclick: () => { if (isShortcut) jumpToTrailNode(node.targetId); else trailNavigate(node); }});
+        navArea.appendChild(h('div', {class: 'i-title', style: isShortcut ? 'color:#8E44AD; font-style:italic;' : ''}, node.title));
         
         let subParts = [];
-        if (node.price > 0) subParts.push('💰 ' + brl(node.price));
-        if (node.hours > 0) subParts.push('⏱️ ' + node.hours + 'h');
-        if (node.desc) subParts.push(node.desc.slice(0,40) + (node.desc.length>40?'…':''));
-        
-        const childCount = allTrails.filter(t => t.parentId === node.id).length;
-        if (childCount > 0) subParts.push(`📂 ${childCount} sub-etapas`);
+        if (!isShortcut) {
+            if (node.price > 0) subParts.push('💰 ' + brl(node.price));
+            
+            // NOVO: Monta a string de tempo (Ex: 1h 15m)
+            let timeStr = [];
+            if (node.hours > 0) timeStr.push(node.hours + 'h');
+            if (node.mins > 0) timeStr.push(node.mins + 'm');
+            if (timeStr.length > 0) subParts.push('⏱️ ' + timeStr.join(' '));
 
-        if (subParts.length > 0) grow.appendChild(h('div', {class: 'i-sub'}, subParts.join(' · ')));
+            if (node.desc) subParts.push(node.desc.slice(0,40) + (node.desc.length>40?'…':''));
+            const childCount = allTrails.filter(t => t.parentId === node.id).length;
+            if (childCount > 0) subParts.push(`📂 ${childCount} sub-etapas`);
+        } else { subParts.push('🔗 Toque para pular para a etapa original'); }
+        
+        if (subParts.length > 0) navArea.appendChild(h('div', {class: 'i-sub'}, subParts.join(' · ')));
+        grow.appendChild(navArea);
+
+        if (!isShortcut) {
+            const audioArea = h('div', {
+                style: 'margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--line); font-size: 11px; color: var(--ink-soft); font-weight: 700; text-transform: uppercase; cursor: pointer; display: flex; align-items: center; gap: 4px;',
+                onclick: (e) => {
+                    e.stopPropagation(); 
+                    playTrailVoice(`${node.title}. ${node.desc || ''}`);
+                    toast('🔊 Repetindo instrução');
+                }
+            });
+            audioArea.innerHTML = '🔊 Tocar instrução novamente';
+            grow.appendChild(audioArea);
+        }
+
         row.appendChild(grow);
 
-        // Ações (Editar, Apagar e Orçar)
         const actCol = h('div', {style: 'display:flex; flex-direction:column; align-items:center;'});
-        
-        // NOVO: Botão de Gerar Orçamento
-        actCol.appendChild(h('button', {class:'icon-btn', style:'color:#25D366; margin-bottom:6px;', title:'Gerar Orçamento até aqui', onclick: (e)=>{e.stopPropagation(); openQuoteModal(node)}}, '💲'));
-        
-        actCol.appendChild(h('button', {class:'icon-btn', style:'color:var(--c-quotes);', onclick: (e)=>{e.stopPropagation(); openTrailForm(node)}}, '✏️'));
+        if (!isShortcut) {
+            actCol.appendChild(h('button', {class:'icon-btn', style:'color:#25D366; margin-bottom:6px;', title:'Orçar', onclick: (e)=>{e.stopPropagation(); openQuoteModal(node)}}, '💲'));
+            actCol.appendChild(h('button', {class:'icon-btn', style:'color:var(--c-quotes);', onclick: (e)=>{e.stopPropagation(); openTrailForm(node)}}, '✏️'));
+        }
         actCol.appendChild(h('button', {class:'icon-btn', style:'color:var(--danger); margin-top:6px;', onclick: (e)=>{e.stopPropagation(); confirmDeleteTrail(node.id)}}, '✕'));
         row.appendChild(actCol);
 
         list.appendChild(row);
+    });
+}
+
+// Abre o formulário (Agora com o Modo Atalho Inteligente Embutido!)
+// Abre o formulário (Corrigido o erro do botão null e o texto do atalho)
+// Abre o formulário (Agora com campo de Minutos!)
+function openTrailForm(existing) {
+    const isEdit = !!existing;
+    const parentId = currentTrailPath.length > 0 ? currentTrailPath[currentTrailPath.length - 1].id : null;
+
+    openSheet({
+        title: isEdit ? 'Editar Etapa' : 'Nova Etapa',
+        buildFields: (box) => {
+            if (!isEdit) {
+                const shortcutBtn = h('button', {class:'btn btn-ghost', style:'width:100%; margin-bottom:16px; border:1px dashed #8E44AD; color:#8E44AD; font-weight:700;', onclick: async (e) => {
+                    e.preventDefault();
+                    box.innerHTML = '';
+                    
+                    const saveBtn = document.getElementById('sheet-save-btn');
+                    if (saveBtn) { saveBtn.style.display = 'none'; } 
+                    else { document.querySelectorAll('.sheet-content button').forEach(b => { if(b.textContent.toLowerCase().includes('salvar')) b.style.display = 'none'; }); }
+                    
+                    box.appendChild(h('div', {style:'font-size:13px; color:var(--ink-soft); margin-bottom:8px;'}, 'Pesquise a etapa original que você deseja linkar aqui:'));
+                    const searchInp = h('input', {type:'text', placeholder:'Ex: Testar Módulo...', style:'width:100%; padding:12px; margin-bottom:12px; border-radius:var(--r-md); border:1px solid var(--line); font-size:16px; outline:none;'});
+                    box.appendChild(searchInp);
+
+                    const listWrap = h('div', {style:'display:flex; flex-direction:column; gap:8px; max-height:50vh; overflow-y:auto; padding-bottom:12px;'});
+                    box.appendChild(listWrap);
+
+                    const allTrails = await dbAll('trails');
+                    const realNodes = allTrails.filter(t => !t.isShortcut); 
+
+                    const renderShortcutList = (q) => {
+                        listWrap.innerHTML = '';
+                        let filtered = realNodes;
+                        if (q) {
+                            const normQ = norm(q);
+                            filtered = realNodes.filter(t => norm(t.title).includes(normQ) || norm(t.desc).includes(normQ));
+                        }
+                        
+                        if(filtered.length === 0) listWrap.appendChild(emptyState('🔍', 'Nada encontrado', 'Tente outro termo.'));
+
+                        filtered.slice(0, 50).forEach(node => {
+                            const row = h('div', {style:'padding:12px; border:1px solid var(--line); border-radius:var(--r-md); background:var(--surface); cursor:pointer;'});
+                            row.appendChild(h('div', {style:'font-weight:700; color:var(--ink);'}, node.title));
+                            if (node.desc) row.appendChild(h('div', {style:'font-size:12px; color:var(--ink-soft); margin-top:4px;'}, node.desc.slice(0, 50) + '...'));
+                            
+                            row.onclick = async () => {
+                                const obj = {
+                                    id: Date.now().toString(), parentId: parentId, order: Date.now(),
+                                    isShortcut: true, targetId: node.id, title: '🔗 Ir para: ' + node.title
+                                };
+                                await dbAdd('trails', obj);
+                                const overlay = document.querySelector('.sheet-overlay');
+                                if(overlay) overlay.click(); 
+                                renderTrails();
+                                toast('Atalho criado!');
+                            };
+                            listWrap.appendChild(row);
+                        });
+                    };
+                    
+                    searchInp.oninput = (ev) => renderShortcutList(ev.target.value);
+                    renderShortcutList(''); 
+                    setTimeout(() => searchInp.focus(), 100);
+                }}, '🔗 Criar atalho para um item'); 
+                
+                box.appendChild(shortcutBtn);
+            }
+
+            box.appendChild(fieldWrap('Título / Falha', h('input', {type:'text', id:'f-tr-title', value: existing?existing.title:'', placeholder:'Ex: Jet não liga / Testar bateria'})));
+            box.appendChild(fieldWrap('Descrição / Detalhes (Opcional)', h('textarea', {id:'f-tr-desc', style:'min-height:80px;', placeholder:'Ex: Usar multímetro. Voltagem deve ser maior que 11.5v.'}, existing?existing.desc:'')));
+            
+            const row = h('div', {style: 'display:flex; gap:8px;'});
+            row.appendChild(h('div',{style:'flex:1'}, fieldWrap('Valor (R$)', h('input',{type:'number', id:'f-tr-price', value: existing?existing.price:''} ))));
+            
+            // NOVO: Divisão perfeita entre Horas e Minutos
+            const timeWrap = h('div', {style: 'flex:1; display:flex; gap:4px;'});
+            timeWrap.appendChild(h('div',{style:'flex:1'}, fieldWrap('Horas', h('input',{type:'number', id:'f-tr-hours', value: existing?(existing.hours||''):'', placeholder:'0'} ))));
+            timeWrap.appendChild(h('div',{style:'flex:1'}, fieldWrap('Minutos', h('input',{type:'number', id:'f-tr-mins', value: existing?(existing.mins||''):'', placeholder:'0'} ))));
+            row.appendChild(timeWrap);
+
+            box.appendChild(row);
+        },
+        onSubmit: async () => {
+            const title = document.getElementById('f-tr-title').value;
+            if (!title) { toast('Dê um título para a etapa!'); return false; }
+            
+            let obj = existing || { id: Date.now().toString(), parentId: parentId, order: Date.now() };
+            obj.title = title.trim();
+            obj.desc = document.getElementById('f-tr-desc').value.trim();
+            obj.price = Number(document.getElementById('f-tr-price').value) || 0;
+            obj.hours = Number(document.getElementById('f-tr-hours').value) || 0;
+            obj.mins = Number(document.getElementById('f-tr-mins').value) || 0; // Salva os minutos!
+
+            await dbPut('trails', obj);
+            renderTrails(); toast('Salvo!');
+        }
     });
 }
 
@@ -3236,39 +3502,8 @@ async function moveTrailNode(nodeA, nodeB) {
     await dbPut('trails', nodeA); await dbPut('trails', nodeB);
     renderTrails();
 }
-
-function openTrailForm(existing) {
-    const isEdit = !!existing;
-    const parentId = currentTrailPath.length > 0 ? currentTrailPath[currentTrailPath.length - 1].id : null;
-
-    openSheet({
-        title: isEdit ? 'Editar Etapa' : 'Nova Etapa',
-        buildFields: (box) => {
-            box.appendChild(fieldWrap('Título / Falha', h('input', {type:'text', id:'f-tr-title', value: existing?existing.title:'', placeholder:'Ex: Jet não liga / Testar bateria'})));
-            box.appendChild(fieldWrap('Descrição / Detalhes (Opcional)', h('textarea', {id:'f-tr-desc', style:'min-height:80px;', placeholder:'Ex: Usar multímetro. Voltagem deve ser maior que 11.5v.'}, existing?existing.desc:'')));
-            
-            const row = h('div', {style: 'display:flex; gap:8px;'});
-            row.appendChild(h('div',{style:'flex:1'}, fieldWrap('Valor (R$)', h('input',{type:'number', id:'f-tr-price', value: existing?existing.price:''}))));
-            row.appendChild(h('div',{style:'flex:1'}, fieldWrap('Tempo (Horas)', h('input',{type:'number', step:'0.1', id:'f-tr-hours', value: existing?existing.hours:''}))));
-            box.appendChild(row);
-        },
-        onSubmit: async () => {
-            const title = document.getElementById('f-tr-title').value.trim();
-            if (!title) { toast('Dê um título para a etapa!'); return false; }
-            
-            let obj = existing || { id: Date.now().toString(), parentId: parentId, order: Date.now() };
-            obj.title = title;
-            obj.desc = document.getElementById('f-tr-desc').value.trim();
-            obj.price = Number(document.getElementById('f-tr-price').value) || 0;
-            obj.hours = Number(document.getElementById('f-tr-hours').value) || 0;
-
-            await dbPut('trails', obj);
-            renderTrails(); toast('Salvo!');
-        }
-    });
-}
-
 // O Apagador "Cascata" Inteligente
+// O Apagador "Cascata" Inteligente (Corrigido para não dar erro dbDelete)
 async function confirmDeleteTrail(id) {
     const all = await dbAll('trails');
     const hasChildren = all.some(t => t.parentId === id);
@@ -3280,7 +3515,7 @@ async function confirmDeleteTrail(id) {
     if (confirm(msg)) {
         const toDelete = [id];
         
-        // Procura todos os filhos e netos infinitamente
+        // Coleta todos os "filhos", "netos" e "bisnetos" para apagar
         const collectChildren = (pId) => {
             all.filter(t => t.parentId === pId).forEach(child => {
                 toDelete.push(child.id);
@@ -3290,23 +3525,36 @@ async function confirmDeleteTrail(id) {
         collectChildren(id);
         
         toast('Apagando etapa e sub-etapas...');
-        for (let did of toDelete) { await dbDelete('trails', did); }
-        renderTrails(); updateHomeStats();
+        
+        // Injeção direta no banco nativo (resolve o erro ReferenceError)
+        try {
+            const tx = db.transaction('trails', 'readwrite');
+            const store = tx.objectStore('trails');
+            for (let did of toDelete) { store.delete(did); }
+            
+            tx.oncomplete = () => {
+                renderTrails(); 
+                if(typeof updateHomeStats === 'function') updateHomeStats();
+            };
+        } catch (err) {
+            console.error(err);
+            toast('Erro ao apagar. Tente recarregar a página.');
+        }
     }
 }
+
 // 💲 GERADOR DE ORÇAMENTOS (Checklist Dinâmico para WhatsApp)
+// 💲 GERADOR DE ORÇAMENTOS (Com cálculo automático de minutos e horas)
 async function openQuoteModal(targetNode) {
     const allTrails = await dbAll('trails');
     let path = [];
     let curr = targetNode;
     
-    // A MÁGICA: Sobe a árvore puxando o "pai" do "pai" até chegar na raiz 0!
     while(curr) {
         path.unshift(curr);
         curr = allTrails.find(t => t.id === curr.parentId);
     }
 
-    // Marca todas as etapas como selecionadas por padrão
     let selectedItems = path.map(p => ({ ...p, checked: true }));
 
     openSheet({
@@ -3318,23 +3566,33 @@ async function openQuoteModal(targetNode) {
 
             const listWrap = h('div', {style:'display:flex; flex-direction:column; gap:8px; margin-bottom:16px;'});
             
-            // Placar de Totais no final do Modal
             const totalBox = h('div', {style:'background:var(--surface-2); padding:16px; border-radius:var(--r-md); border:1px solid var(--line); margin-top:16px; text-align:right; display:flex; justify-content:space-between; align-items:center;'});
             const tHours = h('div', {style:'font-size:14px; color:var(--ink-soft); font-weight:700;'});
             const tPrice = h('div', {style:'font-size:22px; color:#25D366; font-weight:900;'});
             totalBox.appendChild(tHours); totalBox.appendChild(tPrice);
 
-            // Função que recalcula tudo quando você desmarca a caixinha
             const updateTotals = () => {
-                let sumP = 0, sumH = 0;
+                let sumP = 0, sumH = 0, sumM = 0;
                 selectedItems.forEach(item => {
-                    if (item.checked) { sumP += Number(item.price) || 0; sumH += Number(item.hours) || 0; }
+                    if (item.checked) { 
+                        sumP += Number(item.price) || 0; 
+                        sumH += Number(item.hours) || 0; 
+                        sumM += Number(item.mins) || 0; 
+                    }
                 });
-                tHours.textContent = `⏱️ ${sumH}h`;
+                
+                // NOVO: Converte minutos estourados em horas (Ex: 90 mins -> 1h 30m)
+                const totalH = sumH + Math.floor(sumM / 60);
+                const totalM = sumM % 60;
+                
+                let tStr = [];
+                if (totalH > 0) tStr.push(totalH + 'h');
+                if (totalM > 0) tStr.push(totalM + 'm');
+                
+                tHours.textContent = tStr.length > 0 ? `⏱️ ${tStr.join(' ')}` : '';
                 tPrice.textContent = `Total: ${brl(sumP)}`;
             };
 
-            // Desenha as etapas no Modal
             selectedItems.forEach((item, idx) => {
                 const row = h('div', {style:'display:flex; align-items:center; gap:12px; background:var(--surface); padding:12px; border:1px solid var(--line); border-radius:var(--r-md);'});
 
@@ -3348,7 +3606,12 @@ async function openQuoteModal(targetNode) {
 
                 let details = [];
                 if (item.price > 0) details.push(`💰 ${brl(item.price)}`);
-                if (item.hours > 0) details.push(`⏱️ ${item.hours}h`);
+                
+                let itemTime = [];
+                if (item.hours > 0) itemTime.push(item.hours + 'h');
+                if (item.mins > 0) itemTime.push(item.mins + 'm');
+                if (itemTime.length > 0) details.push(`⏱️ ${itemTime.join(' ')}`);
+
                 if (details.length > 0) txtWrap.appendChild(h('div', {style:'font-size:13px; color:var(--ink-soft); margin-top:4px; font-weight:600;'}, details.join(' · ')));
 
                 row.appendChild(txtWrap);
@@ -3359,7 +3622,6 @@ async function openQuoteModal(targetNode) {
             box.appendChild(totalBox);
             updateTotals();
 
-            // Pinta o botão de salvar de "Verde WhatsApp"
             setTimeout(() => {
                 const btn = document.getElementById('sheet-save-btn');
                 if(btn) {
@@ -3375,26 +3637,38 @@ async function openQuoteModal(targetNode) {
             const checkedItems = selectedItems.filter(i => i.checked);
             if(checkedItems.length === 0) { toast('Selecione pelo menos uma etapa para o orçamento!'); return false; }
 
-            let sumP = 0, sumH = 0;
+            let sumP = 0, sumH = 0, sumM = 0;
             let report = `🛠️ *Orçamento de Serviço e Diagnóstico*\n\n`;
             report += `Abaixo estão as etapas, peças ou serviços necessários:\n\n`;
 
             checkedItems.forEach((item, idx) => {
                 sumP += Number(item.price) || 0;
                 sumH += Number(item.hours) || 0;
+                sumM += Number(item.mins) || 0;
                 
                 report += `🔹 *${idx+1}. ${item.title}*\n`;
                 if(item.desc) report += `   📝 _${item.desc}_\n`;
 
                 let vals = [];
-                if(item.hours > 0) vals.push(`⏱️ ${item.hours}h`);
+                
+                let itemTime = [];
+                if (item.hours > 0) itemTime.push(item.hours + 'h');
+                if (item.mins > 0) itemTime.push(item.mins + 'm');
+                if (itemTime.length > 0) vals.push(`⏱️ ${itemTime.join(' ')}`);
+                
                 if(item.price > 0) vals.push(`💰 ${brl(item.price)}`);
                 if(vals.length > 0) report += `   ↳ ${vals.join(' | ')}\n`;
                 report += `\n`;
             });
 
+            const totalH = sumH + Math.floor(sumM / 60);
+            const totalM = sumM % 60;
+            let tStr = [];
+            if (totalH > 0) tStr.push(totalH + 'h');
+            if (totalM > 0) tStr.push(totalM + 'm');
+
             report += `➖➖➖➖➖➖➖➖➖➖\n`;
-            if(sumH > 0) report += `⏱️ *Tempo Total Estimado:* ${sumH}h\n`;
+            if(tStr.length > 0) report += `⏱️ *Tempo Total Estimado:* ${tStr.join(' ')}\n`;
             report += `✅ *VALOR TOTAL: ${brl(sumP)}*`;
 
             try {
@@ -3404,7 +3678,7 @@ async function openQuoteModal(targetNode) {
                 window.open(url, '_blank');
             } catch(e) { toast('Erro ao copiar.'); }
             
-            return true; // Fecha a janela do modal
+            return true;
         }
     });
 }
@@ -3442,6 +3716,58 @@ setInterval(updateHabitTimersUI, 1000);
 function wireFilterTabs(){
   document.querySelectorAll('#screen-tasks .f-tab').forEach(btn=>{ btn.addEventListener('click', ()=>{ document.querySelectorAll('#screen-tasks .f-tab').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); taskFilter=btn.dataset.f; renderTasks(); }); });
 }
+// ============================================================
+// VIGIA DOS CRONÔMETROS DE HÁBITOS E SOM
+// ============================================================
+setInterval(async () => {
+   const now = Date.now();
+   let needsUpdate = false;
+   
+   try {
+       const habits = await dbAll('habits');
+       for (let hb of habits) {
+           if (hb.readyAt && hb.readyAt > 0 && hb.readyAt <= now && !hb.notified) {
+               
+               // Emite 1 bipe eletrônico no celular usando o destravador
+               if (habitAudioCtx) {
+                   try {
+                       const osc = habitAudioCtx.createOscillator();
+                       const gain = habitAudioCtx.createGain();
+                       osc.connect(gain); gain.connect(habitAudioCtx.destination);
+                       osc.type = 'square';
+                       osc.frequency.setValueAtTime(800, habitAudioCtx.currentTime);
+                       gain.gain.setValueAtTime(0.1, habitAudioCtx.currentTime);
+                       gain.gain.exponentialRampToValueAtTime(0.001, habitAudioCtx.currentTime + 0.3);
+                       osc.start(habitAudioCtx.currentTime);
+                       osc.stop(habitAudioCtx.currentTime + 0.3);
+                   } catch(e) {}
+               }
+               
+               toast(`🔔 O tempo do hábito acabou!`);
+               hb.notified = true; // Desarma o som para não ficar apitando sem parar
+               await dbPut('habits', hb);
+               needsUpdate = true;
+           }
+       }
+       
+       if (needsUpdate) {
+           if (typeof renderHabits === 'function' && document.getElementById('screen-habits').style.display !== 'none') renderHabits();
+       }
+   } catch(e) {}
+
+   // Atualiza os relógios regressivos na tela
+   document.querySelectorAll('.habit-timer').forEach(el => {
+       const ready = parseInt(el.getAttribute('data-ready'));
+       if (ready && ready > now) {
+           const diff = Math.floor((ready - now) / 1000);
+           const m = String(Math.floor(diff / 60)).padStart(2, '0');
+           const s = String(diff % 60).padStart(2, '0');
+           el.textContent = `⏳ ${m}:${s}`;
+       } else if (ready && ready <= now && el.textContent.includes('⏳')) {
+           el.textContent = 'Pronto!';
+       }
+   });
+}, 1000);
 
 async function init(){
   loadTheme();
