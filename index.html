@@ -4202,8 +4202,16 @@ async function openCalculatorBuilder(existing) {
                     cCard.appendChild(cHead);
 
                     // Badge de Variável
-                    cCard.appendChild(h('div', {style:'font-size:12px; color:var(--ink-soft); margin-bottom:8px;'}, `Variável na fórmula: <b style="color:#2980B9; background:rgba(41,128,185,0.1); padding:2px 6px; border-radius:4px;">v${idx+1}</b>`));
+                   const varLabel = h('div', {
+    style: 'font-size:12px; color:var(--ink-soft); margin-bottom:8px;'
+}, 'Variável na fórmula: ');
 
+const varBadge = h('span', {
+    style: 'color:#2980B9; background:rgba(41,128,185,0.1); padding:2px 6px; border-radius:4px; font-weight:700;'
+}, `v${idx + 1}`);
+
+varLabel.appendChild(varBadge);
+cCard.appendChild(varLabel);
                     cCard.appendChild(fieldWrap('Rótulo (o que a pessoa vê)', h('input', {type:'text', value:inp.label, placeholder:'Ex.: Distância percorrida', oninput:(e)=>inp.label=e.target.value})));
                     
                     // Seletor de Tipo
@@ -4232,8 +4240,8 @@ async function openCalculatorBuilder(existing) {
                     }
 
                     const r2 = h('div', {style:'display:flex; gap:8px;'});
-                    r2.appendChild(h('div', {style:'flex:1'}, fieldWrap('Unidade (opcional)', h('input', {type:'text', value:inp.unit||'', placeholder:'Ex: km, L', oninput:e=>inp.unit=e.target.value}))));
-                    r2.appendChild(h('div', {style:'flex:1'}, fieldWrap('Valor padrão (opcional)', h('input', {type: inp.type==='number'?'number':'text', value:inp.defaultValue||'', placeholder:'Ex: 0', oninput:e=>inp.defaultValue=e.target.value}))));
+                    r2.appendChild(h('div', {style:'flex:1'}, fieldWrap('Unidade(opcional)', h('input', {type:'text', value:inp.unit||'', placeholder:'Ex: km, L', oninput:e=>inp.unit=e.target.value}))));
+                    r2.appendChild(h('div', {style:'flex:1'}, fieldWrap('padrão (opcional)', h('input', {type: inp.type==='number'?'number':'text', value:inp.defaultValue||'', placeholder:'Ex: 0', oninput:e=>inp.defaultValue=e.target.value}))));
                     cCard.appendChild(r2);
 
                     inBox.appendChild(cCard);
@@ -4264,8 +4272,21 @@ async function openCalculatorBuilder(existing) {
                     rHead.appendChild(acts);
                     rCard.appendChild(rHead);
 
-                    rCard.appendChild(h('div', {style:'font-size:12px; color:var(--ink-soft); margin-bottom:8px;'}, `Variável: <b style="color:#16A085; background:rgba(26,188,156,0.1); padding:2px 6px; border-radius:4px;">r${idx+1}</b> (para usar em outros resultados)`));
+                    const rVarLabel = h('div', {
+    style: 'font-size:12px; color:var(--ink-soft); margin-bottom:8px;'
+}, 'Variável: ');
 
+const rVarBadge = h('span', {
+    style: 'color:#16A085; background:rgba(26,188,156,0.1); padding:2px 6px; border-radius:4px; font-weight:700;'
+}, `r${idx + 1}`);
+
+const rVarText = h('span', {}, ' (para usar em outros resultados)');
+
+rVarLabel.appendChild(rVarBadge);
+rVarLabel.appendChild(rVarText);
+
+rCard.appendChild(rVarLabel);
+                    
                     rCard.appendChild(fieldWrap('Rótulo do resultado', h('input', {type:'text', value:res.label, placeholder:'Ex: Custo da viagem', oninput:(e)=>res.label=e.target.value})));
 
                     const chipBar = h('div', {style:'display:flex; flex-wrap:wrap; gap:6px; margin-bottom:8px; background:var(--surface-2); padding:8px; border-radius:6px;'});
@@ -4298,7 +4319,7 @@ async function openCalculatorBuilder(existing) {
                     fRow.appendChild(h('div', {style:'flex:2;'}, fieldWrap('Posição', selPos)));
 
                     const decInp = h('input', {type:'number', value: res.decimals !== undefined ? res.decimals : 2, oninput:e=>res.decimals=parseInt(e.target.value)});
-                    fRow.appendChild(h('div', {style:'flex:1;'}, fieldWrap('Casas dec.', decInp)));
+                    fRow.appendChild(h('div', {style:'flex:1;'}, fieldWrap('Casas', decInp)));
                     rCard.appendChild(fRow);
 
                     resBox.appendChild(rCard);
