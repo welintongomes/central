@@ -4289,7 +4289,7 @@ rCard.appendChild(rVarLabel);
                     
                     rCard.appendChild(fieldWrap('Rótulo do resultado', h('input', {type:'text', value:res.label, placeholder:'Ex: Custo da viagem', oninput:(e)=>res.label=e.target.value})));
 
-                    const chipBar = h('div', {style:'display:flex; flex-wrap:wrap; gap:6px; margin-bottom:8px; background:var(--surface-2); padding:8px; border-radius:6px;'});
+                    const chipBar = h('div', {style:'display:flex; flex-wrap:wrap;margin-top: 2px; gap:6px; margin-bottom:8px; background:var(--surface-2); padding:8px; border-radius:6px;'});
                     if(calc.inputs.length===0 && idx===0) chipBar.appendChild(h('div', {style:'font-size:11px; color:var(--ink-soft); width:100%;'}, 'Adicione campos acima para usá-los aqui.'));
                     
                     // Chips de Entradas (v1, v2...)
@@ -4343,11 +4343,12 @@ rCard.appendChild(rVarLabel);
 }
 
 // 🚀 O EXECUTOR DE CÁLCULOS (Motor com Variáveis Inteligentes)
+// 🚀 O EXECUTOR DE CÁLCULOS (Com opção de Salvar Padrões e Salvar do Teste)
 function openCalculatorRunner(calc, isTest = false) {
     if (!calc.inputs || calc.inputs.length === 0) { toast('Essa calculadora não tem campos de entrada!'); return; }
 
     openSheet({
-        title: isTest ? '🧪 TESTE: ' + calc.title : calc.title,
+        title: isTest ? '🧪 TESTE: ' + (calc.title || 'Calculadora sem nome') : calc.title,
         buildFields: (box) => {
             if (calc.desc) box.appendChild(h('div', {style:'font-size:14px; color:var(--ink-soft); margin-bottom:16px; font-style:italic; border-left:3px solid #2980B9; padding-left:8px;'}, calc.desc));
 
@@ -4365,7 +4366,6 @@ function openCalculatorRunner(calc, isTest = false) {
                     let finalVal = 0;
                     
                     try {
-                        // Passa TODAS as variáveis dinamicamente para o motor do JavaScript
                         const keys = Object.keys(valStore);
                         const vals = Object.values(valStore);
                         const execFunc = new Function(...keys, `return ${res.formula || '0'}`);
@@ -4374,14 +4374,11 @@ function openCalculatorRunner(calc, isTest = false) {
                         if (typeof finalVal === 'number' && (!isFinite(finalVal) || isNaN(finalVal))) finalVal = 0;
                     } catch(e) { finalVal = 'Erro na fórmula'; }
 
-                    // Salva o resultado no valStore para a PRÓXIMA fórmula poder usar! (ex: r1)
                     valStore[`r${idx+1}`] = finalVal;
 
-                    // Formatação Final Visual
                     let dVal = finalVal;
                     if (typeof finalVal === 'number') {
                         const decs = res.decimals !== undefined ? res.decimals : 2;
-                        // Usa formatação nativa do Brasil (Ex: 1.000,50)
                         dVal = finalVal.toLocaleString('pt-BR', { minimumFractionDigits: decs, maximumFractionDigits: decs });
                     }
                     
@@ -4395,14 +4392,12 @@ function openCalculatorRunner(calc, isTest = false) {
                 });
             };
 
-            // Desenha os inputs na tela
             calc.inputs.forEach((inp, idx) => {
                 const varName = `v${idx+1}`;
                 
-                // Trata o Valor Padrão
                 let def = inp.defaultValue || '';
                 if(inp.type === 'number') valStore[varName] = Number(def) || 0;
-                else valStore[varName] = def; // Texto puro
+                else valStore[varName] = def; 
 
                 const w = h('div', {style:'margin-bottom:12px;'});
                 const lblWrap = h('div', {style:'display:flex; justify-content:space-between; margin-bottom:4px;'});
@@ -4417,8 +4412,12 @@ function openCalculatorRunner(calc, isTest = false) {
                         f.appendChild(h('option', {value:opt.value}, opt.label));
                     });
                     f.onchange = (e) => { valStore[varName] = Number(e.target.value.replace(',','.')) || 0; doMath(); };
-                    // Seta o valor inicial do primeiro item
-                    if(inp.options && inp.options.length > 0) valStore[varName] = Number(inp.options[0].value) || 0;
+                    if(inp.options && inp.options.length > 0 && def === '') valStore[varName] = Number(inp.options[0].value) || 0;
+                    // Se tiver valor padrão salvo, tenta selecionar ele
+                    if(def !== '') {
+                        Array.from(f.options).forEach(o => { if(o.value == def) o.selected = true; });
+                        valStore[varName] = Number(def) || 0;
+                    }
 
                 } else if (inp.type === 'text') {
                     f = h('input', {type:'text', placeholder:'Digite o texto...', value:def, style:'font-size:16px; padding:12px;'});
@@ -4433,9 +4432,50 @@ function openCalculatorRunner(calc, isTest = false) {
             
             doMath(); 
 
-            if(isTest) setTimeout(() => { const b = document.getElementById('sheet-save-btn'); if(b) b.style.display='none'; }, 10);
+            // BOTÕES ESPECIAIS DE ACORDO COM O MODO
+            if (isTest) {
+                // Modo Teste: Botão de voltar para edição
+                const backBtn = h('button', {class:'btn btn-ghost', style:'width:100%; margin-top:16px; border:1px dashed #2980B9; color:#2980B9; padding:12px;', onclick:(e)=>{
+                    e.preventDefault();
+                    openCalculatorBuilder(calc); // Reabre a tela de construção sem perder nada
+                }}, '🔙 Voltar para edição da fórmula');
+                box.appendChild(backBtn);
+                
+                // Transforma o botão "Salvar" padrão para salvar o trabalho
+                setTimeout(() => { 
+                    const b = document.getElementById('sheet-save-btn'); 
+                    if(b) { b.style.display='block'; b.textContent='💾 Salvar Calculadora'; b.style.background='#27AE60'; b.style.borderColor='#27AE60'; b.style.color='#fff'; }
+                }, 10);
+            } else {
+                // Modo Normal (Usando): Botão para salvar os valores atuais como padrão
+                const saveDefBtn = h('button', {class:'btn btn-ghost', style:'width:100%; margin-top:16px; border:1px dashed #16A085; color:#16A085; padding:12px;', onclick: async (e)=>{
+                    e.preventDefault();
+                    calc.inputs.forEach((inp, idx) => {
+                        inp.defaultValue = valStore[`v${idx+1}`]; // Pega o valor exato que está no input agora
+                    });
+                    await dbPut('calculators', calc);
+                    toast('Valores atuais salvos como padrão!');
+                }}, '💾 Salvar valores atuais como padrão');
+                box.appendChild(saveDefBtn);
+                
+                // Muda o botão principal para apenas "Fechar"
+                setTimeout(() => { 
+                    const b = document.getElementById('sheet-save-btn'); 
+                    if(b) { b.textContent='Fechar'; b.style.background='var(--surface-2)'; b.style.color='var(--ink)'; b.style.borderColor='var(--line)'; }
+                }, 10);
+            }
         },
-        onSubmit: () => { return true; }
+        onSubmit: async () => { 
+            // Se for Teste, o botão principal salva a calculadora no banco de dados!
+            if (isTest) {
+                if (!calc.title || !calc.title.trim()) { toast('Dê um nome para a calculadora antes de salvar!'); return false; }
+                await dbPut('calculators', calc);
+                if(typeof renderCalculators === 'function') renderCalculators();
+                if(typeof updateHomeStats === 'function') updateHomeStats();
+                toast('Calculadora Salva com Sucesso!');
+            }
+            return true; // Fecha a janela
+        }
     });
 }
 async function init(){
