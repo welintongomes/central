@@ -1340,15 +1340,7 @@ if (globalSearchFilter === 'Todos' || globalSearchFilter === 'Trilhas') trails.f
       
       // 👇 MUDANÇA: O MEIO AGORA EXECUTA O JOGO E A CALCULADORA 👇
       else if (r.type === 'calculator') openCalculatorRunner(r.item); // ▶️ Roda a Calculadora
-      else if (r.type === 'flashcard') {
-          // ATENÇÃO CHAT: Coloque aqui o nome exato da função que RODA o seu jogo de flashcards!
-          // Exemplo: se for startDemostenes(r.item) ou playFlashcard(r.item)
-          if (typeof playFlashcard === 'function') {
-              playFlashcard(r.item); 
-          } else {
-              toast('Vá até a tela do flashcards e escolha um deck primeiro!');
-          }
-      }
+      else if (r.type === 'flashcard') reviewSingleFlashcard(r.item); // ▶️ Roda o Flashcard na janelinha!
     }});
     
     grow.appendChild(h('div', { class: 'i-title' }, r.title));
@@ -4499,6 +4491,94 @@ function openCalculatorRunner(calc, isTest = false) {
         }
     });
 }
+// 🧠 MINI-EXECUTOR DE FLASHCARD (Revisão rápida sem sair da busca)
+// 🧠 MINI-EXECUTOR DE FLASHCARD (Visualização interativa, Leitor de Voz e Varredura de Campos)
+// 🧠 MINI-EXECUTOR DE FLASHCARD (Com Tradução do Exemplo)
+// 🧠 MINI-EXECUTOR DE FLASHCARD (Versão Limpa e Definitiva)
+function reviewSingleFlashcard(card) {
+    openSheet({
+        title: '🧠 Detalhes do Cartão',
+        buildFields: (box) => {
+            let lastSpoken = '';
+
+            // 🎙️ Função Mágica de Voz
+            const handleSpeak = (text, lang) => {
+                if (!window.speechSynthesis) return;
+                
+                if (window.speechSynthesis.speaking && lastSpoken === text) {
+                    window.speechSynthesis.cancel();
+                    lastSpoken = '';
+                } else {
+                    playFCVoice(text, lang);
+                    lastSpoken = text;
+                }
+            };
+
+            // 📦 Criador de blocos clicáveis
+            const createBlock = (label, text, lang, color) => {
+                if (!text) return null;
+                const wrap = h('div', {style:`background:var(--surface-2); padding:16px; border-radius:12px; text-align:center; margin-bottom:12px; border:1px solid ${color}; cursor:pointer; transition:0.2s;`});
+                
+                wrap.onclick = (e) => {
+                    e.preventDefault();
+                    handleSpeak(text, lang);
+                    wrap.style.opacity = '0.5';
+                    setTimeout(() => wrap.style.opacity = '1', 150);
+                };
+
+                wrap.appendChild(h('div', {style:`font-size:11px; font-weight:800; color:${color}; letter-spacing:1px; margin-bottom:8px;`}, label + ' 🔊 (Toque para ouvir)'));
+                wrap.appendChild(h('div', {style:'font-size:20px; font-weight:700; color:var(--ink);'}, text));
+                return wrap;
+            };
+
+            // ===== 1. FRENTE (Sempre visível) =====
+            const frontText = card.front || card.question || card.q || '';
+            if (frontText) box.appendChild(createBlock('FRENTE', frontText, card.frontLang, '#4A90E2'));
+
+            // Caixa invisível que guarda tudo do verso
+            const aBox = h('div', {style:'display:none; margin-top:12px;'});
+
+            // ===== 2. VERSO =====
+            const backText = card.back || card.answer || card.a || '';
+            if (backText) aBox.appendChild(createBlock('VERSO', backText, card.backLang || card.frontLang, '#1ABC9C'));
+
+            // ===== 3. EXEMPLOS =====
+            if (card.example || card.examples) {
+                aBox.appendChild(createBlock('EXEMPLO', card.example || card.examples, card.backLang || card.frontLang, '#E67E22'));
+            }
+
+            // ===== 4. TRADUÇÃO DO EXEMPLO (Com o seu nome exato) =====
+            if (card.exTranslation) {
+                aBox.appendChild(createBlock('TRADUÇÃO DO EXEMPLO', card.exTranslation, card.frontLang, '#D35400'));
+            }
+
+            // ===== 5. NOTAS =====
+            if (card.note || card.notes) {
+                aBox.appendChild(createBlock('NOTAS', card.note || card.notes, null, '#8E44AD'));
+            }
+
+            box.appendChild(aBox);
+
+            // ===== BOTÃO REVELAR =====
+            const btnFlip = h('button', {class:'btn', style:'width:100%; margin-top:8px; background:var(--surface-2); color:var(--ink); border:1px dashed var(--ink-soft); padding:16px; font-size:16px;'}, '⬇️ Revelar tudo');
+            btnFlip.onclick = (e) => {
+                e.preventDefault();
+                aBox.style.display = 'block';
+                btnFlip.style.display = 'none';
+            };
+            box.appendChild(btnFlip);
+
+            // Esconde o botão de salvar
+            setTimeout(() => { const saveBtn = document.getElementById('sheet-save-btn'); if (saveBtn) saveBtn.style.display = 'none'; }, 10);
+        },
+        onSubmit: () => { 
+            // Corta o áudio automaticamente se você fechar a janela
+            if (window.speechSynthesis) window.speechSynthesis.cancel();
+            return true; 
+        }
+    });
+}
+
 async function init(){
   loadTheme();
   try{ await openDatabase(); }catch(err){ toast('Não foi possível abrir o banco local.'); console.error(err); return; }
