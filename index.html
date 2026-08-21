@@ -1402,6 +1402,11 @@ function openSettings() {
       box.appendChild(h('div', {style: 'font-size:13px; color:var(--ink-soft); margin-bottom:16px; line-height:1.5; text-align:center;'}, 'Seus dados ficam apenas na memória deste celular. Salve um backup para não perder nada.'));
       box.appendChild(h('button', { type: 'button', class: 'btn btn-primary', style: 'width:100%; margin-bottom:12px;', onclick: () => { closeSheet(); exportAllData(); } }, '💾 Salvar Backup (Exportar)'));
       box.appendChild(h('button', { type: 'button', class: 'btn btn-ghost', style: 'width:100%;', onclick: () => { closeSheet(); triggerImport(); } }, '📂 Restaurar Backup (Importar)'));
+      // 👇 O NOVO BOTÃO DE MUDAR SENHA 👇
+      if (localStorage.getItem('master-hash')) {
+          box.appendChild(h('div', {style: 'font-size:13px; color:var(--ink-soft); margin-bottom:8px; line-height:1.5; text-align:center; border-top:1px solid var(--line); padding-top:16px;'}, 'Área de Segurança'));
+          box.appendChild(h('button', { type: 'button', class: 'btn btn-ghost', style: 'width:100%; border: 1px dashed var(--danger); color: var(--danger);', onclick: () => { closeSheet(); changeMasterPassword(); } }, '🔐 Mudar Senha Mestra'));
+      }
     },
     submitLabel: 'Fechar', onSubmit: () => { return true; }
   });
@@ -2589,6 +2594,73 @@ function toggleModuleLock(key) {
   });
 }
 
+// 🔐 FUNÇÃO MESTRA: Trocar Senha com Rotação de Criptografia Segura
+function changeMasterPassword() {
+    const savedHash = localStorage.getItem('master-hash');
+    if (!savedHash) {
+        toast('Você ainda não tem uma senha mestra configurada!');
+        return;
+    }
+
+    openSheet({
+        title: 'Mudar Senha Mestra',
+        buildFields: (box) => {
+            box.appendChild(h('div', {style:'font-size:13px; color:var(--danger); font-weight:700; margin-bottom:16px; line-height:1.4; padding:12px; background:rgba(231,76,60,0.1); border-radius:8px; border:1px dashed var(--danger);'}, 
+                '⚠️ ATENÇÃO: O sistema abrirá todos os seus cofres e os trancará com a nova senha. Não feche ou atualize a página até o processo terminar!'));
+            
+            box.appendChild(fieldWrap('Senha Atual', h('input', {type:'password', id:'f-pwd-old'})));
+            box.appendChild(fieldWrap('Nova Senha', h('input', {type:'password', id:'f-pwd-new'})));
+            box.appendChild(fieldWrap('Confirmar Nova Senha', h('input', {type:'password', id:'f-pwd-new-conf'})));
+        },
+        submitLabel: '🔐 Trocar Senha',
+        onSubmit: async () => {
+            const oldPwd = document.getElementById('f-pwd-old').value;
+            const newPwd = document.getElementById('f-pwd-new').value;
+            const confPwd = document.getElementById('f-pwd-new-conf').value;
+
+            if(!oldPwd || !newPwd || !confPwd) { toast('Preencha todos os campos!'); return false; }
+            if(newPwd !== confPwd) { toast('A nova senha não confere!'); return false; }
+            if(oldPwd === newPwd) { toast('A nova senha deve ser diferente da atual.'); return false; }
+
+            // 1. Verifica se a senha atual está correta antes de tentar abrir qualquer coisa
+            const currentHash = await Vault.hashPwd(oldPwd);
+            if (savedHash !== currentHash) { toast('Senha atual incorreta!'); return false; }
+
+            toast('Atualizando cofres... Por favor, aguarde!');
+            
+            try {
+                // 2. Varredura Nível Paranoia: Passa por TODAS as tabelas do IndexedDB
+                for (const store of STORES) {
+                    const items = await dbAll(store);
+                    
+                    for (const item of items) {
+                        // Se achar um item trancado, faz a Mágica da Rotação
+                        if (item.isEncrypted) {
+                            // Destranca com a chave velha
+                            const decrypted = await Vault.decryptItem(item, oldPwd);
+                            // Tranca imediatamente com a chave nova
+                            const reEncrypted = await Vault.encryptItem(decrypted, newPwd);
+                            // Salva de volta no banco
+                            await dbPut(store, reEncrypted);
+                        }
+                    }
+                }
+
+                // 3. Só depois que tudo deu certo, atualizamos a fechadura principal
+                const newHash = await Vault.hashPwd(newPwd);
+                localStorage.setItem('master-hash', newHash);
+                
+                toast('Senha alterada com sucesso! Todos os dados estão protegidos.');
+                return true; // Fecha a janela
+                
+            } catch(e) {
+                console.error(e);
+                toast('Erro crítico na rotação. Seus dados antigos foram preservados.');
+                return false;
+            }
+        }
+    });
+}
 /* ============================================================
    CITAÇÕES E FRASES (Com Autoplay Inteligente)
    ============================================================ */
