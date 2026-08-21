@@ -1324,27 +1324,36 @@ if (globalSearchFilter === 'Todos' || globalSearchFilter === 'Trilhas') trails.f
     }
 
     const grow = h('div', { class: 'grow', onclick: () => {
-      // O clique nas trilhas invoca a função de orçamento e fecha a busca
-      if (r.type === 'trail') { clearSearch(); openQuoteModal(r.item); return; }
+      // As janelas abrem POR CIMA e a pesquisa continua no fundo!
+      if (r.type === 'trail') openQuoteModal(r.item); 
+      else if (r.type === 'task') openTaskForm(r.item); 
+      else if (r.type === 'library') openLibraryForm(r.item); 
+      else if (r.type === 'note') openNoteForm(r.item); 
+      else if (r.type === 'contact') openContactForm(r.item); 
+      else if (r.type === 'expense') openExpenseForm(r.item); 
+      else if (r.type === 'shopping') toggleShopping(r.item); 
+      else if (r.type === 'journal') openJournalForm(r.item); 
+      else if (r.type === 'habit') openHabitForm(r.item); 
+      else if (r.type === 'password') openPasswordForm(r.item); 
+      else if (r.type === 'gallery') openGalleryViewer(r.item); 
+      else if (r.type === 'quote') openQuoteForm(r.item); 
       
-      
-      if (r.type === 'task') openTaskForm(r.item); 
-else if (r.type === 'library') openLibraryForm(r.item); 
-else if (r.type === 'note') openNoteForm(r.item); 
-else if (r.type === 'contact') openContactForm(r.item); 
-else if (r.type === 'expense') openExpenseForm(r.item); 
-else if (r.type === 'shopping') toggleShopping(r.item); 
-else if (r.type === 'journal') openJournalForm(r.item); 
-else if (r.type === 'habit') openHabitForm(r.item); 
-else if (r.type === 'password') openPasswordForm(r.item); 
-else if (r.type === 'gallery') openGalleryViewer(r.item); 
-else if (r.type === 'quote') openQuoteForm(r.item); 
-else if (r.type === 'flashcard') openFlashcardForm(r.item);
-else if (r.type === 'calculator') openCalculatorRunner(r.item);
+      // 👇 MUDANÇA: O MEIO AGORA EXECUTA O JOGO E A CALCULADORA 👇
+      else if (r.type === 'calculator') openCalculatorRunner(r.item); // ▶️ Roda a Calculadora
+      else if (r.type === 'flashcard') {
+          // ATENÇÃO CHAT: Coloque aqui o nome exato da função que RODA o seu jogo de flashcards!
+          // Exemplo: se for startDemostenes(r.item) ou playFlashcard(r.item)
+          if (typeof playFlashcard === 'function') {
+              playFlashcard(r.item); 
+          } else {
+              toast('Vá até a tela do flashcards e escolha um deck primeiro!');
+          }
+      }
     }});
     
     grow.appendChild(h('div', { class: 'i-title' }, r.title));
     
+    // --- SUAS REGRAS DE ESTILO ORIGINAIS (MANTIDAS INTACTAS) ---
     if (r.type === 'task') {
       const t = r.item; const overdue = t.due && t.due < todayISO && !t.done; const subParts = [];
       if (t.due) subParts.push((overdue ? '⚠️ atrasada · ' : '') + humanDateFull(t.due)); if (t.priority && t.priority !== 'baixa') subParts.push(t.priority === 'alta' ? '🔴 alta' : '🟡 média');
@@ -1370,10 +1379,22 @@ else if (r.type === 'calculator') openCalculatorRunner(r.item);
 
     row.appendChild(grow); 
 
+    // ===== BOTÕES DE AÇÃO RÁPIDA (No canto direito) =====
     if (r.type === 'password') {
       row.appendChild(h('button',{ class:'icon-btn', style:'color:var(--c-contacts); margin-left: 4px;', onclick: (e)=>{ e.stopPropagation(); navigator.clipboard.writeText(r.item.password); toast('Senha copiada!'); } }, '📋'));
       if (r.item.url) { row.appendChild(h('button',{ class:'icon-btn', style:'color:var(--c-tasks); margin-left: 4px;', onclick: async (e)=>{ e.stopPropagation(); if(r.item.username) await navigator.clipboard.writeText(r.item.username); toast(r.item.username ? 'Usuário copiado! Abrindo...' : 'Abrindo site...'); setTimeout(() => window.open(r.item.url, '_blank'), 600); } }, '🌐')); }
     }
+
+    // 👇 MUDANÇA: LÁPIS DE EDIÇÃO APENAS PARA CALCULADORA E FLASHCARDS 👇
+    if (r.type === 'calculator' || r.type === 'flashcard') {
+      row.appendChild(h('button',{ class:'icon-btn', style:'color:var(--c-quotes); margin-left: 8px; font-size:16px; padding:4px;', onclick: (e)=>{ 
+          e.stopPropagation(); // Impede que o clique dispare o "play" do meio da tela
+          
+          if (r.type === 'calculator') openCalculatorBuilder(r.item); // ✏️ Abre o construtor da fórmula
+          if (r.type === 'flashcard') openFlashcardForm(r.item);      // ✏️ Abre a edição do flashcard
+      } }, '✏️'));
+    }
+
     resBox.appendChild(row);
   });
   if(window.aplicarLazyLoading) window.aplicarLazyLoading();
@@ -4423,7 +4444,7 @@ function openCalculatorRunner(calc, isTest = false) {
                     f = h('input', {type:'text', placeholder:'Digite o texto...', value:def, style:'font-size:16px; padding:12px;'});
                     f.oninput = (e) => { valStore[varName] = e.target.value; doMath(); };
                 } else {
-                    f = h('input', {type:'number', step:'any', placeholder:'Digite o número...', value:def, style:'font-size:18px; padding:12px;'});
+                    f = h('input', {type:'number', step:'any', placeholder:'Digite o número...', value:def, style:'border: 1.5px solid var(--line); background: var(--surface-2); border-radius: var(--r-sm); padding: 11px 12px; font-size: 15px; color: var(--ink); width: 100%;'});
                     f.oninput = (e) => { valStore[varName] = Number(e.target.value.replace(',','.')) || 0; doMath(); };
                 }
                 
