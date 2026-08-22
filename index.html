@@ -335,6 +335,18 @@ body.dark-theme #app { box-shadow: 0 0 60px rgba(0,0,0,0.5); }
 /* codigos para a calculadora os chips com estilos de codigo */
 .var-chip { background: #E8F8F5; border: 1px solid #1ABC9C; color: #16A085; padding: 4px 8px; border-radius: 6px; font-family: monospace; font-size: 13px; font-weight: bold; cursor: pointer; white-space: nowrap; }
 .var-chip:active { background: #1ABC9C; color: #fff; }
+.item .i-sub {
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    margin-top: 3px;
+    font-weight: 500;
+
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+    line-clamp: 2;
+}
 </style>
 </head>
 <body>
@@ -784,8 +796,11 @@ body.dark-theme #app { box-shadow: 0 0 60px rgba(0,0,0,0.5); }
     <div id="diagnosis-cat-filter" class="chips chip-picker" style="padding: 0 16px; margin-bottom: 8px;"></div>
     
   <div class="module-header" id="diagnosis-header">
-    <button class="back-btn" onclick="document.getElementById('screen-diagnosis').classList.remove('active'); document.getElementById('screen-home').classList.add('active');">←</button>
+    <button class="back-btn" onclick="document.getElementById('screen-diagnosis').classList.remove('active'); document.getElementById('screen-home').classList.add('active'); if(window.speechSynthesis) window.speechSynthesis.cancel();">←</button>
     <h2 style="flex:1;">Diagnósticos</h2>
+    
+    <!-- 👇 O botão de Ligar/Desligar a Playlist 👇 -->
+    <button class="header-action" onclick="toggleDiagTts()" id="diag-tts-btn" title="Leitura Automática">🔈</button>
   </div>
 </section>
 <!-- FIM APP -->
@@ -4769,7 +4784,7 @@ async function renderDiagnosis() {
         if(d.cause) subTxt += ` · Causa: ${d.cause}`;
         grow.appendChild(h('div',{class:'i-sub'}, subTxt)); 
         if (d.tags && d.tags.length) {
-            const tagsRow = h('div', {style:'display:flex; flex-wrap:wrap; gap:4px; margin-top:4px;'});
+            const tagsRow = h('div', {style:'display:flex; flex-wrap: nowrap;scrollbar-width: none; white-space: nowrap; gap:4px; margin-top:4px;overflow-x: auto;'});
             d.tags.forEach(t => tagsRow.appendChild(h('span', {style:'font-size:10.5px; padding:2px 7px; border-radius:999px; background:var(--surface-2); color:var(--ink-soft);'}, t)));
             grow.appendChild(tagsRow);
         }
@@ -5093,13 +5108,78 @@ async function runSherlockSearch() {
     const sortedResults = diags.filter(d => d._finalScore > 0).sort((a, b) => b._finalScore - a._finalScore);
     renderSherlockResults(sortedResults);
 }
+// ============================================================
+// 🎙️ MOTOR DE PLAYLIST (TEXT-TO-SPEECH) DO SHERLOCK
+// ============================================================
+let diagTtsEnabled = false;
+let diagSpeechPlaylist = [];
+let diagSpeechIndex = -1;
 
+function toggleDiagTts() {
+    diagTtsEnabled = !diagTtsEnabled;
+    const btn = document.getElementById('diag-tts-btn');
+    if (btn) btn.textContent = diagTtsEnabled ? '🔊' : '🔈';
+    
+    if (!diagTtsEnabled && window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+        diagSpeechIndex = -1;
+    }
+    toast(diagTtsEnabled ? 'Modo Playlist Ativado 🔊' : 'Modo Playlist Desativado 🔈');
+}
+
+function toggleDiagAudioPlay(startIndex, results) {
+    if (!window.speechSynthesis) return;
+
+    // Se já estiver falando QUALQUER coisa, o toque serve para interromper e calar a boca
+    if (window.speechSynthesis.speaking) {
+        window.speechSynthesis.cancel();
+        diagSpeechIndex = -1;
+        return;
+    }
+
+    // Se não estiver falando, ele carrega a lista atual e começa a tocar do item que você clicou!
+    diagSpeechPlaylist = results;
+    diagSpeechIndex = startIndex;
+    playNextDiagAudio();
+}
+
+function playNextDiagAudio() {
+    if (diagSpeechIndex >= diagSpeechPlaylist.length || diagSpeechIndex < 0) return;
+
+    const d = diagSpeechPlaylist[diagSpeechIndex];
+    
+    // Monta a frase que o robô vai ler
+    let textToRead = d.title;
+    if (d.cause) textToRead += `. Causa suspeita: ${d.cause}`;
+    if (d.solution) textToRead += `. Solução recomendada: ${d.solution}`;
+
+    const u = new SpeechSynthesisUtterance(textToRead);
+    u.lang = 'pt-BR'; // Garante o sotaque em português
+    
+    // Assim que terminar de falar este item, ele chama o próximo da lista sozinho!
+    u.onend = () => {
+        diagSpeechIndex++;
+        if (diagSpeechIndex < diagSpeechPlaylist.length) {
+            // Pequeno delay pra não ficar robótico demais
+            setTimeout(playNextDiagAudio, 600); 
+        } else {
+            diagSpeechIndex = -1; // Acabou a lista
+        }
+    };
+    
+    window.speechSynthesis.speak(u);
+}
 // 👁️ DESENHA O PAINEL DE RESULTADOS DO SHERLOCK
 // 👁️ DESENHA O PAINEL DE RESULTADOS DO SHERLOCK (Com Porcentagem de Certeza)
+// 👁️ DESENHA O PAINEL DE RESULTADOS DO SHERLOCK (Com Lápis e Playlist)
 function renderSherlockResults(results) {
     const list = document.getElementById('diagnosis-list');
     list.innerHTML = '';
     
+    // Corta qualquer áudio tocando se a lista mudar (por nova pesquisa)
+    if (window.speechSynthesis) window.speechSynthesis.cancel();
+    diagSpeechIndex = -1;
+
     if (results.length === 0) {
         list.appendChild(emptyState('🤷‍♂️', 'Nenhuma Pista Encontrada', 'Tente usar outros termos para descrever o sintoma.'));
         return;
@@ -5111,47 +5191,31 @@ function renderSherlockResults(results) {
 
     results.forEach((d, index) => {
         
-        // 🧮 CÁLCULO DA PORCENTAGEM (Curva Exponencial)
-        // Transforma o score infinito do BM25 em uma porcentagem de 0 a 99%
         let pct = (1 - Math.exp(-d._finalScore * 0.35)) * 100;
-        
-        // Bônus Bayesiano Manual: Cada 👍 que você deu no passado adiciona ~3% de certeza bruta!
-        if (d.relevanceCount > 0) { 
-            pct += (d.relevanceCount * 3); 
-        }
-        
-        // Trava no máximo de 99.9% (Sherlock nunca tem 100% de certeza sem ver o problema kkk)
+        if (d.relevanceCount > 0) pct += (d.relevanceCount * 3); 
         let pctInt = Math.floor(Math.min(99.9, pct));
 
-        // 🎨 DEFINIÇÃO DOS NÍVEIS DE CERTEZA DO DETETIVE
         let probText, probColor, bgColor;
-        if (pctInt >= 85) {
-            probText = `🔥 ${pctInt}% — PISTA QUENTE (Certeza Alta)`;
-            probColor = '#E74C3C'; // Vermelho
-            bgColor = '#230a0a';   // Fundo avermelhado super escuro
-        } else if (pctInt >= 60) {
-            probText = `🟠 ${pctInt}% — ALTA SUSPEITA`;
-            probColor = '#E67E22'; // Laranja
-            bgColor = '#211306';   // Fundo alaranjado escuro
-        } else if (pctInt >= 35) {
-            probText = `🟡 ${pctInt}% — POSSÍVEL CAUSA`;
-            probColor = '#F1C40F'; // Amarelo
-            bgColor = '#1f1a07';   // Fundo amarelado escuro
-        } else {
-            probText = `🔵 ${pctInt}% — PISTA FRACA (Inconclusivo)`;
-            probColor = '#3498DB'; // Azul
-            bgColor = '#08131c';   // Fundo azulado escuro
-        }
+        if (pctInt >= 85) { probText = `🔥 ${pctInt}% — PISTA QUENTE (Certeza Alta)`; probColor = '#E74C3C'; bgColor = '#230a0a'; } 
+        else if (pctInt >= 60) { probText = `🟠 ${pctInt}% — ALTA SUSPEITA`; probColor = '#E67E22'; bgColor = '#211306'; } 
+        else if (pctInt >= 35) { probText = `🟡 ${pctInt}% — POSSÍVEL CAUSA`; probColor = '#F1C40F'; bgColor = '#1f1a07'; } 
+        else { probText = `🔵 ${pctInt}% — PISTA FRACA (Inconclusivo)`; probColor = '#3498DB'; bgColor = '#08131c'; }
 
-        // O Top 1 recebe a borda e o fundo da cor do nível de certeza!
         const rowStyle = index === 0 ? `border: 2px solid ${probColor}; background:${bgColor};` : '';
         const row = h('div',{class:'item', style: rowStyle}); 
         
-        const grow = h('div',{class:'grow', onclick:()=>openDiagnosisForm(d)}); 
+        // 👇 MUDANÇA AQUI: O clique no meio agora é governado pelo áudio 👇
+        const grow = h('div',{class:'grow', onclick:() => {
+            if (diagTtsEnabled) {
+                // Se o falante lá em cima estiver ativado (🔊), vira playlist!
+                toggleDiagAudioPlay(index, results);
+            } else {
+                // Se o falante estiver desativado (🔈), funciona como antes (abre a edição)
+                openDiagnosisForm(d);
+            }
+        }}); 
         
-        // Badge de Probabilidade Inteligente Colorido
         grow.appendChild(h('div',{style:`font-size:11px; font-weight:900; color:${probColor}; margin-bottom:5px; letter-spacing:0.5px;`}, probText));
-        
         grow.appendChild(h('div',{class:'i-title'}, d.title)); 
         
         let subTxt = `Cartucho: ${d.category || 'Geral'}`;
@@ -5165,17 +5229,20 @@ function renderSherlockResults(results) {
         }
         row.appendChild(grow);
 
-        // 👍 BOTÃO BAYESIANO: Aprende na hora e aumenta a porcentagem visualmente!
+        // ✏️ NOVO BOTÃO: Lápis para forçar a edição sem desligar o áudio global
+        row.appendChild(h('button',{ class:'icon-btn', style:'color:var(--c-quotes); font-size:16px; margin-right:2px;', onclick:(e)=>{ 
+            e.stopPropagation(); 
+            openDiagnosisForm(d); 
+        }}, '✏️'));
+
         row.appendChild(h('button',{ class:'icon-btn', style:'color:#27AE60; font-size:18px;', onclick: async (e)=>{ 
             e.stopPropagation(); 
             d.relevanceCount = (d.relevanceCount || 0) + 1; 
             await dbPut('diagnosis', d);
-            toast('Sherlock aprendeu com este caso! 🧠 (+3% de Certeza)');
+            toast('Sherlock aprendeu! 🧠 (+3% de Certeza)');
             invalidateSherlockCache();
             runSherlockSearch(); 
         }}, '👍'));
-
-        row.appendChild(h('button',{ class:'icon-btn', style:'color:var(--c-notes); margin-left:4px;', onclick:(e)=>{ e.stopPropagation(); navigator.clipboard.writeText(`<pre>${d.solution || ''}</pre>`); toast('Solução copiada!'); } }, '📋'));
         
         list.appendChild(row);
     });
