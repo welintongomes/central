@@ -324,6 +324,10 @@ body.dark-theme #app { box-shadow: 0 0 60px rgba(0,0,0,0.5); }
 #trails-header, #trails-fab, .bubble.b-trails { background: #8E44AD; }
 .b-trails { font-size: 20px !important; }
 
+/* Cores do Diagnóstico Mestre */
+#diagnosis-header, #diagnosis-fab, .bubble.b-diagnosis { background: #E67E22; color: #fff; }
+.b-diagnosis { font-size: 20px !important; }
+
 /* O Caminho de Migalhas Horizontal */
 .trail-breadcrumb { display: flex; overflow-x: auto; gap: 2px; padding: 12px 16px; background: var(--surface-2); border-bottom: 1px solid var(--line); scrollbar-width: none; align-items: center; }
 .trail-crumb { flex: 0 0 auto; background: var(--surface); border: 1px solid var(--line); padding: 6px 12px; border-radius: var(--r-pill); font-size: 13px; font-weight: 700; color: var(--ink-soft); cursor: pointer; display: flex; align-items: center; gap: 6px; transition: 0.2s; }
@@ -699,11 +703,6 @@ body.dark-theme #app { box-shadow: 0 0 60px rgba(0,0,0,0.5); }
 </section>
 <!-- ===== TRILHAS E DIAGNÓSTICOS ===== -->
 <section id="screen-trails" class="screen module-screen">
-  
-  
-  
-  
-  
   <div class="module-body" style="margin-top:0;padding-top:16px;">
     <div class="list" id="trails-list"></div>
   </div>
@@ -734,7 +733,6 @@ body.dark-theme #app { box-shadow: 0 0 60px rgba(0,0,0,0.5); }
 </section>
 <!-- ===== CALCULADORAS CUSTOMIZADAS ===== -->
 <section id="screen-calculators" class="screen module-screen">
-  
   <div class="module-body" style="margin-top:0;">
     <div id="calculators-filters" style="display:flex; gap:8px; overflow-x:auto; padding: 12px 16px; background:var(--surface-2); border-bottom:1px solid var(--line); scrollbar-width:none; align-items:center;"></div>
     <div class="list" id="calculators-list" style="margin-top:12px;"></div>
@@ -743,6 +741,51 @@ body.dark-theme #app { box-shadow: 0 0 60px rgba(0,0,0,0.5); }
   <div class="module-header" id="calculators-header" style="background:#0f7328;">
     <button class="back-btn" onclick="goHome()">←</button>
     <h2 style="flex:1;">Fórmulas e Cálculos</h2>
+  </div>
+</section>
+<!-- ===== DIAGNÓSTICO MESTRE ===== -->
+<section id="screen-diagnosis" class="screen module-screen">
+  <!-- 👇 O NOVO MOTOR DE INVESTIGAÇÃO FICA AQUI 👇 -->
+  <div style="padding:16px; background:var(--surface); border-bottom:1px solid var(--line);">
+      <div style="font-size:12px; font-weight:700; color:#E67E22; margin-bottom:8px; letter-spacing:1px;">🔎 INVESTIGADOR SHERLOCK</div>
+      
+  </div>
+
+  <div class="module-body" style="margin-top:0;padding-top:16px;">
+    <!-- Lista de Casos -->
+    <div class="list" id="diagnosis-list"></div>
+  </div>
+  
+  <button class="fab" id="diagnosis-fab" onclick="openDiagnosisForm()" style="bottom: calc(130px + env(safe-area-inset-bottom));">+</button>
+  <div style="display:flex; gap:8px; margin: 9px 10px 16px 75px; align-items:center;">
+    <div style="position:relative; flex:10;">
+        <input type="text" id="diag-search-input" oninput="onSherlockTyping()" 
+        placeholder="Sintomas... Use - para excluir e + para obrigar" style="width:100%;
+        border: 1.5px solid var(--line);
+        background: var(--surface);
+        border-radius: 14px;
+        padding: 10px 38px 10px 38px;
+        font-size: 14.5px;
+        outline: none;
+        box-shadow: 0 1px 2px rgba(var(--shadow-rgb), .04);
+        color: var(--ink);">
+
+        <button type="button" id="diag-clear-search-btn" onclick="clearDiagSearch()"
+            style="display:none; position:absolute; left:10px; top:50%; transform:translateY(-50%);
+            width:22px; height:22px; border:none; border-radius:50%;
+            background:var(--surface-2); color:var(--ink-soft);
+            font-size:13px; line-height:1; cursor:pointer;
+            align-items:center; justify-content:center;
+            transition:background .15s ease, opacity .15s ease; opacity:.65;">✕</button>
+    </div>
+    <button class="btn btn-primary" style="background:#E67E22; border:none; font-size: 14px; padding: 10px;" onclick="runSherlockSearch()">Investigar</button>
+</div>
+  <!-- Filtro dos Cartuchos -->
+    <div id="diagnosis-cat-filter" class="chips chip-picker" style="padding: 0 16px; margin-bottom: 8px;"></div>
+    
+  <div class="module-header" id="diagnosis-header">
+    <button class="back-btn" onclick="document.getElementById('screen-diagnosis').classList.remove('active'); document.getElementById('screen-home').classList.add('active');">←</button>
+    <h2 style="flex:1;">Diagnósticos</h2>
   </div>
 </section>
 <!-- FIM APP -->
@@ -825,11 +868,11 @@ function toast(msg){
 }
 
 /* ============================================================
-   INDEXEDDB LAYER (Versão 3 mantida, segura para atualizações)
+   INDEXEDDB LAYER (Versão manteinha atualizada sempre que mudar ou criar um novo modulo, forma segura para atualizações)
    ============================================================ */
 const DB_NAME='centralPessoalDB';
-const DB_VERSION=9;
-const STORES=['tasks','notes','expenses','habits','habitLogs','shopping','journal','contacts','waterLogs','weight','passwords','gallery', 'quotes','flashcards','workhours','trails','library','calculators'];
+const DB_VERSION=10;
+const STORES=['tasks','notes','expenses','habits','habitLogs','shopping','journal','contacts','waterLogs','weight','passwords','gallery', 'quotes','flashcards','workhours','trails','library','calculators','diagnosis'];
 let db;
 function openDatabase(){
   return new Promise((resolve,reject)=>{
@@ -986,6 +1029,7 @@ function closeSheet(){ document.getElementById('sheet-overlay').classList.remove
 const MODULES=[
   {key:'workhours', title:'Ponto', icon:'⏱️', cls:'b-workhours'},
   {key:'trails', title:'Trilhas', icon:'🗺️', cls:'b-trails'},
+  { key: 'diagnosis', title: 'Diagnósticos', icon: '🔎', cls: 'b-diagnosis' },
   {key:'tasks', title:'Tarefas', icon:'✅', cls:'b-tasks'},
   {key:'notes', title:'Notas', icon:'📝', cls:'b-notes'},
   {key:'flashcards', title:'Flashcards', icon:'🧠', cls:'b-flashcards'},
@@ -999,7 +1043,7 @@ const MODULES=[
   {key:'passwords', title:'Senhas', icon:'🔑', cls:'b-passwords'},
   {key:'gallery', title:'Galeria', icon:'🖼️', cls:'b-gallery'},
   {key:'library', title:'Biblioteca', icon:'📚', cls:'b-library'},
-  {key:'calculators', title:'Calculadoras', icon:'🧮', cls:'b-calculators'}
+  {key:'calculators', title:'Calculadoras', icon:'🧮', cls:'b-calculators'},
 ];
 
 function buildTileGrid(){
@@ -1022,7 +1066,7 @@ function renderModule(key){
     if (list) { list.innerHTML = ''; list.appendChild(emptyState('🔒', 'Módulo Protegido', 'Toque no cadeado no topo para destravar.')); }
   } else {
     screen.classList.remove('is-locked');
-    ({tasks:renderTasks, notes:renderNotes, expenses:renderExpenses, habits:renderHabits, shopping:renderShopping, journal:renderJournal, contacts:renderContacts, water:renderWater, passwords:renderPasswords, gallery:renderGallery, quotes:renderQuotes, flashcards: renderFlashcards,workhours: renderWorkHours,trails: renderTrails, library: renderLibrary, calculators: renderCalculators})[key]();
+    ({tasks:renderTasks, notes:renderNotes, expenses:renderExpenses, habits:renderHabits, shopping:renderShopping, journal:renderJournal, contacts:renderContacts, water:renderWater, passwords:renderPasswords, gallery:renderGallery, quotes:renderQuotes, flashcards: renderFlashcards,workhours: renderWorkHours,trails: renderTrails, library: renderLibrary, calculators: renderCalculators, diagnosis: renderDiagnosis})[key]();
   }
 }
 
@@ -1031,8 +1075,8 @@ function setSub(key, text){ const n=document.getElementById('sub-'+key); if(n) n
 async function updateHomeStats(){
   // AGORA BUSCAMOS TODOS OS 13 MÓDULOS! (workhours incluso)
 // 👇 Copie e cole este bloco EXATAMENTE assim na sua função handleGlobalSearch 👇
-  const [tasks, notes, expenses, habits, habitLogs, shopping, journal, contacts, waterLogs, passwords, gallery, quotes, flashcards, workhours, trails, library, calculators] = await Promise.all(
-    ['tasks','notes','expenses','habits','habitLogs','shopping','journal','contacts','waterLogs','passwords','gallery','quotes','flashcards','workhours','trails','library','calculators'].map(dbAll)
+  const [tasks, notes, expenses, habits, habitLogs, shopping, journal, contacts, waterLogs, passwords, gallery, quotes, flashcards, workhours, trails, library, calculators, diagnosis] = await Promise.all(
+    ['tasks','notes','expenses','habits','habitLogs','shopping','journal','contacts','waterLogs','passwords','gallery','quotes','flashcards','workhours','trails','library','calculators','diagnosis'].map(dbAll)
   );
   
   const pending = tasks.filter(t=>!t.done && !t.isEncrypted);
@@ -1175,7 +1219,7 @@ function norm(str) { return (str || '').toString().normalize('NFD').replace(/[\u
 function renderGlobalSearchChips() {
   const container = document.getElementById('global-search-filters'); container.style.display = 'flex'; container.innerHTML = '';
   // NOVO: 'Trilhas' adicionada no final da lista
-  const cats = ['Todos', 'Tarefas', 'Hábitos', 'Notas', 'Diário', 'Compras', 'Gastos', 'Senhas', 'Contatos', 'Galeria', 'Citações', 'Flashcards', 'Trilhas','Biblioteca','Calculadoras'];
+  const cats = ['Todos', 'Diagnósticos', 'Tarefas', 'Hábitos', 'Notas', 'Diário', 'Compras', 'Gastos', 'Senhas', 'Contatos', 'Galeria', 'Citações', 'Flashcards', 'Trilhas','Biblioteca','Calculadoras'];
   cats.forEach(c => { container.appendChild(h('button', { type: 'button', class: globalSearchFilter === c ? 'active' : '', style: 'flex: 0 0 auto;', onclick: () => { globalSearchFilter = c; handleGlobalSearch(); } }, c)); });
 }
 
@@ -1190,8 +1234,8 @@ async function handleGlobalSearch() {
   clearBtn.style.display = 'flex'; grid.style.display = 'none'; hint.style.display = 'none'; resBox.style.display = 'flex'; resBox.innerHTML = ''; renderGlobalSearchChips();
 
   // NOVO: dbAll('trails') adicionado no Promise! sempre que criar um novo modo adicione o nome ex: , library e abaixo o , dball(library)
-  const [tasks, notes, contacts, expenses, shopping, journal, habits, habitLogs, passwords, gallery, quotes, flashcards, trails, library, calculators] = await Promise.all([ 
-      dbAll('tasks'), dbAll('notes'), dbAll('contacts'), dbAll('expenses'), dbAll('shopping'), dbAll('journal'), dbAll('habits'), dbAll('habitLogs'), dbAll('passwords'), dbAll('gallery'), dbAll('quotes'), dbAll('flashcards'), dbAll('trails'), dbAll('library') 
+  const [tasks, notes, contacts, expenses, shopping, journal, habits, habitLogs, passwords, gallery, quotes, flashcards, trails, library, calculators, diagnosis] = await Promise.all([ 
+      dbAll('tasks'), dbAll('notes'), dbAll('contacts'), dbAll('expenses'), dbAll('shopping'), dbAll('journal'), dbAll('habits'), dbAll('habitLogs'), dbAll('passwords'), dbAll('gallery'), dbAll('quotes'), dbAll('flashcards'), dbAll('trails'), dbAll('library')
   ]);
   
   let results = []; const todayISO = todayIso(); const now = Date.now();
@@ -1227,6 +1271,34 @@ async function handleGlobalSearch() {
               subText += ' · Toque para calcular';
               
               results.push({ type: 'calculator', item: calc, title: titulo, sub: subText }); 
+          } 
+      });
+  }
+
+  // TÁTICA DE ISOLAMENTO: Busca os diagnósticos direto do banco, blindado contra erros!
+  const dbDiagnosticos = await dbAll('diagnosis'); 
+  
+  if (globalSearchFilter === 'Todos' || globalSearchFilter === 'Diagnósticos') {
+      
+      (dbDiagnosticos || []).forEach(d => { 
+          const titulo = d.title || '';
+          const causa = d.cause || '';
+          const solucao = d.solution || '';
+          const cat = d.category || 'Geral';
+          
+          // Junta tudo para a pesquisa achar qualquer palavra solta
+          const searchArea = norm(titulo) + ' ' + norm(causa) + ' ' + norm(solucao);
+          
+          if (!d.isEncrypted && (!q || searchArea.includes(q))) {
+              let subText = cat;
+              if (causa) subText += ` · Causa: ${causa}`;
+              
+              results.push({ 
+                  type: 'diagnosis', 
+                  item: d, 
+                  title: titulo, 
+                  sub: subText 
+              }); 
           } 
       });
   }
@@ -1337,6 +1409,7 @@ if (globalSearchFilter === 'Todos' || globalSearchFilter === 'Trilhas') trails.f
       else if (r.type === 'password') openPasswordForm(r.item); 
       else if (r.type === 'gallery') openGalleryViewer(r.item); 
       else if (r.type === 'quote') openQuoteForm(r.item); 
+      else if (r.type === 'diagnosis') openDiagnosisForm(r.item);
       
       // 👇 MUDANÇA: O MEIO AGORA EXECUTA O JOGO E A CALCULADORA 👇
       else if (r.type === 'calculator') openCalculatorRunner(r.item); // ▶️ Roda a Calculadora
@@ -1433,7 +1506,7 @@ async function exportAllData() {
         tasks: '✅ Tarefas', notes: '📝 Notas', expenses: '💰 Gastos', habits: '⭐ Hábitos',
         habitLogs: '📅 Histórico de Hábitos', shopping: '🛒 Compras', journal: '📔 Diário',
         contacts: '📇 Contatos', waterLogs: '💧 Água', passwords: '🔑 Senhas', gallery: '🖼️ Galeria (Mídia)',
-        quotes: '💬 Citações', flashcards: '🧠 Flashcards', workhours: '⏱️ Ponto', trails: '🗺️ Trilhas', library: '📚 Biblioteca', calculators: '🧮 Calculadoras'
+        quotes: '💬 Citações', flashcards: '🧠 Flashcards', workhours: '⏱️ Ponto', trails: '🗺️ Trilhas', library: '📚 Biblioteca', calculators: '🧮 Calculadoras', diagnosis: '🕵️ sherlock'
     };
 
     openSheet({
@@ -3989,9 +4062,7 @@ setInterval(updateHabitTimersUI, 1000);
 function wireFilterTabs(){
   document.querySelectorAll('#screen-tasks .f-tab').forEach(btn=>{ btn.addEventListener('click', ()=>{ document.querySelectorAll('#screen-tasks .f-tab').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); taskFilter=btn.dataset.f; renderTasks(); }); });
 }
-// ============================================================
-// VIGIA DOS CRONÔMETROS DE HÁBITOS E SOM
-// ============================================================
+
 // ============================================================
 // VIGIA DOS CRONÔMETROS DE HÁBITOS E SOM (ALARME DE OFICINA)
 // ============================================================
@@ -4238,7 +4309,6 @@ async function renderCalculators() {
     });
 }
 
-// 🛠️ O CONSTRUTOR DE CALCULADORAS (Modo Criação)
 // 🛠️ O CONSTRUTOR DE CALCULADORAS (Modo Avançado e Reordenável)
 async function openCalculatorBuilder(existing) {
     let calc = existing ? JSON.parse(JSON.stringify(existing)) : { id: Date.now().toString(), title:'', desc:'', category:'', inputs:[], results:[] };
@@ -4288,15 +4358,15 @@ async function openCalculatorBuilder(existing) {
 
                     // Badge de Variável
                    const varLabel = h('div', {
-    style: 'font-size:12px; color:var(--ink-soft); margin-bottom:8px;'
-}, 'Variável na fórmula: ');
+                        style: 'font-size:12px; color:var(--ink-soft); margin-bottom:8px;'
+                    }, 'Variável na fórmula: ');
 
-const varBadge = h('span', {
-    style: 'color:#2980B9; background:rgba(41,128,185,0.1); padding:2px 6px; border-radius:4px; font-weight:700;'
-}, `v${idx + 1}`);
+                    const varBadge = h('span', {
+                        style: 'color:#2980B9; background:rgba(41,128,185,0.1); padding:2px 6px; border-radius:4px; font-weight:700;'
+                    }, `v${idx + 1}`);
 
-varLabel.appendChild(varBadge);
-cCard.appendChild(varLabel);
+                    varLabel.appendChild(varBadge);
+                    cCard.appendChild(varLabel);
                     cCard.appendChild(fieldWrap('Rótulo (o que a pessoa vê)', h('input', {type:'text', value:inp.label, placeholder:'Ex.: Distância percorrida', oninput:(e)=>inp.label=e.target.value})));
                     
                     // Seletor de Tipo
@@ -4358,19 +4428,19 @@ cCard.appendChild(varLabel);
                     rCard.appendChild(rHead);
 
                     const rVarLabel = h('div', {
-    style: 'font-size:12px; color:var(--ink-soft); margin-bottom:8px;'
-}, 'Variável: ');
+                        style: 'font-size:12px; color:var(--ink-soft); margin-bottom:8px;'
+                    }, 'Variável: ');
 
-const rVarBadge = h('span', {
-    style: 'color:#16A085; background:rgba(26,188,156,0.1); padding:2px 6px; border-radius:4px; font-weight:700;'
-}, `r${idx + 1}`);
+                    const rVarBadge = h('span', {
+                        style: 'color:#16A085; background:rgba(26,188,156,0.1); padding:2px 6px; border-radius:4px; font-weight:700;'
+                    }, `r${idx + 1}`);
 
-const rVarText = h('span', {}, ' (para usar em outros resultados)');
+                    const rVarText = h('span', {}, ' (para usar em outros resultados)');
 
-rVarLabel.appendChild(rVarBadge);
-rVarLabel.appendChild(rVarText);
+                    rVarLabel.appendChild(rVarBadge);
+                    rVarLabel.appendChild(rVarText);
 
-rCard.appendChild(rVarLabel);
+                    rCard.appendChild(rVarLabel);
                     
                     rCard.appendChild(fieldWrap('Rótulo do resultado', h('input', {type:'text', value:res.label, placeholder:'Ex: Custo da viagem', oninput:(e)=>res.label=e.target.value})));
 
@@ -4427,7 +4497,6 @@ rCard.appendChild(rVarLabel);
     });
 }
 
-// 🚀 O EXECUTOR DE CÁLCULOS (Motor com Variáveis Inteligentes)
 // 🚀 O EXECUTOR DE CÁLCULOS (Com opção de Salvar Padrões e Salvar do Teste)
 function openCalculatorRunner(calc, isTest = false) {
     if (!calc.inputs || calc.inputs.length === 0) { toast('Essa calculadora não tem campos de entrada!'); return; }
@@ -4561,6 +4630,376 @@ function openCalculatorRunner(calc, isTest = false) {
             }
             return true; // Fecha a janela
         }
+    });
+}
+/* ============================================================
+   DIAGNÓSTICO MESTRE (BANCO DE CAUSAS)
+   ============================================================ */
+let diagCatFilter = 'Todos';
+// Estes são os seus Cartuchos (pode alterar os nomes se quiser)
+const DIAG_CATS = ['Mecânica', 'Elétrica', 'Software', 'Ferramentas', 'Outros']; 
+
+async function renderDiagnosis() {
+    const list = document.getElementById('diagnosis-list'); if (!list) return;
+    list.innerHTML = ''; 
+    let diags = await dbAll('diagnosis');
+    
+    // Desenha os filtros de Cartucho
+    buildCategoryFilter('diagnosis-cat-filter', DIAG_CATS, diags, diagCatFilter, async (val) => {
+    diagCatFilter = val;
+    const searchInput = document.getElementById('diag-search-input');
+    const hasActiveSearch = searchInput && searchInput.value.trim().length > 0;
+    if (hasActiveSearch) {
+        await renderDiagnosis();   // 👈 redesenha os chips já com a categoria nova pintada
+        await runSherlockSearch(); // 👈 e depois sobrescreve a lista com o resultado da busca
+    } else {
+        renderDiagnosis();
+    }
+});
+    if (diagCatFilter !== 'Todos') diags = diags.filter(d => (d.category || DIAG_CATS[0]) === diagCatFilter); 
+    
+    // Ordem alfabética pelo Sintoma
+    diags.sort((a,b) => (a.title||'').localeCompare(b.title||'','pt-BR'));
+    
+    if(!diags.length){ list.appendChild(emptyState('🔎','Banco Vazio','Adicione um novo caso ao seu Diagnóstico Mestre')); return; }
+    
+    diags.forEach(d => {
+        const row = h('div',{class:'item'}); 
+        
+        // ZONA DE EDIÇÃO (Clicar no meio abre para editar)
+        const grow = h('div',{class:'grow', onclick:()=>openDiagnosisForm(d)}); 
+        grow.appendChild(h('div',{class:'i-title'}, d.title)); // Sintoma principal
+        
+        let subTxt = `Cartucho: ${d.category || DIAG_CATS[0]}`;
+        if(d.cause) subTxt += ` · Causa: ${d.cause}`;
+        grow.appendChild(h('div',{class:'i-sub'}, subTxt)); 
+        row.appendChild(grow);
+        
+        // 📋 BOTÃO 1: Copiar SOMENTE o Diagnóstico/Solução dentro de <pre>
+        row.appendChild(h('button',{ class:'icon-btn', style:'color:var(--c-notes); margin-left:4px;', onclick:(e)=>{ 
+            e.stopPropagation(); 
+            navigator.clipboard.writeText(`<pre>${d.solution || ''}</pre>`); 
+            toast('Solução copiada em <pre>!'); 
+        } }, '📋'));
+
+        // 📤 BOTÃO 2: Copiar TUDO (Para mandar para um amigo)
+        row.appendChild(h('button',{ class:'icon-btn', style:'color:var(--c-tasks); margin-left:4px;', onclick:(e)=>{ 
+            e.stopPropagation(); 
+            const fullText = `*Sintoma:* ${d.title}\n*Diagnóstico/Causa:* ${d.cause || 'N/A'}\n*Solução:*\n${d.solution || ''}`;
+            navigator.clipboard.writeText(fullText); 
+            toast('Caso completo copiado!'); 
+        } }, '📤'));
+
+        row.appendChild(h('button',{class:'icon-btn', onclick:(e)=>{ e.stopPropagation(); confirmDelete('diagnosis', d.id, ()=>{renderDiagnosis();updateHomeStats();}); }},'✕')); 
+        list.appendChild(row);
+    });
+    
+    if(window.aplicarLazyLoading) window.aplicarLazyLoading();
+}
+
+// ✏️ ABRIR FORMULÁRIO DO DIAGNÓSTICO
+function openDiagnosisForm(existing) {
+    const isEdit = !!existing; 
+    let cat = (existing && existing.category) || DIAG_CATS[0];
+    
+    openSheet({
+        title: isEdit ? 'Editar Caso Sherlock' : 'Novo Diagnóstico',
+        buildFields: (box) => {
+            box.appendChild(fieldWrap('Sintoma / Problema (Título)', h('input',{type:'text', id:'f-diag-title', value:(existing&&existing.title)||''}))); 
+            box.appendChild(fieldWrap('Cartucho (Categoria)', buildFormCategoryField(DIAG_CATS, cat)));
+            box.appendChild(fieldWrap('Causa / Hipótese', h('input',{type:'text', id:'f-diag-cause', value:(existing&&existing.cause)||''}))); 
+            
+            const ta = h('textarea',{id:'f-diag-sol', style:'height: 120px;'}); 
+            ta.value = (existing&&existing.solution)||''; 
+            box.appendChild(fieldWrap('Diagnóstico / Solução', ta));
+
+            // 👇 NOVO: CONTROLE MANUAL BAYESIANO 👇
+            if (isEdit) {
+                const badgeBox = h('div', {style:'margin-top:16px; padding:12px; background:var(--surface-2); border-radius:8px; border:1px dashed var(--line);'});
+                badgeBox.appendChild(h('div', {style:'font-size:12px; font-weight:700; color:var(--ink-soft); margin-bottom:8px;'}, '🧠 Força do Diagnóstico (Pontos de Relevância)'));
+                badgeBox.appendChild(h('div', {style:'font-size:11px; color:var(--ink-soft); margin-bottom:8px;'}, 'Você pode zerar ou aumentar os pontos manualmente para alterar o peso deste caso nas pesquisas.'));
+                
+                const inputNum = h('input',{type:'number', id:'f-diag-relevance', value: existing.relevanceCount || 0, style:'width:100px; text-align:center; font-weight:bold; color:#E67E22;'}); 
+                badgeBox.appendChild(inputNum);
+                box.appendChild(badgeBox);
+            }
+        },
+        onSubmit: async () => {
+            const title = document.getElementById('f-diag-title').value.trim(); 
+            if(!title){ toast('O Sintoma é obrigatório'); return false; }
+            
+            const obj = existing || {createdAt:Date.now()}; 
+            obj.title = title; 
+            obj.cause = document.getElementById('f-diag-cause').value.trim(); 
+            obj.solution = document.getElementById('f-diag-sol').value.trim(); 
+            obj.category = document.getElementById('f-cat-input').dataset.val;
+            
+            // Salva o peso Bayesiano editado
+            if (existing) {
+                const relVal = document.getElementById('f-diag-relevance');
+                if (relVal) obj.relevanceCount = parseInt(relVal.value, 10) || 0;
+            } else {
+                obj.relevanceCount = 0; // Novos começam do zero
+            }
+            
+            if(existing) await dbPut('diagnosis', obj);
+            else await dbAdd('diagnosis', obj); 
+            invalidateSherlockCache();
+            
+            renderDiagnosis(); updateHomeStats(); toast('Caso arquivado!');
+            
+            // Força a barra de pesquisa a atualizar se você estava pesquisando
+            const searchBox = document.getElementById('diag-search-input');
+            if(searchBox && searchBox.value) runSherlockSearch();
+            
+            return true;
+        }, 
+        onDelete: isEdit ? () => confirmDelete('diagnosis', existing.id, ()=>{invalidateSherlockCache(); renderDiagnosis();updateHomeStats();}) : null
+    });
+}
+
+// ============================================================
+// 🕵️ CONFIGURAÇÃO DO DETETIVE
+// ============================================================
+const SHERLOCK_MIN_CHARS = 2;       // não investiga com menos que isso
+const SHERLOCK_DEBOUNCE_MS = 300;   // espera você parar de digitar
+const SHERLOCK_CACHE_TTL_MS = 4000; // evita reconsultar o banco a cada tecla
+
+let _sherlockTimer = null;
+let _sherlockCache = null;
+let _sherlockCacheAt = 0;
+let _sherlockReqId = 0; // evita resultado antigo sobrescrever o novo
+function clearDiagSearch() {
+    const input = document.getElementById('diag-search-input');
+    input.value = '';
+    toggleDiagClearButton('');
+    renderDiagnosis();
+}
+
+function toggleDiagClearButton(value) {
+    const btn = document.getElementById('diag-clear-search-btn');
+    if (btn) btn.style.display = (value && value.trim()) ? 'flex' : 'none';
+}
+// ============================================================
+// ⌨️ DISPARADOR COM DEBOUNCE (chamado pelo oninput)
+// ============================================================
+function onSherlockTyping() {
+    clearTimeout(_sherlockTimer);
+    const qRaw = document.getElementById('diag-search-input').value;
+
+    toggleDiagClearButton(qRaw); // 👈 essa linha é a única coisa nova aqui
+
+    if (!qRaw || !qRaw.trim()) {
+        renderDiagnosis();
+        return;
+    }
+
+    markSherlockThinking(true);
+    _sherlockTimer = setTimeout(() => { runSherlockSearch(); }, SHERLOCK_DEBOUNCE_MS);
+}
+
+function markSherlockThinking(isThinking) {
+    const box = document.getElementById('diag-results') || document.getElementById('sherlock-results');
+    if (!box) return;
+    box.classList.toggle('sherlock-thinking', isThinking);
+}
+
+// ============================================================
+// 📚 CACHE DE CASOS
+// ============================================================
+async function getSherlockCases() {
+    const now = Date.now();
+    if (!_sherlockCache || (now - _sherlockCacheAt) > SHERLOCK_CACHE_TTL_MS) {
+        _sherlockCache = await dbAll('diagnosis');
+        _sherlockCacheAt = now;
+    }
+    return _sherlockCache;
+}
+
+function invalidateSherlockCache() {
+    _sherlockCache = null;
+}
+
+// ============================================================
+// 🔎 DISTÂNCIA DE LEVENSHTEIN (tolerância a erro de digitação)
+// ============================================================
+function levenshtein(a, b) {
+    if (a === b) return 0;
+    const al = a.length, bl = b.length;
+    if (al === 0) return bl;
+    if (bl === 0) return al;
+    if (Math.abs(al - bl) > 2) return 99; // corte rápido
+
+    let prev = Array.from({length: bl + 1}, (_, i) => i);
+    for (let i = 1; i <= al; i++) {
+        const curr = [i];
+        for (let j = 1; j <= bl; j++) {
+            const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+            curr[j] = Math.min(prev[j] + 1, curr[j - 1] + 1, prev[j - 1] + cost);
+        }
+        prev = curr;
+    }
+    return prev[bl];
+}
+
+function fuzzyIncludes(text, term) {
+    if (text.includes(term)) return 1;
+    if (term.length < 4) return 0; // termo curto demais, fuzzy vira ruído
+
+    const words = text.split(/\s+/);
+    const maxDist = term.length > 6 ? 2 : 1;
+    for (const w of words) {
+        if (Math.abs(w.length - term.length) > maxDist) continue;
+        if (levenshtein(w, term) <= maxDist) return 0.6; // confiança parcial
+    }
+    return 0;
+}
+
+// ============================================================
+// 🧠 O CÉREBRO INVESTIGATIVO DO SHERLOCK (BM25F + BAYES + INTENÇÃO + FUZZY)
+// ============================================================
+async function runSherlockSearch() {
+    markSherlockThinking(false);
+    const myReqId = ++_sherlockReqId;
+
+    const qRaw = document.getElementById('diag-search-input').value;
+    if (!qRaw || !qRaw.trim()) { renderDiagnosis(); return; }
+
+    const norm = str => (str || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const rawTokens = qRaw.split(/\s+/).filter(t => t.length > 1);
+
+    let mustHave = [], mustNotHave = [], bm25Tokens = [];
+    rawTokens.forEach(t => {
+        if (t.startsWith('+') && t.length > 2) mustHave.push(norm(t.substring(1)));
+        else if (t.startsWith('-') && t.length > 2) mustNotHave.push(norm(t.substring(1)));
+        else bm25Tokens.push(norm(t));
+    });
+
+    // Poucas pistas ainda -> espera mais, não sai chutando
+    const meaningfulChars = bm25Tokens.join('').length;
+    const hasOperators = mustHave.length > 0 || mustNotHave.length > 0;
+    if (!hasOperators && meaningfulChars < SHERLOCK_MIN_CHARS) {
+        renderDiagnosis();
+        return;
+    }
+
+    let diags = await getSherlockCases();
+    if (diagCatFilter !== 'Todos') {
+        diags = diags.filter(d => (d.category || DIAG_CATS[0]) === diagCatFilter);
+    }
+
+    diags = diags.filter(d => {
+        const tTitle = norm(d.title || '');
+        const tCause = norm(d.cause || '');
+        const tSol = norm(d.solution || '');
+        const fullText = `${tTitle} ${tCause} ${tSol}`;
+
+        d._tTitle = tTitle; d._tCause = tCause; d._tSol = tSol;
+        d._fullText = fullText;
+        d._docLen = fullText.split(/\s+/).length;
+
+        for (const bad of mustNotHave) if (fullText.includes(bad)) return false;
+        for (const good of mustHave) if (!fullText.includes(good)) return false;
+        return true;
+    });
+
+    if (diags.length === 0) { renderSherlockResults([]); return; }
+
+    if (bm25Tokens.length === 0) {
+        diags.forEach(d => {
+            const hitRate = d.relevanceCount || 0;
+            d._finalScore = 1 + (Math.log1p(hitRate) * 0.15);
+        });
+    } else {
+        const k1 = 1.2, b = 0.75;
+        const W_TITLE = 3, W_CAUSE = 1.6, W_SOL = 1; // título > causa > solução
+
+        let totalLen = 0; diags.forEach(d => totalLen += d._docLen);
+        const avgdl = totalLen / (diags.length || 1);
+
+        const df = {};
+        bm25Tokens.forEach(t => {
+            df[t] = diags.filter(d => d._fullText.includes(t) || fuzzyIncludes(d._fullText, t) > 0).length;
+        });
+
+        diags.forEach(d => {
+            let bm25Score = 0;
+            bm25Tokens.forEach(t => {
+                const inTitle = d._tTitle.includes(t);
+                const inCause = d._tCause.includes(t);
+                const inSol = d._tSol.includes(t);
+                let confidence = 1;
+
+                if (!(inTitle || inCause || inSol)) {
+                    confidence = fuzzyIncludes(d._fullText, t);
+                    if (confidence === 0) return;
+                }
+
+                const idf = Math.log((diags.length - df[t] + 0.5) / (df[t] + 0.5) + 1);
+                const safeT = t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                const tf = (d._fullText.match(new RegExp(safeT, 'g')) || []).length || 1;
+                const fieldWeight = inTitle ? W_TITLE : (inCause ? W_CAUSE : W_SOL);
+                const termScore = idf * ((tf * (k1 + 1)) / (tf + k1 * (1 - b + b * (d._docLen / avgdl))));
+
+                bm25Score += termScore * fieldWeight * confidence;
+            });
+
+            const hitRate = d.relevanceCount || 0;
+            d._finalScore = bm25Score * (1 + (Math.log1p(hitRate) * 0.15));
+        });
+    }
+
+    if (myReqId !== _sherlockReqId) return; // resposta antiga, descarta
+
+    const sortedResults = diags.filter(d => d._finalScore > 0).sort((a, b) => b._finalScore - a._finalScore);
+    renderSherlockResults(sortedResults);
+}
+
+// 👁️ DESENHA O PAINEL DE RESULTADOS DO SHERLOCK
+function renderSherlockResults(results) {
+    const list = document.getElementById('diagnosis-list');
+    list.innerHTML = '';
+    
+    // Esconde os cartuchos para focar na pesquisa
+    // document.getElementById('diagnosis-cat-filter').style.display = 'none';
+
+    if (results.length === 0) {
+        list.appendChild(emptyState('🤷‍♂️', 'Nenhuma Pista Encontrada', 'Tente usar outros termos para descrever o sintoma.'));
+        return;
+    }
+    
+    const banner = h('div', {style:'padding:12px; background:#0e0d0d; color:#D35400; border-radius:8px; margin-bottom:16px; font-size:13px; font-weight:700; text-align:center; border:1px solid #E67E22;'}, 
+        `🕵️ Sherlock analisou as evidências: ${results.length} causa(s) provável(is).`);
+    list.appendChild(banner);
+
+    results.forEach((d, index) => {
+        const row = h('div',{class:'item', style: index === 0 ? 'border: 2px solid #E67E22; background:#100d0b;' : ''}); 
+        
+        const grow = h('div',{class:'grow', onclick:()=>openDiagnosisForm(d)}); 
+        
+        // Badge de Probabilidade (Mais Alta pro Top 1)
+        const probText = index === 0 ? '🔴 MUITO PROVÁVEL' : '🟡 PROVÁVEL';
+        grow.appendChild(h('div',{style:'font-size:11px; font-weight:800; color:#E67E22; margin-bottom:4px;'}, probText));
+        
+        grow.appendChild(h('div',{class:'i-title'}, d.title)); 
+        
+        let subTxt = `Cartucho: ${d.category || 'Geral'}`;
+        if(d.cause) subTxt += ` · Causa: ${d.cause}`;
+        grow.appendChild(h('div',{class:'i-sub'}, subTxt)); 
+        row.appendChild(grow);
+
+        // 👍 BOTÃO BAYESIANO: Confirma que essa foi a solução e aumenta o peso histórico!
+        row.appendChild(h('button',{ class:'icon-btn', style:'color:#27AE60; font-size:18px;', onclick: async (e)=>{ 
+            e.stopPropagation(); 
+            d.relevanceCount = (d.relevanceCount || 0) + 1; // Aprende com o uso
+            await dbPut('diagnosis', d);
+            toast('Sherlock aprendeu com este caso! 🧠');
+            runSherlockSearch(); // Recalcula na hora
+        }}, '👍'));
+
+        row.appendChild(h('button',{ class:'icon-btn', style:'color:var(--c-notes); margin-left:4px;', onclick:(e)=>{ e.stopPropagation(); navigator.clipboard.writeText(`<pre>${d.solution || ''}</pre>`); toast('Solução copiada!'); } }, '📋'));
+        
+        list.appendChild(row);
     });
 }
 // 🧠 MINI-EXECUTOR DE FLASHCARD (Revisão rápida sem sair da busca)
