@@ -764,7 +764,7 @@ body.dark-theme #app { box-shadow: 0 0 60px rgba(0,0,0,0.5); }
         border: 1.5px solid var(--line);
         background: var(--surface);
         border-radius: 14px;
-        padding: 10px 38px 10px 38px;
+        padding: 10px 10px 10px 38px;
         font-size: 14.5px;
         outline: none;
         box-shadow: 0 1px 2px rgba(var(--shadow-rgb), .04);
@@ -3229,6 +3229,93 @@ function openFlashcardForm(existing) {
     }) : null
   });
 }
+// 🧠 MINI-EXECUTOR DE FLASHCARD (Revisão rápida sem sair da busca)
+// 🧠 MINI-EXECUTOR DE FLASHCARD (Visualização interativa, Leitor de Voz e Varredura de Campos)
+// 🧠 MINI-EXECUTOR DE FLASHCARD (Com Tradução do Exemplo)
+// 🧠 MINI-EXECUTOR DE FLASHCARD (Versão Limpa e Definitiva)
+function reviewSingleFlashcard(card) {
+    openSheet({
+        title: '🧠 Detalhes do Cartão',
+        buildFields: (box) => {
+            let lastSpoken = '';
+
+            // 🎙️ Função Mágica de Voz
+            const handleSpeak = (text, lang) => {
+                if (!window.speechSynthesis) return;
+                
+                if (window.speechSynthesis.speaking && lastSpoken === text) {
+                    window.speechSynthesis.cancel();
+                    lastSpoken = '';
+                } else {
+                    playFCVoice(text, lang);
+                    lastSpoken = text;
+                }
+            };
+
+            // 📦 Criador de blocos clicáveis
+            const createBlock = (label, text, lang, color) => {
+                if (!text) return null;
+                const wrap = h('div', {style:`background:var(--surface-2); padding:16px; border-radius:12px; text-align:center; margin-bottom:12px; border:1px solid ${color}; cursor:pointer; transition:0.2s;`});
+                
+                wrap.onclick = (e) => {
+                    e.preventDefault();
+                    handleSpeak(text, lang);
+                    wrap.style.opacity = '0.5';
+                    setTimeout(() => wrap.style.opacity = '1', 150);
+                };
+
+                wrap.appendChild(h('div', {style:`font-size:11px; font-weight:800; color:${color}; letter-spacing:1px; margin-bottom:8px;`}, label + ' 🔊 (Toque para ouvir)'));
+                wrap.appendChild(h('div', {style:'font-size:20px; font-weight:700; color:var(--ink);'}, text));
+                return wrap;
+            };
+
+            // ===== 1. FRENTE (Sempre visível) =====
+            const frontText = card.front || card.question || card.q || '';
+            if (frontText) box.appendChild(createBlock('FRENTE', frontText, card.frontLang, '#4A90E2'));
+
+            // Caixa invisível que guarda tudo do verso
+            const aBox = h('div', {style:'display:none; margin-top:12px;'});
+
+            // ===== 2. VERSO =====
+            const backText = card.back || card.answer || card.a || '';
+            if (backText) aBox.appendChild(createBlock('VERSO', backText, card.backLang || card.frontLang, '#1ABC9C'));
+
+            // ===== 3. EXEMPLOS =====
+            if (card.example || card.examples) {
+                aBox.appendChild(createBlock('EXEMPLO', card.example || card.examples, card.backLang || card.frontLang, '#E67E22'));
+            }
+
+            // ===== 4. TRADUÇÃO DO EXEMPLO (Com o seu nome exato) =====
+            if (card.exTranslation) {
+                aBox.appendChild(createBlock('TRADUÇÃO DO EXEMPLO', card.exTranslation, card.frontLang, '#D35400'));
+            }
+
+            // ===== 5. NOTAS =====
+            if (card.note || card.notes) {
+                aBox.appendChild(createBlock('NOTAS', card.note || card.notes, null, '#8E44AD'));
+            }
+
+            box.appendChild(aBox);
+
+            // ===== BOTÃO REVELAR =====
+            const btnFlip = h('button', {class:'btn', style:'width:100%; margin-top:8px; background:var(--surface-2); color:var(--ink); border:1px dashed var(--ink-soft); padding:16px; font-size:16px;'}, '⬇️ Revelar tudo');
+            btnFlip.onclick = (e) => {
+                e.preventDefault();
+                aBox.style.display = 'block';
+                btnFlip.style.display = 'none';
+            };
+            box.appendChild(btnFlip);
+
+            // Esconde o botão de salvar
+            setTimeout(() => { const saveBtn = document.getElementById('sheet-save-btn'); if (saveBtn) saveBtn.style.display = 'none'; }, 10);
+        },
+        onSubmit: () => { 
+            // Corta o áudio automaticamente se você fechar a janela
+            if (window.speechSynthesis) window.speechSynthesis.cancel();
+            return true; 
+        }
+    });
+}
 /* ============================================================
    HORAS TRABALHADAS (Ponto e Fechamento)
    ============================================================ */
@@ -4638,7 +4725,15 @@ function openCalculatorRunner(calc, isTest = false) {
 let diagCatFilter = 'Todos';
 // Estes são os seus Cartuchos (pode alterar os nomes se quiser)
 const DIAG_CATS = ['Mecânica', 'Elétrica', 'Software', 'Ferramentas', 'Outros']; 
-
+// 🗂️ VASSOURA DE CARTUCHOS (Busca todos os que você já criou)
+async function getDynamicCategories() {
+    const diags = await dbAll('diagnosis');
+    const cats = new Set(DIAG_CATS); // Garante que os 5 originais sempre existam
+    diags.forEach(d => {
+        if (d.category && d.category.trim()) cats.add(d.category.trim());
+    });
+    return Array.from(cats).sort(); // Retorna em ordem alfabética
+}
 async function renderDiagnosis() {
     const list = document.getElementById('diagnosis-list'); if (!list) return;
     list.innerHTML = ''; 
@@ -4655,7 +4750,7 @@ async function renderDiagnosis() {
     } else {
         renderDiagnosis();
     }
-});
+  });
     if (diagCatFilter !== 'Todos') diags = diags.filter(d => (d.category || DIAG_CATS[0]) === diagCatFilter); 
     
     // Ordem alfabética pelo Sintoma
@@ -4673,6 +4768,11 @@ async function renderDiagnosis() {
         let subTxt = `Cartucho: ${d.category || DIAG_CATS[0]}`;
         if(d.cause) subTxt += ` · Causa: ${d.cause}`;
         grow.appendChild(h('div',{class:'i-sub'}, subTxt)); 
+        if (d.tags && d.tags.length) {
+            const tagsRow = h('div', {style:'display:flex; flex-wrap:wrap; gap:4px; margin-top:4px;'});
+            d.tags.forEach(t => tagsRow.appendChild(h('span', {style:'font-size:10.5px; padding:2px 7px; border-radius:999px; background:var(--surface-2); color:var(--ink-soft);'}, t)));
+            grow.appendChild(tagsRow);
+        }
         row.appendChild(grow);
         
         // 📋 BOTÃO 1: Copiar SOMENTE o Diagnóstico/Solução dentro de <pre>
@@ -4698,66 +4798,102 @@ async function renderDiagnosis() {
 }
 
 // ✏️ ABRIR FORMULÁRIO DO DIAGNÓSTICO
-function openDiagnosisForm(existing) {
-    const isEdit = !!existing; 
+// ✏️ ABRIR FORMULÁRIO DO DIAGNÓSTICO
+async function openDiagnosisForm(existing) { // 👈 NOVO: Agora é async
+    const isEdit = !!existing;
     let cat = (existing && existing.category) || DIAG_CATS[0];
+    let tagFieldRef = null;
     
+    // 👈 NOVO: Puxa todas as categorias que existem no seu banco
+    const dynamicCats = await getDynamicCategories(); 
+
     openSheet({
         title: isEdit ? 'Editar Caso Sherlock' : 'Novo Diagnóstico',
         buildFields: (box) => {
-            box.appendChild(fieldWrap('Sintoma / Problema (Título)', h('input',{type:'text', id:'f-diag-title', value:(existing&&existing.title)||''}))); 
-            box.appendChild(fieldWrap('Cartucho (Categoria)', buildFormCategoryField(DIAG_CATS, cat)));
-            box.appendChild(fieldWrap('Causa / Hipótese', h('input',{type:'text', id:'f-diag-cause', value:(existing&&existing.cause)||''}))); 
+            const manualWrap = h('div', { id: 'diag-manual-fields', style: isEdit ? '' : 'display:none;' });
+            manualWrap.appendChild(fieldWrap('Sintoma / Problema (Título)', h('input', { type: 'text', id: 'f-diag-title', value: (existing && existing.title) || '' })));
             
-            const ta = h('textarea',{id:'f-diag-sol', style:'height: 120px;'}); 
-            ta.value = (existing&&existing.solution)||''; 
-            box.appendChild(fieldWrap('Diagnóstico / Solução', ta));
+            // 👇 NOVO: O Datalist Híbrido (Select + Input) 👇
+            const catInput = h('input', { type: 'text', id: 'f-cat-input', list: 'diag-cat-list', value: cat, placeholder: 'Escolha ou digite novo...' });
+            const dataList = h('datalist', { id: 'diag-cat-list' });
+            dynamicCats.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c;
+                dataList.appendChild(opt);
+            });
+            const catWrap = h('div', {});
+            catWrap.appendChild(catInput);
+            catWrap.appendChild(dataList);
+            manualWrap.appendChild(fieldWrap('Cartucho (Categoria)', catWrap));
+            // 👆 FIM DO DATALIST 👆
 
-            // 👇 NOVO: CONTROLE MANUAL BAYESIANO 👇
+            manualWrap.appendChild(fieldWrap('Causa / Hipótese', h('input', { type: 'text', id: 'f-diag-cause', value: (existing && existing.cause) || '' })));
+
+            const ta = h('textarea', { id: 'f-diag-sol', style: 'height: 120px;' });
+            ta.value = (existing && existing.solution) || '';
+            manualWrap.appendChild(fieldWrap('Diagnóstico / Solução', ta));
+
+            tagFieldRef = buildTagInputField((existing && existing.tags) || []);
+            manualWrap.appendChild(fieldWrap('Tags', tagFieldRef));
+
             if (isEdit) {
-                const badgeBox = h('div', {style:'margin-top:16px; padding:12px; background:var(--surface-2); border-radius:8px; border:1px dashed var(--line);'});
-                badgeBox.appendChild(h('div', {style:'font-size:12px; font-weight:700; color:var(--ink-soft); margin-bottom:8px;'}, '🧠 Força do Diagnóstico (Pontos de Relevância)'));
-                badgeBox.appendChild(h('div', {style:'font-size:11px; color:var(--ink-soft); margin-bottom:8px;'}, 'Você pode zerar ou aumentar os pontos manualmente para alterar o peso deste caso nas pesquisas.'));
-                
-                const inputNum = h('input',{type:'number', id:'f-diag-relevance', value: existing.relevanceCount || 0, style:'width:100px; text-align:center; font-weight:bold; color:#E67E22;'}); 
+                const badgeBox = h('div', { style: 'margin-top:16px; padding:12px; background:var(--surface-2); border-radius:8px; border:1px dashed var(--line);' });
+                badgeBox.appendChild(h('div', { style: 'font-size:12px; font-weight:700; color:var(--ink-soft); margin-bottom:8px;' }, '🧠 Força do Diagnóstico (Pontos de Relevância)'));
+                badgeBox.appendChild(h('div', { style: 'font-size:11px; color:var(--ink-soft); margin-bottom:8px;' }, 'Você pode zerar ou aumentar os pontos manualmente para alterar o peso deste caso nas pesquisas.'));
+                const inputNum = h('input', { type: 'number', id: 'f-diag-relevance', value: existing.relevanceCount || 0, style: 'width:100px; text-align:center; font-weight:bold; color:#E67E22;' });
                 badgeBox.appendChild(inputNum);
-                box.appendChild(badgeBox);
+                manualWrap.appendChild(badgeBox);
             }
+
+            if (!isEdit) {
+                box.appendChild(buildQuickAddPanel(tagFieldRef, cat));
+
+                const toggleLink = h('div', { style: 'text-align:center; margin:4px 0 8px; font-size:12.5px; font-weight:700; color:#E67E22; cursor:pointer;' }, '✏️ Preencher manualmente');
+                toggleLink.onclick = () => {
+                    const hidden = manualWrap.style.display === 'none';
+                    manualWrap.style.display = hidden ? '' : 'none';
+                    toggleLink.textContent = hidden ? '🔼 Esconder campos manuais' : '✏️ Preencher manualmente';
+                };
+                box.appendChild(toggleLink);
+            }
+
+            box.appendChild(manualWrap);
         },
         onSubmit: async () => {
-            const title = document.getElementById('f-diag-title').value.trim(); 
-            if(!title){ toast('O Sintoma é obrigatório'); return false; }
+            const title = document.getElementById('f-diag-title').value.trim();
+            if (!title) { toast('O Sintoma é obrigatório'); return false; }
+
+            const obj = existing || { createdAt: Date.now() };
+            obj.title = title;
+            obj.cause = document.getElementById('f-diag-cause').value.trim();
+            obj.solution = document.getElementById('f-diag-sol').value.trim();
             
-            const obj = existing || {createdAt:Date.now()}; 
-            obj.title = title; 
-            obj.cause = document.getElementById('f-diag-cause').value.trim(); 
-            obj.solution = document.getElementById('f-diag-sol').value.trim(); 
-            obj.category = document.getElementById('f-cat-input').dataset.val;
+            // 👈 NOVO: Agora ele pega o "value" do datalist em vez do dataset.val do chip
+            obj.category = document.getElementById('f-cat-input').value.trim() || DIAG_CATS[0]; 
             
-            // Salva o peso Bayesiano editado
+            obj.tags = tagFieldRef ? tagFieldRef._getTags() : (existing && existing.tags) || [];
+
             if (existing) {
                 const relVal = document.getElementById('f-diag-relevance');
                 if (relVal) obj.relevanceCount = parseInt(relVal.value, 10) || 0;
             } else {
-                obj.relevanceCount = 0; // Novos começam do zero
+                obj.relevanceCount = 0;
             }
-            
-            if(existing) await dbPut('diagnosis', obj);
-            else await dbAdd('diagnosis', obj); 
+
+            if (existing) await dbPut('diagnosis', obj);
+            else await dbAdd('diagnosis', obj);
             invalidateSherlockCache();
-            
+
             renderDiagnosis(); updateHomeStats(); toast('Caso arquivado!');
-            
-            // Força a barra de pesquisa a atualizar se você estava pesquisando
+
             const searchBox = document.getElementById('diag-search-input');
-            if(searchBox && searchBox.value) runSherlockSearch();
-            
+            if (searchBox && searchBox.value) runSherlockSearch();
+
             return true;
-        }, 
-        onDelete: isEdit ? () => confirmDelete('diagnosis', existing.id, ()=>{invalidateSherlockCache(); renderDiagnosis();updateHomeStats();}) : null
+        },
+        onDelete: isEdit ? () => confirmDelete('diagnosis', existing.id, () => { invalidateSherlockCache(); renderDiagnosis(); updateHomeStats(); }) : null
     });
 }
-
 // ============================================================
 // 🕵️ CONFIGURAÇÃO DO DETETIVE
 // ============================================================
@@ -4807,10 +4943,22 @@ function markSherlockThinking(isThinking) {
 // ============================================================
 // 📚 CACHE DE CASOS
 // ============================================================
+function buildSearchIndexEntry(d) {
+    const norm = str => (str || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    d._tTitle = norm(d.title || '');
+    d._tCause = norm(d.cause || '');
+    d._tSol = norm(d.solution || '');
+    d._tTags = norm((d.tags || []).join(' '));
+    d._fullText = `${d._tTitle} ${d._tCause} ${d._tSol} ${d._tTags}`;
+    d._docLen = d._fullText.split(/\s+/).filter(Boolean).length;
+    return d;
+}
+
 async function getSherlockCases() {
     const now = Date.now();
     if (!_sherlockCache || (now - _sherlockCacheAt) > SHERLOCK_CACHE_TTL_MS) {
-        _sherlockCache = await dbAll('diagnosis');
+        const raw = await dbAll('diagnosis');
+        _sherlockCache = raw.map(buildSearchIndexEntry); // normaliza 1x, não a cada tecla
         _sherlockCacheAt = now;
     }
     return _sherlockCache;
@@ -4887,19 +5035,9 @@ async function runSherlockSearch() {
     if (diagCatFilter !== 'Todos') {
         diags = diags.filter(d => (d.category || DIAG_CATS[0]) === diagCatFilter);
     }
-
     diags = diags.filter(d => {
-        const tTitle = norm(d.title || '');
-        const tCause = norm(d.cause || '');
-        const tSol = norm(d.solution || '');
-        const fullText = `${tTitle} ${tCause} ${tSol}`;
-
-        d._tTitle = tTitle; d._tCause = tCause; d._tSol = tSol;
-        d._fullText = fullText;
-        d._docLen = fullText.split(/\s+/).length;
-
-        for (const bad of mustNotHave) if (fullText.includes(bad)) return false;
-        for (const good of mustHave) if (!fullText.includes(good)) return false;
+        for (const bad of mustNotHave) if (d._fullText.includes(bad)) return false;
+        for (const good of mustHave) if (!d._fullText.includes(good)) return false;
         return true;
     });
 
@@ -4912,7 +5050,7 @@ async function runSherlockSearch() {
         });
     } else {
         const k1 = 1.2, b = 0.75;
-        const W_TITLE = 3, W_CAUSE = 1.6, W_SOL = 1; // título > causa > solução
+        const W_TITLE = 3, W_TAGS = 2.2, W_CAUSE = 1.6, W_SOL = 1; // título > causa > solução
 
         let totalLen = 0; diags.forEach(d => totalLen += d._docLen);
         const avgdl = totalLen / (diags.length || 1);
@@ -4928,6 +5066,7 @@ async function runSherlockSearch() {
                 const inTitle = d._tTitle.includes(t);
                 const inCause = d._tCause.includes(t);
                 const inSol = d._tSol.includes(t);
+                const inTags = d._tTags.includes(t);
                 let confidence = 1;
 
                 if (!(inTitle || inCause || inSol)) {
@@ -4937,8 +5076,8 @@ async function runSherlockSearch() {
 
                 const idf = Math.log((diags.length - df[t] + 0.5) / (df[t] + 0.5) + 1);
                 const safeT = t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                const tf = (d._fullText.match(new RegExp(safeT, 'g')) || []).length || 1;
-                const fieldWeight = inTitle ? W_TITLE : (inCause ? W_CAUSE : W_SOL);
+                const tf = (d._fullText.split(t).length - 1) || 1;
+                const fieldWeight = inTitle ? W_TITLE : (inTags ? W_TAGS : (inCause ? W_CAUSE : W_SOL));  
                 const termScore = idf * ((tf * (k1 + 1)) / (tf + k1 * (1 - b + b * (d._docLen / avgdl))));
 
                 bm25Score += termScore * fieldWeight * confidence;
@@ -4956,45 +5095,84 @@ async function runSherlockSearch() {
 }
 
 // 👁️ DESENHA O PAINEL DE RESULTADOS DO SHERLOCK
+// 👁️ DESENHA O PAINEL DE RESULTADOS DO SHERLOCK (Com Porcentagem de Certeza)
 function renderSherlockResults(results) {
     const list = document.getElementById('diagnosis-list');
     list.innerHTML = '';
     
-    // Esconde os cartuchos para focar na pesquisa
-    // document.getElementById('diagnosis-cat-filter').style.display = 'none';
-
     if (results.length === 0) {
         list.appendChild(emptyState('🤷‍♂️', 'Nenhuma Pista Encontrada', 'Tente usar outros termos para descrever o sintoma.'));
         return;
     }
     
-    const banner = h('div', {style:'padding:12px; background:#0e0d0d; color:#D35400; border-radius:8px; margin-bottom:16px; font-size:13px; font-weight:700; text-align:center; border:1px solid #E67E22;'}, 
-        `🕵️ Sherlock analisou as evidências: ${results.length} causa(s) provável(is).`);
+    const banner = h('div', {style:'padding:12px; background:#0e0d0d; color:#E67E22; border-radius:8px; margin-bottom:16px; font-size:13px; font-weight:700; text-align:center; border:1px solid #E67E22;'}, 
+        `🕵️ Sherlock analisou as evidências: ${results.length} causa(s) encontrada(s).`);
     list.appendChild(banner);
 
     results.forEach((d, index) => {
-        const row = h('div',{class:'item', style: index === 0 ? 'border: 2px solid #E67E22; background:#100d0b;' : ''}); 
+        
+        // 🧮 CÁLCULO DA PORCENTAGEM (Curva Exponencial)
+        // Transforma o score infinito do BM25 em uma porcentagem de 0 a 99%
+        let pct = (1 - Math.exp(-d._finalScore * 0.35)) * 100;
+        
+        // Bônus Bayesiano Manual: Cada 👍 que você deu no passado adiciona ~3% de certeza bruta!
+        if (d.relevanceCount > 0) { 
+            pct += (d.relevanceCount * 3); 
+        }
+        
+        // Trava no máximo de 99.9% (Sherlock nunca tem 100% de certeza sem ver o problema kkk)
+        let pctInt = Math.floor(Math.min(99.9, pct));
+
+        // 🎨 DEFINIÇÃO DOS NÍVEIS DE CERTEZA DO DETETIVE
+        let probText, probColor, bgColor;
+        if (pctInt >= 85) {
+            probText = `🔥 ${pctInt}% — PISTA QUENTE (Certeza Alta)`;
+            probColor = '#E74C3C'; // Vermelho
+            bgColor = '#230a0a';   // Fundo avermelhado super escuro
+        } else if (pctInt >= 60) {
+            probText = `🟠 ${pctInt}% — ALTA SUSPEITA`;
+            probColor = '#E67E22'; // Laranja
+            bgColor = '#211306';   // Fundo alaranjado escuro
+        } else if (pctInt >= 35) {
+            probText = `🟡 ${pctInt}% — POSSÍVEL CAUSA`;
+            probColor = '#F1C40F'; // Amarelo
+            bgColor = '#1f1a07';   // Fundo amarelado escuro
+        } else {
+            probText = `🔵 ${pctInt}% — PISTA FRACA (Inconclusivo)`;
+            probColor = '#3498DB'; // Azul
+            bgColor = '#08131c';   // Fundo azulado escuro
+        }
+
+        // O Top 1 recebe a borda e o fundo da cor do nível de certeza!
+        const rowStyle = index === 0 ? `border: 2px solid ${probColor}; background:${bgColor};` : '';
+        const row = h('div',{class:'item', style: rowStyle}); 
         
         const grow = h('div',{class:'grow', onclick:()=>openDiagnosisForm(d)}); 
         
-        // Badge de Probabilidade (Mais Alta pro Top 1)
-        const probText = index === 0 ? '🔴 MUITO PROVÁVEL' : '🟡 PROVÁVEL';
-        grow.appendChild(h('div',{style:'font-size:11px; font-weight:800; color:#E67E22; margin-bottom:4px;'}, probText));
+        // Badge de Probabilidade Inteligente Colorido
+        grow.appendChild(h('div',{style:`font-size:11px; font-weight:900; color:${probColor}; margin-bottom:5px; letter-spacing:0.5px;`}, probText));
         
         grow.appendChild(h('div',{class:'i-title'}, d.title)); 
         
         let subTxt = `Cartucho: ${d.category || 'Geral'}`;
         if(d.cause) subTxt += ` · Causa: ${d.cause}`;
         grow.appendChild(h('div',{class:'i-sub'}, subTxt)); 
+        
+        if (d.tags && d.tags.length) {
+            const tagsRow = h('div', {style:'display:flex; flex-wrap:wrap; gap:4px; margin-top:4px;'});
+            d.tags.forEach(t => tagsRow.appendChild(h('span', {style:'font-size:10.5px; padding:2px 7px; border-radius:999px; background:var(--surface-2); color:var(--ink-soft);'}, t)));
+            grow.appendChild(tagsRow);
+        }
         row.appendChild(grow);
 
-        // 👍 BOTÃO BAYESIANO: Confirma que essa foi a solução e aumenta o peso histórico!
+        // 👍 BOTÃO BAYESIANO: Aprende na hora e aumenta a porcentagem visualmente!
         row.appendChild(h('button',{ class:'icon-btn', style:'color:#27AE60; font-size:18px;', onclick: async (e)=>{ 
             e.stopPropagation(); 
-            d.relevanceCount = (d.relevanceCount || 0) + 1; // Aprende com o uso
+            d.relevanceCount = (d.relevanceCount || 0) + 1; 
             await dbPut('diagnosis', d);
-            toast('Sherlock aprendeu com este caso! 🧠');
-            runSherlockSearch(); // Recalcula na hora
+            toast('Sherlock aprendeu com este caso! 🧠 (+3% de Certeza)');
+            invalidateSherlockCache();
+            runSherlockSearch(); 
         }}, '👍'));
 
         row.appendChild(h('button',{ class:'icon-btn', style:'color:var(--c-notes); margin-left:4px;', onclick:(e)=>{ e.stopPropagation(); navigator.clipboard.writeText(`<pre>${d.solution || ''}</pre>`); toast('Solução copiada!'); } }, '📋'));
@@ -5002,92 +5180,307 @@ function renderSherlockResults(results) {
         list.appendChild(row);
     });
 }
-// 🧠 MINI-EXECUTOR DE FLASHCARD (Revisão rápida sem sair da busca)
-// 🧠 MINI-EXECUTOR DE FLASHCARD (Visualização interativa, Leitor de Voz e Varredura de Campos)
-// 🧠 MINI-EXECUTOR DE FLASHCARD (Com Tradução do Exemplo)
-// 🧠 MINI-EXECUTOR DE FLASHCARD (Versão Limpa e Definitiva)
-function reviewSingleFlashcard(card) {
-    openSheet({
-        title: '🧠 Detalhes do Cartão',
-        buildFields: (box) => {
-            let lastSpoken = '';
+function buildTagInputField(initialTags) {
+    const wrap = h('div', { style: 'display:flex; flex-wrap:wrap; gap:6px; padding:8px; border:1.5px solid var(--line); border-radius:12px; background:var(--surface); align-items:center;' });
+    const chipsBox = h('div', { style: 'display:flex; flex-wrap:wrap; gap:6px;' });
+    const input = h('input', { type:'text', placeholder:'Digite e pressione Enter...', style:'border:none; outline:none; flex:1; min-width:120px; background:transparent; color:var(--ink); font-size:13.5px;' });
 
-            // 🎙️ Função Mágica de Voz
-            const handleSpeak = (text, lang) => {
-                if (!window.speechSynthesis) return;
-                
-                if (window.speechSynthesis.speaking && lastSpoken === text) {
-                    window.speechSynthesis.cancel();
-                    lastSpoken = '';
-                } else {
-                    playFCVoice(text, lang);
-                    lastSpoken = text;
-                }
-            };
+    let tags = Array.isArray(initialTags) ? [...initialTags] : [];
 
-            // 📦 Criador de blocos clicáveis
-            const createBlock = (label, text, lang, color) => {
-                if (!text) return null;
-                const wrap = h('div', {style:`background:var(--surface-2); padding:16px; border-radius:12px; text-align:center; margin-bottom:12px; border:1px solid ${color}; cursor:pointer; transition:0.2s;`});
-                
-                wrap.onclick = (e) => {
-                    e.preventDefault();
-                    handleSpeak(text, lang);
-                    wrap.style.opacity = '0.5';
-                    setTimeout(() => wrap.style.opacity = '1', 150);
-                };
+    function renderChips() {
+        chipsBox.innerHTML = '';
+        tags.forEach((tag, i) => {
+            const chip = h('span', { style:'display:inline-flex; align-items:center; gap:4px; background:var(--surface-2); color:var(--ink); padding:4px 8px; border-radius:999px; font-size:12.5px;' }, tag);
+            const rm = h('span', { style:'cursor:pointer; font-weight:700; opacity:.6;', onclick:()=>{ tags.splice(i,1); renderChips(); } }, ' ✕');
+            chip.appendChild(rm);
+            chipsBox.appendChild(chip);
+        });
+    }
+    renderChips();
 
-                wrap.appendChild(h('div', {style:`font-size:11px; font-weight:800; color:${color}; letter-spacing:1px; margin-bottom:8px;`}, label + ' 🔊 (Toque para ouvir)'));
-                wrap.appendChild(h('div', {style:'font-size:20px; font-weight:700; color:var(--ink);'}, text));
-                return wrap;
-            };
-
-            // ===== 1. FRENTE (Sempre visível) =====
-            const frontText = card.front || card.question || card.q || '';
-            if (frontText) box.appendChild(createBlock('FRENTE', frontText, card.frontLang, '#4A90E2'));
-
-            // Caixa invisível que guarda tudo do verso
-            const aBox = h('div', {style:'display:none; margin-top:12px;'});
-
-            // ===== 2. VERSO =====
-            const backText = card.back || card.answer || card.a || '';
-            if (backText) aBox.appendChild(createBlock('VERSO', backText, card.backLang || card.frontLang, '#1ABC9C'));
-
-            // ===== 3. EXEMPLOS =====
-            if (card.example || card.examples) {
-                aBox.appendChild(createBlock('EXEMPLO', card.example || card.examples, card.backLang || card.frontLang, '#E67E22'));
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ',') {
+            e.preventDefault();
+            const val = input.value.trim().replace(/,$/, '');
+            if (val && !tags.some(t => t.toLowerCase() === val.toLowerCase())) {
+                tags.push(val);
+                renderChips();
             }
-
-            // ===== 4. TRADUÇÃO DO EXEMPLO (Com o seu nome exato) =====
-            if (card.exTranslation) {
-                aBox.appendChild(createBlock('TRADUÇÃO DO EXEMPLO', card.exTranslation, card.frontLang, '#D35400'));
-            }
-
-            // ===== 5. NOTAS =====
-            if (card.note || card.notes) {
-                aBox.appendChild(createBlock('NOTAS', card.note || card.notes, null, '#8E44AD'));
-            }
-
-            box.appendChild(aBox);
-
-            // ===== BOTÃO REVELAR =====
-            const btnFlip = h('button', {class:'btn', style:'width:100%; margin-top:8px; background:var(--surface-2); color:var(--ink); border:1px dashed var(--ink-soft); padding:16px; font-size:16px;'}, '⬇️ Revelar tudo');
-            btnFlip.onclick = (e) => {
-                e.preventDefault();
-                aBox.style.display = 'block';
-                btnFlip.style.display = 'none';
-            };
-            box.appendChild(btnFlip);
-
-            // Esconde o botão de salvar
-            setTimeout(() => { const saveBtn = document.getElementById('sheet-save-btn'); if (saveBtn) saveBtn.style.display = 'none'; }, 10);
-        },
-        onSubmit: () => { 
-            // Corta o áudio automaticamente se você fechar a janela
-            if (window.speechSynthesis) window.speechSynthesis.cancel();
-            return true; 
+            input.value = '';
+        } else if (e.key === 'Backspace' && !input.value && tags.length) {
+            tags.pop();
+            renderChips();
         }
     });
+
+    wrap.appendChild(chipsBox);
+    wrap.appendChild(input);
+    wrap._getTags = () => tags; // pega o valor final na hora do submit
+    wrap._getTags = () => tags;
+    wrap._hasTag = (term) => {
+        const n = normalizeForTags(term);
+        return tags.some(t => normalizeForTags(t) === n);
+    };
+    wrap._addTag = (term) => { if (!wrap._hasTag(term)) { tags.push(term); renderChips(); } };
+    wrap._removeTag = (term) => {
+        const n = normalizeForTags(term);
+        const idx = tags.findIndex(t => normalizeForTags(t) === n);
+        if (idx >= 0) { tags.splice(idx, 1); renderChips(); }
+    };
+    wrap._toggleTag = (term) => { wrap._hasTag(term) ? wrap._removeTag(term) : wrap._addTag(term); };
+    return wrap;
+}
+function normalizeForTags(str) {
+    return (str || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+function capitalizeFirst(str) {
+    if (!str) return str;
+    return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+const PT_STOPWORDS = new Set([
+    'de','a','o','que','e','do','da','em','um','para','com','nao','uma','os','no','se','na','por',
+    'mais','as','dos','como','mas','ao','ele','das','seu','sua','ou','quando','muito','nos','ja',
+    'eu','tambem','so','pelo','pela','ate','isso','ela','entre','depois','sem','mesmo','aos','seus',
+    'quem','nas','me','esse','eles','voce','essa','num','nem','suas','meu','minha','numa','pelos',
+    'elas','qual','lhe','deles','essas','esses','pelas','este','dele','tu','te','voces','vos',
+    'lhes','meus','minhas','teu','tua','teus','tuas','nosso','nossa','nossos','nossas','dela','delas',
+    'esta','estes','estas','aquele','aquela','aqueles','aquelas','isto','aquilo','estou','estamos',
+    'estao','foi','ser','estar','ter','tem','tinha','pra','pro','ai','la','aqui','entao','sim',
+    'onde','porque','apos','durante','sobre','ainda','todo','toda','todos','todas','tudo','nada',
+    'algo','alguns','algumas','cada','outro','outra','outros','outras','vez','vezes'
+]);
+function extractTitleCandidates(rawText) {
+    const clean = rawText.trim();
+    if (!clean) return [];
+
+    const lines = clean.split(/\n+/).map(s => s.trim()).filter(Boolean);
+    const sentences = clean.split(/(?<=[.!?])\s+/).map(s => s.trim()).filter(Boolean);
+    const rawCandidates = [...new Set([...lines, ...sentences])];
+
+    let scored = rawCandidates.map((text, idx) => {
+        const words = text.split(/\s+/).filter(Boolean);
+        const wc = words.length;
+        if (wc < 2 || wc > 14) return null; // título tem que ser curto
+
+        const posScore = 1 / (1 + idx * 0.5);      // quanto mais cedo, melhor
+        const idealLen = 6;
+        const lenScore = Math.max(0, 1 - Math.abs(idealLen - wc) / idealLen);
+        return { text: capitalizeFirst(text), score: posScore * 0.6 + lenScore * 0.4 };
+    }).filter(Boolean);
+
+    scored.sort((a, b) => b.score - a.score);
+
+    const uniq = [];
+    scored.forEach(c => {
+        const dup = uniq.some(u => levenshtein(u.text.toLowerCase(), c.text.toLowerCase()) <= 2);
+        if (!dup) uniq.push(c);
+    });
+
+    if (uniq.length === 0 && clean) {
+        const words = clean.split(/\s+/).slice(0, 8).join(' ');
+        uniq.push({ text: capitalizeFirst(words) + '…', score: 1 });
+    }
+
+    return uniq.slice(0, 6);
+}
+const SPLIT_MARKERS = [
+    'solucao:', 'solução:', 'resolvi', 'resolvido', 'conserto:', 'correcao:', 'correção:',
+    'diagnostico:', 'diagnóstico:', 'causa:', 'o problema era', 'consegui resolver'
+];
+
+function splitCauseSolution(rawText) {
+    const clean = rawText.trim();
+    if (!clean) return { cause: '', solution: '' };
+
+    const lower = clean.toLowerCase();
+    for (const marker of SPLIT_MARKERS) {
+        const idx = lower.indexOf(marker);
+        if (idx > 5) return { cause: clean.slice(0, idx).trim(), solution: clean.slice(idx).trim() };
+    }
+
+    const parts = clean.split(/(?<=[.!?\n])\s*/).map(s => s.trim()).filter(Boolean);
+    let cutIdx = -1, acc = '';
+    for (let i = 0; i < parts.length; i++) {
+        acc += (acc ? ' ' : '') + parts[i];
+        if (acc.split(/\s+/).length >= 4) { cutIdx = i; break; }
+    }
+    if (cutIdx >= 0) {
+        const cause = parts.slice(0, cutIdx + 1).join(' ').trim();
+        const solution = parts.slice(cutIdx + 1).join(' ').trim();
+        if (solution) return { cause, solution };
+    }
+
+    const words = clean.split(/\s+/);
+    const cutCount = Math.min(15, Math.max(4, Math.round(words.length * 0.25)));
+    return { cause: words.slice(0, cutCount).join(' '), solution: words.slice(cutCount).join(' ') || clean };
+}
+function extractTagCandidates(rawText, tagFrequencyMap) {
+    const norm = normalizeForTags(rawText);
+    const tokens = norm.split(/[^a-z0-9]+/).filter(Boolean);
+
+    const freq = {};
+    tokens.forEach(t => {
+        if (t.length < 3 || PT_STOPWORDS.has(t)) return;
+        freq[t] = (freq[t] || 0) + 1;
+    });
+
+    const bigramFreq = {};
+    for (let i = 0; i < tokens.length - 1; i++) {
+        const w1 = tokens[i], w2 = tokens[i + 1];
+        if (w1.length < 3 || w2.length < 3) continue;
+        if (PT_STOPWORDS.has(w1) || PT_STOPWORDS.has(w2)) continue;
+        const bg = `${w1} ${w2}`;
+        bigramFreq[bg] = (bigramFreq[bg] || 0) + 1;
+    }
+
+    const candidates = [];
+    Object.entries(freq).forEach(([term, count]) => {
+        let score = count;
+        if (tagFrequencyMap && tagFrequencyMap[term]) score += tagFrequencyMap[term].count * 2; // já usado antes = bônus
+        candidates.push({ term, score });
+    });
+    Object.entries(bigramFreq).forEach(([term, count]) => {
+        let score = count * 1.6; // frase composta vale mais
+        if (tagFrequencyMap && tagFrequencyMap[term]) score += tagFrequencyMap[term].count * 2;
+        candidates.push({ term, score });
+    });
+
+    return candidates.sort((a, b) => b.score - a.score).slice(0, 10).map(c => c.term);
+}
+
+async function getTagFrequencyMap() {
+    const diags = await getSherlockCases(); // reaproveita o cache do Sherlock
+    const freq = {};
+    diags.forEach(d => {
+        (d.tags || []).forEach(tag => {
+            const key = normalizeForTags(tag);
+            if (!key) return;
+            if (!freq[key]) freq[key] = { display: tag, count: 0 };
+            freq[key].count++;
+        });
+    });
+    return freq;
+}
+function buildQuickAddPanel(tagFieldRef, defaultCat) {
+    const panel = h('div', { style: 'background:var(--surface-2); border:1px solid var(--line); border-radius:14px; padding:14px; margin-bottom:16px;' });
+    panel.appendChild(h('div', { style: 'font-size:12px; font-weight:800; color:#E67E22; letter-spacing:.5px; margin-bottom:8px;' }, '⚡ ADIÇÃO RÁPIDA'));
+
+    const textarea = h('textarea', {
+        id: 'qa-raw-text',
+        placeholder: 'Cole aqui o relato completo do caso (sintoma, causa, solução)...',
+        style: 'width:100%; min-height:110px; border:1.5px solid var(--line); border-radius:12px; padding:10px; font-size:13.5px; background:var(--surface); color:var(--ink); resize:vertical;'
+    });
+    panel.appendChild(textarea);
+
+    const resultsBox = h('div', { id: 'qa-results', style: 'display:none; margin-top:12px;' });
+    panel.appendChild(resultsBox);
+
+    let qaTimer = null;
+    textarea.addEventListener('input', () => {
+        clearTimeout(qaTimer);
+        const text = textarea.value;
+        if (!text || text.trim().length < 12) { resultsBox.style.display = 'none'; return; }
+        qaTimer = setTimeout(() => { renderQuickAddSuggestions(text, resultsBox, tagFieldRef, defaultCat); }, 350);
+    });
+
+    return panel;
+}
+
+async function renderQuickAddSuggestions(text, box, tagFieldRef, defaultCat) {
+    box.innerHTML = '';
+    box.style.display = '';
+
+    // TÍTULO
+    const titleCandidates = extractTitleCandidates(text);
+    if (titleCandidates.length) {
+        box.appendChild(h('div', { style: 'font-size:11px; font-weight:700; color:var(--ink-soft); margin-bottom:6px;' }, '📌 TÍTULO SUGERIDO'));
+        const titleRow = h('div', { class: 'chips chip-picker', style: 'margin-bottom:12px;' });
+        titleCandidates.forEach((cand, i) => {
+            const chip = h('button', { type: 'button', class: 'chip' + (i === 0 ? ' active' : '') }, cand.text);
+            chip.onclick = () => {
+                document.getElementById('f-diag-title').value = cand.text;
+                titleRow.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+                chip.classList.add('active');
+            };
+            titleRow.appendChild(chip);
+        });
+        box.appendChild(titleRow);
+        document.getElementById('f-diag-title').value = titleCandidates[0].text; // pré-seleciona o melhor
+    }
+
+    const tagFreq = await getTagFrequencyMap();
+    const extractedTags = extractTagCandidates(text, tagFreq);
+
+    // ============================================================
+    // CARTUCHO (Tenta adivinhar baseado em TODOS os cartuchos que você já criou)
+    // ============================================================
+    const dynamicCats = await getDynamicCategories();
+    
+    let guessedCat = defaultCat;
+    const normCats = dynamicCats.map(c => normalizeForTags(c));
+    for (const term of extractedTags) {
+        const idx = normCats.findIndex(nc => nc === term || nc.includes(term) || term.includes(nc));
+        if (idx >= 0) { guessedCat = dynamicCats[idx]; break; }
+    }
+
+    box.appendChild(h('div', { style: 'font-size:11px; font-weight:700; color:var(--ink-soft); margin-bottom:6px;' }, '🗂️ CARTUCHO'));
+    
+    // O Select nativo do celular - infinitamente melhor para listas longas
+    const catSelect = h('select', { style: 'width:100%; border:1.5px solid var(--line); border-radius:12px; padding:10px; font-size:13.5px; background:var(--surface); color:var(--ink); margin-bottom:12px;' });
+    
+    dynamicCats.forEach(c => {
+        const opt = h('option', { value: c }, c);
+        if (c === guessedCat) opt.selected = true;
+        catSelect.appendChild(opt);
+    });
+    
+    // Sincroniza o Select do modo rápido com o input do modo manual
+    catSelect.onchange = () => {
+        const manualInput = document.getElementById('f-cat-input');
+        if (manualInput) manualInput.value = catSelect.value;
+    };
+    box.appendChild(catSelect);
+    
+    // Garante que o input escondido receba o palpite inicial
+    const manualInput = document.getElementById('f-cat-input');
+    if (manualInput) manualInput.value = guessedCat;
+    // ============================================================
+    // TAGS extraídas
+    box.appendChild(h('div', { style: 'font-size:11px; font-weight:700; color:var(--ink-soft); margin-bottom:6px;' }, '🏷️ TAGS — extraídas do texto'));
+    const tagRow1 = h('div', { class: 'chips chip-picker', style: 'margin-bottom:8px;' });
+    extractedTags.forEach(term => {
+        const chip = h('button', { type: 'button', class: 'chip' + (tagFieldRef._hasTag(term) ? ' active' : '') }, term);
+        chip.onclick = () => { tagFieldRef._toggleTag(term); chip.classList.toggle('active'); };
+        tagRow1.appendChild(chip);
+    });
+    box.appendChild(tagRow1);
+
+    // TAGS mais usadas no seu histórico
+    const frequentTags = Object.values(tagFreq)
+        .sort((a, b) => b.count - a.count)
+        .map(f => f.display)
+        .filter(t => !extractedTags.includes(normalizeForTags(t)))
+        .slice(0, 8);
+
+    if (frequentTags.length) {
+        box.appendChild(h('div', { style: 'font-size:11px; font-weight:700; color:var(--ink-soft); margin:8px 0 6px;' }, '⭐ TAGS MAIS USADAS'));
+        const tagRow2 = h('div', { class: 'chips chip-picker' });
+        frequentTags.forEach(term => {
+            const chip = h('button', { type: 'button', class: 'chip' + (tagFieldRef._hasTag(term) ? ' active' : '') }, term);
+            chip.onclick = () => { tagFieldRef._toggleTag(term); chip.classList.toggle('active'); };
+            tagRow2.appendChild(chip);
+        });
+        box.appendChild(tagRow2);
+    }
+
+    // CAUSA/SOLUÇÃO nos bastidores
+    const split = splitCauseSolution(text);
+    document.getElementById('f-diag-cause').value = split.cause;
+    document.getElementById('f-diag-sol').value = split.solution;
+
+    box.appendChild(h('div', { style: 'font-size:11px; color:var(--ink-soft); margin-top:10px; font-style:italic;' },
+        'Causa e Solução foram separadas automaticamente. Toque em "Preencher manualmente" pra revisar antes de salvar.'));
 }
 
 async function init(){
