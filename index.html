@@ -769,7 +769,7 @@ body.dark-theme #app { box-shadow: 0 0 60px rgba(0,0,0,0.5); }
   </div>
   
   <button class="fab" id="diagnosis-fab" onclick="openDiagnosisForm()" style="height: 44px;
-    width: 54px; border-radius: 18px; bottom: calc(135px + env(safe-area-inset-bottom));">+</button>
+    width: 54px; border-radius: 18px; bottom: calc(138px + env(safe-area-inset-bottom));">+</button>
   <div style="display:flex; gap:2px; margin: 9px 10px 16px 75px; align-items:center;">
     <div style="position:relative; flex:10;">
         <input type="text" id="diag-search-input" oninput="onSherlockTyping()" 
@@ -777,16 +777,16 @@ body.dark-theme #app { box-shadow: 0 0 60px rgba(0,0,0,0.5); }
         border: 1.5px solid var(--line);
         background: var(--surface);
         border-radius: 14px;
-        padding: 10px 10px 10px 38px;
+        padding: 10px 10px 10px 45px;
         font-size: 14.5px;
         outline: none;
         box-shadow: 0 1px 2px rgba(var(--shadow-rgb), .04);
         color: var(--ink);">
 
         <button type="button" id="diag-clear-search-btn" onclick="clearDiagSearch()"
-            style="display:none; position:absolute; left:10px; top:50%; transform:translateY(-50%);
-            width:22px; height:22px; border:none; border-radius:50%;
-            background:var(--surface-2); color:var(--ink-soft);
+            style="display:none; position:absolute; left:1px; top:50%; transform:translateY(-50%);
+            width:45px; height:40px; border:none; border-radius:18px;
+            background:var(--surface); color:var(--ink-soft);
             font-size:13px; line-height:1; cursor:pointer;
             align-items:center; justify-content:center;
             transition:background .15s ease, opacity .15s ease; opacity:.65;">✕</button>
@@ -794,7 +794,7 @@ body.dark-theme #app { box-shadow: 0 0 60px rgba(0,0,0,0.5); }
     <button class="btn btn-primary" style="background:#E67E22; border:none; font-size: 14px; padding: 10px;" onclick="runSherlockSearch()">Investigar</button>
 </div>
   <!-- Filtro dos Cartuchos -->
-    <div id="diagnosis-cat-filter" class="chips chip-picker" style="padding: 0 16px; margin-bottom: 8px;"></div>
+    <div id="diagnosis-cat-filter" class="chips chip-picker" style="padding: 0 16px; margin: 0px 16px 12px 16px;"></div>
     
   <div class="module-header" id="diagnosis-header">
     <button class="back-btn" onclick="document.getElementById('screen-diagnosis').classList.remove('active'); document.getElementById('screen-home').classList.add('active'); if(window.speechSynthesis) window.speechSynthesis.cancel();">←</button>
@@ -4867,13 +4867,13 @@ async function openDiagnosisForm(existing) { // 👈 NOVO: Agora é async
                 const relWrap = h('div', { style: 'display:flex; justify-content:center; align-items:center; gap:12px;' });
                 
                 // Botão de Menos
-                const btnMinus = h('button', { type: 'button', class: 'btn', style: 'background:var(--surface); color:#E67E22; border:2px solid #E67E22; border-radius:8%; width:38px; height:38px; font-size:22px; display:flex; align-items:center; justify-content:center; padding:0;' }, '-');
+                const btnMinus = h('button', { type: 'button', class: 'btn', style: 'background:var(--surface); color:#E67E22; border: 2px solid #d90c0c; border-radius:12px; width:38px; height:38px; font-size:40px; display:flex; align-items:center; justify-content:center; padding:0;' }, '-');
                 
                 // O Input (agora mais bonitinho e centralizado)
                 const inputNum = h('input', { type: 'number', id: 'f-diag-relevance', value: existing.relevanceCount || 0, style: 'width:70px; text-align:center; font-weight:900; font-size:18px; color:#E67E22; border:1px solid var(--line); border-radius:8px; padding:8px; background:transparent;' });
                 
                 // Botão de Mais
-                const btnPlus = h('button', { type: 'button', class: 'btn', style: 'background:var(--surface); color:#E67E22; border:2px solid #E67E22; border-radius:8%; width:38px; height:38px; font-size:22px; display:flex; align-items:center; justify-content:center; padding:0;' }, '+');
+                const btnPlus = h('button', { type: 'button', class: 'btn', style: 'background:var(--surface); color:#E67E22; border: 2px solid #1e9635; border-radius:12px; width:38px; height:38px; font-size:40px; display:flex; align-items:center; justify-content:center; padding:0;' }, '+');
 
                 // A Lógica dos botões
                 btnMinus.onclick = (e) => { e.preventDefault(); let v = parseInt(inputNum.value, 10)||0; inputNum.value = v-1; };
@@ -4936,15 +4936,67 @@ async function openDiagnosisForm(existing) { // 👈 NOVO: Agora é async
     });
 }
 
-// ⚙️ PAINEL DE CONTROLE DO SHERLOCK (Sinônimos + Time Decay)
+// ⚙️ PAINEL DE CONTROLE DO SHERLOCK (Stopwords + Sinônimos + Time Decay)
+// ⚙️ PAINEL DE CONTROLE DO SHERLOCK (Stopwords + Sinônimos + Time Decay)
 function openSherlockSettings() {
     const savedSynonyms = localStorage.getItem('sherlock_synonyms') || "fio = cabo, chicote\nbateria = pilha, acumulador";
     const savedDecayDays = localStorage.getItem('sherlock_decay_days') || "1500";
-    const savedDecayPct = localStorage.getItem('sherlock_decay_pct') || "40"; // Representa 40% (0.4)
+    const savedDecayPct = localStorage.getItem('sherlock_decay_pct') || "40";
     
+    // Puxa a lista atual de stopwords e transforma em array para editarmos
+    let currentSW = Array.from(PT_STOPWORDS);
+
     openSheet({
         title: '⚙️ Motor do Sherlock',
         buildFields: (box) => {
+            
+            // == BLOCO 0: STOPWORDS (Otimizado para Celular) ==
+            const swBox = h('div', {style: 'padding:14px; background:var(--surface-2); border-radius:12px; border:1px solid var(--line); margin-bottom:12px;'});
+            swBox.appendChild(h('div', {style:'font-size:12px; font-weight:800; color:#E67E22; margin-bottom:8px;'}, '🛑 PALAVRAS IGNORADAS (Stopwords)'));
+            swBox.appendChild(h('div', {style:'font-size:11px; color:var(--ink-soft); margin-bottom:12px; line-height:1.4;'}, 'Palavras curtas que o Sherlock ignora na busca para poupar a memória do celular.'));
+
+            const swInputRow = h('div', {style:'display:flex; gap:6px; margin-bottom:12px;'});
+            const swInput = h('input', {type:'text', placeholder:'Nova palavra...', style:'flex:1; padding:8px; border:1px solid var(--line); border-radius:8px; background:var(--surface); color:var(--ink);'});
+            
+            // 📱 A SOLUÇÃO PRO CELULAR: O Botão Físico!
+            const swBtn = h('button', {type:'button', style:'background:#E67E22; color:#fff; border:none; border-radius:8px; padding:0 14px; font-weight:bold;'}, '+ Add');
+            swInputRow.appendChild(swInput);
+            swInputRow.appendChild(swBtn);
+            swBox.appendChild(swInputRow);
+
+            const swChipsBox = h('div', {style:'display:flex; flex-wrap:wrap; gap:6px; max-height:140px; overflow-y:auto; padding-right:4px;'});
+
+            function renderSWChips() {
+                swChipsBox.innerHTML = '';
+                currentSW.forEach((word, idx) => {
+                    const chip = h('span', {style:'display:inline-flex; align-items:center; gap:4px; background:var(--surface); border:1px solid var(--line); color:var(--ink); padding:4px 8px; border-radius:999px; font-size:11.5px;'});
+                    chip.textContent = word;
+                    const rm = h('span', {style:'cursor:pointer; font-weight:900; opacity:.8; color:var(--danger); margin-left:2px;', onclick:() => {
+                        currentSW.splice(idx, 1);
+                        renderSWChips();
+                    }}, '✕');
+                    chip.appendChild(rm);
+                    swChipsBox.appendChild(chip);
+                });
+            }
+            renderSWChips(); // Desenha a lista pela primeira vez
+
+            // Ação do Botão Add
+            swBtn.onclick = () => {
+                const normWord = (swInput.value || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                if (normWord && !currentSW.includes(normWord)) {
+                    currentSW.unshift(normWord); // Coloca a palavra nova no topo!
+                    renderSWChips();
+                }
+                swInput.value = '';
+            };
+
+            // Para quando usar no PC, o Enter continua funcionando!
+            swInput.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); swBtn.click(); } };
+
+            swBox.appendChild(swChipsBox);
+            box.appendChild(swBox);
+
             // == BLOCO 1: SINÔNIMOS ==
             const info = h('div', {style:'font-size:12px; color:var(--ink-soft); margin-bottom:12px; line-height:1.4;'});
             info.innerHTML = `<b>Dicionário de Sinônimos:</b><br>Formato: <code>palavra = sinonimo1, sinonimo2</code>`;
@@ -4957,16 +5009,13 @@ function openSherlockSettings() {
             // == BLOCO 2: ENVELHECIMENTO DA PISTA (Time Decay) ==
             const decayBox = h('div', {style: 'padding:14px; background:var(--surface-2); border-radius:12px; border:1px solid var(--line); margin-top:8px;'});
             decayBox.appendChild(h('div', {style:'font-size:12px; font-weight:800; color:#E67E22; margin-bottom:10px;'}, '⏳ MEMÓRIA E ENVELHECIMENTO (Time Decay)'));
-            decayBox.appendChild(h('div', {style:'font-size:11px; color:var(--ink-soft); margin-bottom:14px; line-height:1.4;'}, 'Configure com que velocidade pistas antigas perdem a relevância nas pesquisas, dando espaço para novas soluções.'));
             
-            // Controle de Dias
             const wrapDays = h('div', {style:'display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;'});
             wrapDays.appendChild(h('div', {style:'font-size:13px; font-weight:700;'}, 'Vencimento em (Dias):'));
             const inputDays = h('input', {type:'number', id:'f-decay-days', value: savedDecayDays, style:'width:80px; text-align:center; padding:6px; background:var(--surface); border:1px solid var(--line); border-radius:6px; color:#E67E22; font-weight:bold;'});
             wrapDays.appendChild(inputDays);
             decayBox.appendChild(wrapDays);
 
-            // Controle de Porcentagem
             const wrapPct = h('div', {style:'display:flex; align-items:center; justify-content:space-between;'});
             wrapPct.appendChild(h('div', {style:'font-size:13px; font-weight:700;'}, 'Perder Força Base (%):'));
             const inputPct = h('input', {type:'number', id:'f-decay-pct', value: savedDecayPct, max: 99, style:'width:80px; text-align:center; padding:6px; background:var(--surface); border:1px solid var(--line); border-radius:6px; color:#E74C3C; font-weight:bold;'});
@@ -4976,19 +5025,23 @@ function openSherlockSettings() {
             box.appendChild(decayBox);
         },
         onSubmit: () => {
+            // 💾 Salva os Stopwords novos!
+            PT_STOPWORDS = new Set(currentSW);
+            localStorage.setItem('sherlock_stopwords', JSON.stringify(currentSW));
+
             localStorage.setItem('sherlock_synonyms', document.getElementById('f-sherlock-syn').value);
             localStorage.setItem('sherlock_decay_days', document.getElementById('f-decay-days').value || "1500");
             localStorage.setItem('sherlock_decay_pct', document.getElementById('f-decay-pct').value || "40");
+            
             invalidateSherlockCache();
-            toast('🧠 Mente e Memória do Sherlock atualizadas!');
+            toast('🧠 Mente do Sherlock atualizada!');
             
             const searchBox = document.getElementById('diag-search-input');
-            if (searchBox && searchBox.value) runSherlockSearch(); // Recalcula tudo na hora
+            if (searchBox && searchBox.value) runSherlockSearch();
             return true;
         }
     });
 }
-
 // ============================================================
 // 🕵️ CONFIGURAÇÃO DO DETETIVE
 // ============================================================
@@ -5113,9 +5166,18 @@ async function runSherlockSearch() {
 
     let mustHave = [], mustNotHave = [], bm25Tokens = [];
     rawTokens.forEach(t => {
-        if (t.startsWith('+') && t.length > 2) mustHave.push(norm(t.substring(1)));
-        else if (t.startsWith('-') && t.length > 2) mustNotHave.push(norm(t.substring(1)));
-        else bm25Tokens.push(norm(t));
+        if (t.startsWith('+') && t.length > 2) {
+            mustHave.push(norm(t.substring(1)));
+        } else if (t.startsWith('-') && t.length > 2) {
+            mustNotHave.push(norm(t.substring(1)));
+        } else {
+            const cleanToken = norm(t);
+            // 🛑 A BARREIRA: Se for um StopWord (de, na, o, a), ele ignora!
+            // E só permite investigar palavras que sobraram no filtro.
+            if (!PT_STOPWORDS.has(cleanToken)) {
+                bm25Tokens.push(cleanToken);
+            }
+        }
     });
 
     // 🧠 INJEÇÃO SEMÂNTICA (SINÔNIMOS EM FRASES)
@@ -5461,7 +5523,14 @@ function renderSherlockResults(results) {
 function buildTagInputField(initialTags) {
     const wrap = h('div', { style: 'display:flex; flex-wrap:wrap; gap:6px; padding:8px; border:1.5px solid var(--line); border-radius:12px; background:var(--surface); align-items:center;' });
     const chipsBox = h('div', { style: 'display:flex; flex-wrap:wrap; gap:6px;' });
-    const input = h('input', { type:'text', placeholder:'Digite e pressione Enter...', style:'border:none; outline:none; flex:1; min-width:120px; background:transparent; color:var(--ink); font-size:13.5px;' });
+
+    // 📱 O SEGREDO PRO CELULAR: Agrupar o input e o botão!
+    const inputWrap = h('div', { style: 'display:flex; flex:1; min-width:140px; align-items:center; gap:4px;' });
+    const input = h('input', { type:'text', placeholder:'Nova tag...', style:'border:none; outline:none; flex:1; min-width:80px; background:transparent; color:var(--ink); font-size:13.5px;' });
+    const addBtn = h('button', { type:'button', style:'background:var(--surface-2); color:var(--ink); border:1px solid var(--line); border-radius:6px; padding:4px 10px; font-weight:bold; font-size:14px; cursor:pointer;' }, '+');
+
+    inputWrap.appendChild(input);
+    inputWrap.appendChild(addBtn);
 
     let tags = Array.isArray(initialTags) ? [...initialTags] : [];
 
@@ -5476,15 +5545,28 @@ function buildTagInputField(initialTags) {
     }
     renderChips();
 
+    // Função que cria o balão
+    function addCurrentTag() {
+        const val = input.value.trim().replace(/,$/, '');
+        if (val && !tags.some(t => t.toLowerCase() === val.toLowerCase())) {
+            tags.push(val);
+            renderChips();
+        }
+        input.value = '';
+        input.focus(); // Tenta manter o teclado aberto pro usuário
+    }
+
+    // 📱 Ação do Clique no Botão de Mais
+    addBtn.onclick = (e) => { 
+        e.preventDefault(); 
+        addCurrentTag(); 
+    };
+
+    // 💻 Para o PC, o Enter normal
     input.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' || e.key === ',') {
             e.preventDefault();
-            const val = input.value.trim().replace(/,$/, '');
-            if (val && !tags.some(t => t.toLowerCase() === val.toLowerCase())) {
-                tags.push(val);
-                renderChips();
-            }
-            input.value = '';
+            addCurrentTag();
         } else if (e.key === 'Backspace' && !input.value && tags.length) {
             tags.pop();
             renderChips();
@@ -5492,8 +5574,8 @@ function buildTagInputField(initialTags) {
     });
 
     wrap.appendChild(chipsBox);
-    wrap.appendChild(input);
-    wrap._getTags = () => tags; // pega o valor final na hora do submit
+    wrap.appendChild(inputWrap); // Usa o empacotador de botão e input juntos!
+    
     wrap._getTags = () => tags;
     wrap._hasTag = (term) => {
         const n = normalizeForTags(term);
@@ -5508,6 +5590,7 @@ function buildTagInputField(initialTags) {
     wrap._toggleTag = (term) => { wrap._hasTag(term) ? wrap._removeTag(term) : wrap._addTag(term); };
     return wrap;
 }
+
 function normalizeForTags(str) {
     return (str || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 }
@@ -5516,18 +5599,20 @@ function capitalizeFirst(str) {
     return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
-const PT_STOPWORDS = new Set([
-    'de','a','o','que','e','do','da','em','um','para','com','nao','uma','os','no','se','na','por',
-    'mais','as','dos','como','mas','ao','ele','das','seu','sua','ou','quando','muito','nos','ja',
-    'eu','tambem','so','pelo','pela','ate','isso','ela','entre','depois','sem','mesmo','aos','seus',
-    'quem','nas','me','esse','eles','voce','essa','num','nem','suas','meu','minha','numa','pelos',
-    'elas','qual','lhe','deles','essas','esses','pelas','este','dele','tu','te','voces','vos',
-    'lhes','meus','minhas','teu','tua','teus','tuas','nosso','nossa','nossos','nossas','dela','delas',
-    'esta','estes','estas','aquele','aquela','aqueles','aquelas','isto','aquilo','estou','estamos',
-    'estao','foi','ser','estar','ter','tem','tinha','pra','pro','ai','la','aqui','entao','sim',
-    'onde','porque','apos','durante','sobre','ainda','todo','toda','todos','todas','tudo','nada',
-    'algo','alguns','algumas','cada','outro','outra','outros','outras','vez','vezes'
-]);
+// ============================================================
+// 🛑 DICIONÁRIO DE STOPWORDS (Agora Dinâmico e Salvo no Celular!)
+// ============================================================
+const DEFAULT_STOPWORDS = ['de','a','o','que','e','do','da','em','um','para','com','nao','uma','os','no','se','na','por','mais','as','dos','como','mas','ao','ele','das','seu','sua','ou','quando','muito','nos','ja','eu','tambem','so','pelo','pela','ate','isso','ela','entre','depois','sem','mesmo','aos','seus','quem','nas','me','esse','eles','voce','essa','num','nem','suas','meu','minha','numa','pelos','elas','qual','lhe','deles','essas','esses','pelas','este','dele','tu','te','voces','vos','lhes','meus','minhas','teu','tua','teus','tuas','nosso','nossa','nossos','nossas','dela','delas','esta','estes','estas','aquele','aquela','aqueles','aquelas','isto','aquilo','estou','estamos','estao','foi','ser','estar','ter','tem','tinha','pra','pro','ai','la','aqui','entao','sim','onde','porque','apos','durante','sobre','ainda','todo','toda','todos','todas','tudo','nada','algo','alguns','algumas','cada','outro','outra','outros','outras','vez','vezes'];
+
+// Começa com o padrão
+let PT_STOPWORDS = new Set(DEFAULT_STOPWORDS);
+
+// Se tiver alguma lista salva por você, ele puxa do cache na hora que abre o app!
+try {
+    const savedSW = localStorage.getItem('sherlock_stopwords');
+    if (savedSW) PT_STOPWORDS = new Set(JSON.parse(savedSW));
+} catch(e) {}
+
 function extractTitleCandidates(rawText) {
     const clean = rawText.trim();
     if (!clean) return [];
