@@ -5098,7 +5098,7 @@ function markSherlockThinking(isThinking) {
 // 📚 CACHE DE CASOS
 // ============================================================
 function buildSearchIndexEntry(d) {
-    const norm = str => (str || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const norm = str => (str || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[.,/#!$%^&*;:{}=\-_`~()]/g, '');
     d._tTitle = norm(d.title || '');
     d._tCause = norm(d.cause || '');
     d._tSol = norm(d.solution || '');
@@ -5167,7 +5167,9 @@ async function runSherlockSearch() {
     const qRaw = document.getElementById('diag-search-input').value;
     if (!qRaw || !qRaw.trim()) { renderDiagnosis(); return; }
 
-    const norm = str => (str || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    // 🧹 NORMALIZAÇÃO PESADA: Tira acentos, vírgulas, pontos e sinais! 
+    // Assim "bomba," vira apenas "bomba"
+    const norm = str => (str || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[.,/#!$%^&*;:{}=\-_`~()]/g, '');
     const rawTokens = qRaw.split(/\s+/).filter(t => t.length > 1);
 
     let mustHave = [], mustNotHave = [], bm25Tokens = [];
@@ -5255,13 +5257,23 @@ async function runSherlockSearch() {
             df[t] = diags.filter(d => d._fullText.includes(t) || fuzzyIncludes(d._fullText, t) > 0).length;
         });
 
-        // 🧪 CALCULA A NOTA MÁXIMA TEÓRICA POSSÍVEL (Se a busca batesse perfeitamente nos Títulos de tudo)
+        // 🧪 CALCULA A NOTA MÁXIMA TEÓRICA POSSÍVEL
         let maxTheoreticalScore = 0;
         bm25Tokens.forEach(t => {
             const idf = Math.log((diags.length - df[t] + 0.5) / (df[t] + 0.5) + 1);
             maxTheoreticalScore += idf * (k1 + 1) * W_TITLE; 
         });
-        window._sherlockMaxScore = maxTheoreticalScore || 1;
+        
+        // 🚀 BÔNUS MÁXIMO TEÓRICO DE BIGRAMAS
+        let maxBigramBonus = 1;
+        if (bm25Tokens.length >= 2) {
+            // Em vez de somar 0.4 adoidado, vamos aplicar um bônus modesto global
+            // Se o usuário digitou mais de 2 palavras, a chance perfeita é 1.25x maior
+            maxBigramBonus = 1.25; 
+        }
+        
+        // Se a busca tiver 3 palavras, e o item tiver a frase exata "palavra1 palavra2 palavra3", a nota teórica permite alcançar o teto de 100%.
+        window._sherlockMaxScore = (maxTheoreticalScore || 1) * maxBigramBonus;
 
         diags.forEach(d => {
             let bm25Score = 0;
@@ -5286,6 +5298,30 @@ async function runSherlockSearch() {
                 bm25Score += termScore * fieldWeight * confidence;
             });
 
+            // ============================================================
+            // 🧠 SUPER BÔNUS DE BIGRAMAS (Palavras Conectadas)
+            // ============================================================
+            let bigramBonus = 1;
+            if (bm25Tokens.length >= 2) {
+                // Checa a frase exata
+                const exactPhrase = bm25Tokens.join(' ');
+                if (d._fullText.includes(exactPhrase)) {
+                    bigramBonus = 1.25; // 25% de bônus direto se a frase for exata
+                } else {
+                    // Se não tem a frase exata inteira, procura as palavras em duplas
+                    for (let i = 0; i < bm25Tokens.length - 1; i++) {
+                        const bigram = bm25Tokens[i] + ' ' + bm25Tokens[i+1];
+                        if (d._fullText.includes(bigram)) {
+                            // Se bater uma duplinha de palavras na ordem, ganha 10%
+                            bigramBonus += 0.10; 
+                        }
+                    }
+                }
+            }
+            
+            const finalBm25 = bm25Score * bigramBonus;
+            // ============================================================
+
             // 🕰️ TIME DECAY + BAYES
             const hitRate = d.relevanceCount || 0;
             const ageDays = (Date.now() - (d.createdAt || Date.now())) / (1000 * 60 * 60 * 24);
@@ -5295,8 +5331,8 @@ async function runSherlockSearch() {
             const limitForce = Math.max(0.01, 1 - (userPct / 100)); 
             const decay = Math.max(limitForce, 1 - (ageDays / userDays)); 
             
-            // NOTA PURA DO BM25 x Aprendizado Bayesiano x Envelhecimento
-            d._finalScore = bm25Score * (1 + (Math.log1p(hitRate) * 0.15)) * decay;
+            // NOTA FINAL: BM25 Bigramado x Bayes x Envelhecimento
+            d._finalScore = finalBm25 * (1 + (Math.log1p(hitRate) * 0.15)) * decay;
         });
     }
 
