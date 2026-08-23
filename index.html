@@ -4781,45 +4781,52 @@ async function renderDiagnosis() {
     if(!diags.length){ list.appendChild(emptyState('🔎','Banco Vazio','Adicione um novo caso ao seu Diagnóstico Mestre')); return; }
     
     diags.forEach(d => {
-        const row = h('div',{class:'item'}); 
+        // 📱 LAYOUT EM COLUNA: O texto fica em cima, os botões embaixo
+        const row = h('div',{class:'item', style:'flex-direction: column; align-items: stretch; padding-bottom: 8px;'}); 
         
-        // ZONA DE EDIÇÃO (Clicar no meio abre para editar)
-        const grow = h('div',{class:'grow', onclick:()=>openDiagnosisForm(d)}); 
-        grow.appendChild(h('div',{class:'i-title'}, d.title)); // Sintoma principal
+        // == ZONA DE TEXTO (Ocupa 100% da largura agora) ==
+        const grow = h('div',{class:'grow', style:'width: 100%; cursor: pointer;', onclick:()=>openDiagnosisForm(d)}); 
+        grow.appendChild(h('div',{class:'i-title'}, d.title)); 
         
         let subTxt = `Cartucho: ${d.category || DIAG_CATS[0]}`;
         if(d.cause) subTxt += ` · Causa: ${d.cause}`;
         grow.appendChild(h('div',{class:'i-sub'}, subTxt)); 
+        
         if (d.tags && d.tags.length) {
-            const tagsRow = h('div', {style:'display:flex; flex-wrap: nowrap;scrollbar-width: none; white-space: nowrap; gap:4px; margin-top:4px;overflow-x: auto;'});
+            const tagsRow = h('div', {style:'display:flex; flex-wrap: nowrap; scrollbar-width: none; white-space: nowrap; gap:4px; margin-top:4px; overflow-x: auto;'});
             d.tags.forEach(t => tagsRow.appendChild(h('span', {style:'font-size:10.5px; padding:2px 7px; border-radius:999px; background:var(--surface-2); color:var(--ink-soft);'}, t)));
             grow.appendChild(tagsRow);
         }
         row.appendChild(grow);
         
-        // 📋 BOTÃO 1: Copiar SOMENTE o Diagnóstico/Solução dentro de <pre>
-        row.appendChild(h('button',{ class:'icon-btn', style:'color:var(--c-notes); margin-left:4px;', onclick:(e)=>{ 
+        // == 🎛️ BARRA DE AÇÕES INFERIOR ==
+        const actions = h('div', {style:'display: flex; justify-content: flex-start; gap: 18px; border-top: 1px solid var(--line); padding-top: 10px; margin-top: 8px;margin-left: 10px;'});
+
+        actions.appendChild(h('button',{ class:'icon-btn', style:'color:var(--c-notes); font-size:15px;', onclick:(e)=>{ 
             e.stopPropagation(); 
-            navigator.clipboard.writeText(`<pre>${d.solution || ''}</pre>`); 
-            toast('Solução copiada em <pre>!'); 
+            navigator.clipboard.writeText(d.solution || ''); 
+            toast('Solução copiada!'); 
         } }, '📋'));
 
-        // 📤 BOTÃO 2: Copiar TUDO (Para mandar para um amigo)
-        row.appendChild(h('button',{ class:'icon-btn', style:'color:var(--c-tasks); margin-left:4px;', onclick:(e)=>{ 
+        actions.appendChild(h('button',{ class:'icon-btn', style:'color:var(--c-tasks); font-size:15px;', onclick:(e)=>{ 
             e.stopPropagation(); 
-            const fullText = `*Sintoma:* ${d.title}\n*Diagnóstico/Causa:* ${d.cause || 'N/A'}\n*Solução:*\n${d.solution || ''}`;
+            const fullText = `*Sintoma:* ${d.title}\n*Causa:* ${d.cause || 'N/A'}\n*Solução:*\n${d.solution || ''}`;
             navigator.clipboard.writeText(fullText); 
-            toast('Caso completo copiado!'); 
+            toast('Caso copiado!'); 
         } }, '📤'));
 
-        row.appendChild(h('button',{class:'icon-btn', onclick:(e)=>{ e.stopPropagation(); confirmDelete('diagnosis', d.id, ()=>{renderDiagnosis();updateHomeStats();}); }},'✕')); 
+        actions.appendChild(h('button',{class:'icon-btn', style:'color:var(--danger); font-size:15px;', onclick:(e)=>{ 
+            e.stopPropagation(); 
+            confirmDelete('diagnosis', d.id, ()=>{renderDiagnosis();updateHomeStats();}); 
+        }},'✕')); 
+
+        row.appendChild(actions);
         list.appendChild(row);
     });
     
     if(window.aplicarLazyLoading) window.aplicarLazyLoading();
 }
 
-// ✏️ ABRIR FORMULÁRIO DO DIAGNÓSTICO
 // ✏️ ABRIR FORMULÁRIO DO DIAGNÓSTICO
 async function openDiagnosisForm(existing) { // 👈 NOVO: Agora é async
     const isEdit = !!existing;
@@ -4936,7 +4943,6 @@ async function openDiagnosisForm(existing) { // 👈 NOVO: Agora é async
     });
 }
 
-// ⚙️ PAINEL DE CONTROLE DO SHERLOCK (Stopwords + Sinônimos + Time Decay)
 // ⚙️ PAINEL DE CONTROLE DO SHERLOCK (Stopwords + Sinônimos + Time Decay)
 function openSherlockSettings() {
     const savedSynonyms = localStorage.getItem('sherlock_synonyms') || "fio = cabo, chicote\nbateria = pilha, acumulador";
@@ -5464,28 +5470,24 @@ function renderSherlockResults(results) {
 
     results.forEach((d, index) => {
         
-        // 🧮 CÁLCULO CIENTÍFICO DA PORCENTAGEM (O Coração da Matemática)
         let pct = (d._finalScore / window._sherlockMaxScore) * 100;
-        
-        // Histórico positivo: ajuda até o limite de 15%
         if (d.relevanceCount > 0) pct += Math.min(15, (d.relevanceCount * 2)); 
-        
-        // Histórico negativo (Punição manual): subtrai brutalmente os pontos
         if (d.relevanceCount < 0) pct += (d.relevanceCount * 5); 
-        
-        // Garante que fique estritamente entre 0% e 99.9%
         let pctInt = Math.floor(Math.max(0, Math.min(99.9, pct))); 
 
         let probText, probColor, bgColor;
-        if (pctInt >= 85) { probText = `🔥 ${pctInt}% — PISTA QUENTE (Certeza Alta)`; probColor = '#E74C3C'; bgColor = '#230a0a'; } 
+        if (pctInt >= 85) { probText = `🔥 ${pctInt}% — PISTA QUENTE`; probColor = '#E74C3C'; bgColor = '#230a0a'; } 
         else if (pctInt >= 60) { probText = `🟠 ${pctInt}% — ALTA SUSPEITA`; probColor = '#E67E22'; bgColor = '#211306'; } 
         else if (pctInt >= 35) { probText = `🟡 ${pctInt}% — POSSÍVEL CAUSA`; probColor = '#F1C40F'; bgColor = '#1f1a07'; } 
-        else { probText = `🔵 ${pctInt}% — PISTA FRACA (Inconclusivo)`; probColor = '#3498DB'; bgColor = '#08131c'; }
+        else { probText = `🔵 ${pctInt}% — PISTA FRACA`; probColor = '#3498DB'; bgColor = '#08131c'; }
 
-        const rowStyle = index === 0 ? `border: 2px solid ${probColor}; background:${bgColor};` : '';
+        // 📱 LAYOUT EM COLUNA
+        const baseStyle = 'flex-direction: column; align-items: stretch; padding-bottom: 8px;';
+        const rowStyle = index === 0 ? `border: 2px solid ${probColor}; background:${bgColor}; ${baseStyle}` : baseStyle;
         const row = h('div',{class:'item', style: rowStyle}); 
         
-        const grow = h('div',{class:'grow', onclick:() => {
+        // == ZONA DE TEXTO ==
+        const grow = h('div',{class:'grow', style:'width: 100%; cursor: pointer;', onclick:() => {
             if (diagTtsEnabled) toggleDiagAudioPlay(index, results);
             else openDiagnosisForm(d);
         }}); 
@@ -5504,18 +5506,42 @@ function renderSherlockResults(results) {
         }
         row.appendChild(grow);
 
-        row.appendChild(h('button',{ class:'icon-btn', style:'color:var(--c-quotes); font-size:16px; margin-right:2px;', onclick:(e)=>{ 
-            e.stopPropagation(); openDiagnosisForm(d); 
-        }}, '✏️'));
-
-        row.appendChild(h('button',{ class:'icon-btn', style:'color:#27AE60; font-size:18px;', onclick: async (e)=>{ 
+        // == 🎛️ BARRA DE AÇÕES INFERIOR (Layout Espaçado) ==
+        const actions = h('div', {style:'display: flex; align-items: center; justify-content: flex-start; border-top: 1px dashed var(--line); padding-top: 10px; margin-top: 8px; gap:25px;margin-left: 10px;'});
+        
+        // Lado Esquerdo: O Botão de Treinamento agora tem formato de "Chip"
+        actions.appendChild(h('button',{ class:'icon-btn', style:'color:#27AE60; font-size:13px; font-weight:800; display:flex; gap:6px; align-items:center; background:rgba(39, 174, 96, 0.12); padding:6px 12px; border-radius:8px; border:1px solid rgba(39, 174, 96, 0.3);', onclick: async (e)=>{ 
             e.stopPropagation(); 
             d.relevanceCount = (d.relevanceCount || 0) + 1; 
             await dbPut('diagnosis', d);
-            toast('Sherlock aprendeu! 🧠 (+2% de Certeza)');
+            toast('Sherlock aprendeu! 🧠 (+2%)');
             invalidateSherlockCache();
             runSherlockSearch(); 
-        }}, '👍'));
+        }}, '👍 Ensinar'));
+        
+        // Lado Direito: Editar e Copiar
+        const rightBtns = h('div', {style: 'display: flex; gap: 16px;'});
+
+        rightBtns.appendChild(h('button',{ class:'icon-btn', style:'color:var(--c-quotes); font-size:15px;', onclick:(e)=>{ 
+            e.stopPropagation(); openDiagnosisForm(d); 
+        }}, '✏️'));
+
+        rightBtns.appendChild(h('button',{ class:'icon-btn', style:'color:var(--c-notes); font-size:15px;', onclick:(e)=>{ 
+            e.stopPropagation(); 
+            const txtToCopy = d.solution ? d.solution.trim() : 'Nenhuma solução cadastrada neste caso.';
+            navigator.clipboard.writeText(txtToCopy); 
+            toast('Solução copiada!'); 
+        } }, '📋'));
+
+        rightBtns.appendChild(h('button',{ class:'icon-btn', style:'color:var(--c-tasks); font-size:15px;', onclick:(e)=>{ 
+            e.stopPropagation(); 
+            const fullText = `*Sintoma:* ${d.title}\n*Causa:* ${d.cause || 'N/A'}\n*Solução:*\n${d.solution || 'N/A'}`;
+            navigator.clipboard.writeText(fullText); 
+            toast('Caso copiado!'); 
+        } }, '📤'));
+
+        actions.appendChild(rightBtns);
+        row.appendChild(actions);
         
         list.appendChild(row);
     });
