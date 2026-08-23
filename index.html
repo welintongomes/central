@@ -109,9 +109,9 @@ body.dark-theme #app { box-shadow: 0 0 60px rgba(0,0,0,0.5); }
 
 /* ---------- MODULE SCREENS ---------- */
 .module-screen{background:var(--surface-2);}
-.module-header{ padding: calc(env(safe-area-inset-top) + 5px) var(--sp-4) 16px; display:flex; align-items:center; gap:10px; color:#fff; flex:0 0 auto; }
+.module-header{ padding: calc(env(safe-area-inset-top) + 5px) var(--sp-4) 16px; display:flex; border-radius: 7px 7px 0px 0px; align-items:center; gap:10px; color:#fff; flex:0 0 auto; }
 .module-header h2{font-size:19px;font-weight:700;letter-spacing:-.2px;flex:1;}
-.back-btn, .header-action{ width:56px;height:56px; border-radius:50%; border:none; background:rgba(255,255,255,.22); color:#fff; font-size:18px; display:flex;align-items:center;justify-content:center; flex:0 0 auto; }
+.back-btn, .header-action{ width:56px;height:56px; border-radius:50%; border:none;  color:#fff; font-size:18px; display:flex;align-items:center;justify-content:center; flex:0 0 auto; }
 .back-btn:active{background:rgba(255,255,255,.34);}
 
 .filter-tabs{justify-content: center; display:flex; gap:8px; padding: 10px 23px 20px 23px; flex:0 0 auto; overflow-x:auto; scrollbar-width:none; }
@@ -759,7 +759,7 @@ body.dark-theme #app { box-shadow: 0 0 60px rgba(0,0,0,0.5); }
 <section id="screen-diagnosis" class="screen module-screen">
   <!-- 👇 O NOVO MOTOR DE INVESTIGAÇÃO FICA AQUI 👇 -->
   <div style="padding:16px; background:var(--surface); border-bottom:1px solid var(--line);">
-      <div style="font-size:12px; font-weight:700; color:#E67E22; margin-bottom:8px; letter-spacing:1px;">🔎 INVESTIGADOR SHERLOCK</div>
+      <div style="font-size:12px; font-weight:700; color:#E67E22; text-align: center; margin-bottom:8px; letter-spacing:1px;">🔎 INVESTIGADOR SHERLOCK</div>
       
   </div>
 
@@ -768,8 +768,9 @@ body.dark-theme #app { box-shadow: 0 0 60px rgba(0,0,0,0.5); }
     <div class="list" id="diagnosis-list"></div>
   </div>
   
-  <button class="fab" id="diagnosis-fab" onclick="openDiagnosisForm()" style="bottom: calc(130px + env(safe-area-inset-bottom));">+</button>
-  <div style="display:flex; gap:8px; margin: 9px 10px 16px 75px; align-items:center;">
+  <button class="fab" id="diagnosis-fab" onclick="openDiagnosisForm()" style="height: 44px;
+    width: 54px; border-radius: 18px; bottom: calc(135px + env(safe-area-inset-bottom));">+</button>
+  <div style="display:flex; gap:2px; margin: 9px 10px 16px 75px; align-items:center;">
     <div style="position:relative; flex:10;">
         <input type="text" id="diag-search-input" oninput="onSherlockTyping()" 
         placeholder="Sintomas... Use - para excluir e + para obrigar" style="width:100%;
@@ -798,7 +799,8 @@ body.dark-theme #app { box-shadow: 0 0 60px rgba(0,0,0,0.5); }
   <div class="module-header" id="diagnosis-header">
     <button class="back-btn" onclick="document.getElementById('screen-diagnosis').classList.remove('active'); document.getElementById('screen-home').classList.add('active'); if(window.speechSynthesis) window.speechSynthesis.cancel();">←</button>
     <h2 style="flex:1;">Diagnósticos</h2>
-    
+    <!-- 👇 NOVA ENGRENAGEM DE CONFIGURAÇÃO 👇 -->
+    <button class="header-action" onclick="openSherlockSettings()" title="Configurar Mente do Sherlock">⚙️</button>
     <!-- 👇 O botão de Ligar/Desligar a Playlist 👇 -->
     <button class="header-action" onclick="toggleDiagTts()" id="diag-tts-btn" title="Leitura Automática">🔈</button>
   </div>
@@ -1123,7 +1125,12 @@ async function updateHomeStats(){
   
   const dueFC = flashcards.filter(f => !f.isEncrypted && (f.nextReview <= Date.now()));
   setSub('flashcards', flashcards.length ? (dueFC.length > 0 ? `🚨 ${dueFC.length} revisões hoje` : 'Tudo em dia') : 'Monte seu deck');
-
+  if (diagnosis.length) {
+      const diagCats = new Set(diagnosis.map(d => d.category || 'Geral')).size;
+      setSub('diagnosis', `${diagCats} cartucho${diagCats>1?'s':''} · ${diagnosis.length} caso${diagnosis.length>1?'s':''}`);
+  } else {
+      setSub('diagnosis', 'Banco vazio');
+  }
   // =====================================================
   // NOVO: CÁLCULO FINANCEIRO DO PONTO NA TELA INICIAL, quantidade de trilhas
   // =====================================================
@@ -4852,11 +4859,30 @@ async function openDiagnosisForm(existing) { // 👈 NOVO: Agora é async
             manualWrap.appendChild(fieldWrap('Tags', tagFieldRef));
 
             if (isEdit) {
-                const badgeBox = h('div', { style: 'margin-top:16px; padding:12px; background:var(--surface-2); border-radius:8px; border:1px dashed var(--line);' });
-                badgeBox.appendChild(h('div', { style: 'font-size:12px; font-weight:700; color:var(--ink-soft); margin-bottom:8px;' }, '🧠 Força do Diagnóstico (Pontos de Relevância)'));
-                badgeBox.appendChild(h('div', { style: 'font-size:11px; color:var(--ink-soft); margin-bottom:8px;' }, 'Você pode zerar ou aumentar os pontos manualmente para alterar o peso deste caso nas pesquisas.'));
-                const inputNum = h('input', { type: 'number', id: 'f-diag-relevance', value: existing.relevanceCount || 0, style: 'width:100px; text-align:center; font-weight:bold; color:#E67E22;' });
-                badgeBox.appendChild(inputNum);
+                const badgeBox = h('div', { style: 'margin-top:16px; padding:12px; background:var(--surface-2); border-radius:8px; border:1px dashed var(--line); text-align:center;' });
+                badgeBox.appendChild(h('div', { style: 'font-size:12px; font-weight:800; color:var(--ink-soft); margin-bottom:8px;' }, '🧠 Força do Diagnóstico (Pontos)'));
+                badgeBox.appendChild(h('div', { style: 'font-size:11px; color:var(--ink-soft); margin-bottom:12px;' }, 'Use os botões para calibrar o peso deste caso nas pesquisas.'));
+                
+                // O empacotador que deixa tudo na mesma linha (flex)
+                const relWrap = h('div', { style: 'display:flex; justify-content:center; align-items:center; gap:12px;' });
+                
+                // Botão de Menos
+                const btnMinus = h('button', { type: 'button', class: 'btn', style: 'background:var(--surface); color:#E67E22; border:2px solid #E67E22; border-radius:8%; width:38px; height:38px; font-size:22px; display:flex; align-items:center; justify-content:center; padding:0;' }, '-');
+                
+                // O Input (agora mais bonitinho e centralizado)
+                const inputNum = h('input', { type: 'number', id: 'f-diag-relevance', value: existing.relevanceCount || 0, style: 'width:70px; text-align:center; font-weight:900; font-size:18px; color:#E67E22; border:1px solid var(--line); border-radius:8px; padding:8px; background:transparent;' });
+                
+                // Botão de Mais
+                const btnPlus = h('button', { type: 'button', class: 'btn', style: 'background:var(--surface); color:#E67E22; border:2px solid #E67E22; border-radius:8%; width:38px; height:38px; font-size:22px; display:flex; align-items:center; justify-content:center; padding:0;' }, '+');
+
+                // A Lógica dos botões
+                btnMinus.onclick = (e) => { e.preventDefault(); let v = parseInt(inputNum.value, 10)||0; inputNum.value = v-1; };
+                btnPlus.onclick = (e) => { e.preventDefault(); let v = parseInt(inputNum.value, 10)||0; inputNum.value = v+1; };
+
+                relWrap.appendChild(btnMinus);
+                relWrap.appendChild(inputNum);
+                relWrap.appendChild(btnPlus);
+                badgeBox.appendChild(relWrap);
                 manualWrap.appendChild(badgeBox);
             }
 
@@ -4909,6 +4935,60 @@ async function openDiagnosisForm(existing) { // 👈 NOVO: Agora é async
         onDelete: isEdit ? () => confirmDelete('diagnosis', existing.id, () => { invalidateSherlockCache(); renderDiagnosis(); updateHomeStats(); }) : null
     });
 }
+
+// ⚙️ PAINEL DE CONTROLE DO SHERLOCK (Sinônimos + Time Decay)
+function openSherlockSettings() {
+    const savedSynonyms = localStorage.getItem('sherlock_synonyms') || "fio = cabo, chicote\nbateria = pilha, acumulador";
+    const savedDecayDays = localStorage.getItem('sherlock_decay_days') || "1500";
+    const savedDecayPct = localStorage.getItem('sherlock_decay_pct') || "40"; // Representa 40% (0.4)
+    
+    openSheet({
+        title: '⚙️ Motor do Sherlock',
+        buildFields: (box) => {
+            // == BLOCO 1: SINÔNIMOS ==
+            const info = h('div', {style:'font-size:12px; color:var(--ink-soft); margin-bottom:12px; line-height:1.4;'});
+            info.innerHTML = `<b>Dicionário de Sinônimos:</b><br>Formato: <code>palavra = sinonimo1, sinonimo2</code>`;
+            box.appendChild(info);
+            
+            const ta = h('textarea', {id: 'f-sherlock-syn', style: 'height:120px; font-family:monospace; font-size:13px; margin-bottom:8px;'});
+            ta.value = savedSynonyms;
+            box.appendChild(fieldWrap('Sinônimos (Uma regra por linha)', ta));
+
+            // == BLOCO 2: ENVELHECIMENTO DA PISTA (Time Decay) ==
+            const decayBox = h('div', {style: 'padding:14px; background:var(--surface-2); border-radius:12px; border:1px solid var(--line); margin-top:8px;'});
+            decayBox.appendChild(h('div', {style:'font-size:12px; font-weight:800; color:#E67E22; margin-bottom:10px;'}, '⏳ MEMÓRIA E ENVELHECIMENTO (Time Decay)'));
+            decayBox.appendChild(h('div', {style:'font-size:11px; color:var(--ink-soft); margin-bottom:14px; line-height:1.4;'}, 'Configure com que velocidade pistas antigas perdem a relevância nas pesquisas, dando espaço para novas soluções.'));
+            
+            // Controle de Dias
+            const wrapDays = h('div', {style:'display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;'});
+            wrapDays.appendChild(h('div', {style:'font-size:13px; font-weight:700;'}, 'Vencimento em (Dias):'));
+            const inputDays = h('input', {type:'number', id:'f-decay-days', value: savedDecayDays, style:'width:80px; text-align:center; padding:6px; background:var(--surface); border:1px solid var(--line); border-radius:6px; color:#E67E22; font-weight:bold;'});
+            wrapDays.appendChild(inputDays);
+            decayBox.appendChild(wrapDays);
+
+            // Controle de Porcentagem
+            const wrapPct = h('div', {style:'display:flex; align-items:center; justify-content:space-between;'});
+            wrapPct.appendChild(h('div', {style:'font-size:13px; font-weight:700;'}, 'Perder Força Base (%):'));
+            const inputPct = h('input', {type:'number', id:'f-decay-pct', value: savedDecayPct, max: 99, style:'width:80px; text-align:center; padding:6px; background:var(--surface); border:1px solid var(--line); border-radius:6px; color:#E74C3C; font-weight:bold;'});
+            wrapPct.appendChild(inputPct);
+            decayBox.appendChild(wrapPct);
+
+            box.appendChild(decayBox);
+        },
+        onSubmit: () => {
+            localStorage.setItem('sherlock_synonyms', document.getElementById('f-sherlock-syn').value);
+            localStorage.setItem('sherlock_decay_days', document.getElementById('f-decay-days').value || "1500");
+            localStorage.setItem('sherlock_decay_pct', document.getElementById('f-decay-pct').value || "40");
+            invalidateSherlockCache();
+            toast('🧠 Mente e Memória do Sherlock atualizadas!');
+            
+            const searchBox = document.getElementById('diag-search-input');
+            if (searchBox && searchBox.value) runSherlockSearch(); // Recalcula tudo na hora
+            return true;
+        }
+    });
+}
+
 // ============================================================
 // 🕵️ CONFIGURAÇÃO DO DETETIVE
 // ============================================================
@@ -5013,7 +5093,7 @@ function fuzzyIncludes(text, term) {
     const maxDist = term.length > 6 ? 2 : 1;
     for (const w of words) {
         if (Math.abs(w.length - term.length) > maxDist) continue;
-        if (levenshtein(w, term) <= maxDist) return 0.6; // confiança parcial
+        if (levenshtein(w, term) <= maxDist) return 0.2; // confiança parcial
     }
     return 0;
 }
@@ -5038,6 +5118,40 @@ async function runSherlockSearch() {
         else bm25Tokens.push(norm(t));
     });
 
+    // ============================================================
+    // 🧠 INJEÇÃO SEMÂNTICA (AGORA COM SUPORTE A FRASES!)
+    // ============================================================
+    const synRaw = localStorage.getItem('sherlock_synonyms') || '';
+    let expandedTokens = new Set(bm25Tokens);
+    
+    // Pega a frase inteira que você digitou, tudo em minúsculo e sem acento
+    const qNorm = norm(qRaw); 
+
+    synRaw.split('\n').forEach(line => {
+        if (!line.includes('=')) return;
+        const [main, ...rest] = line.split('=');
+        const root = norm(main.trim());
+        const variations = rest.join('=').split(',').map(s => norm(s.trim())).filter(Boolean);
+        
+        const allTerms = [root, ...variations]; // Junta tudo: "lavar bloco", "retifica", "torneiro"
+        
+        // Verifica se QUALQUER uma dessas expressões existe dentro do que você digitou
+        let matchFound = false;
+        allTerms.forEach(term => {
+            if (qNorm.includes(term)) matchFound = true;
+        });
+
+        // Se você digitou "lavar bloco", ele quebra os sinônimos ("torneiro mecânico") 
+        // e joga as palavras soltas no motor de busca para achar as pistas!
+        if (matchFound) {
+            allTerms.forEach(term => {
+                term.split(/\s+/).forEach(word => expandedTokens.add(word));
+            });
+        }
+    });
+    bm25Tokens = Array.from(expandedTokens);
+    // ============================================================
+
     // Poucas pistas ainda -> espera mais, não sai chutando
     const meaningfulChars = bm25Tokens.join('').length;
     const hasOperators = mustHave.length > 0 || mustNotHave.length > 0;
@@ -5061,7 +5175,17 @@ async function runSherlockSearch() {
     if (bm25Tokens.length === 0) {
         diags.forEach(d => {
             const hitRate = d.relevanceCount || 0;
-            d._finalScore = 1 + (Math.log1p(hitRate) * 0.15);
+            
+            // 🕰️ TIME DECAY DINÂMICO (Configurado pelo Usuário)
+            const ageDays = (Date.now() - (d.createdAt || Date.now())) / (1000 * 60 * 60 * 24);
+            const userDays = parseFloat(localStorage.getItem('sherlock_decay_days')) || 1500;
+            const userPct = parseFloat(localStorage.getItem('sherlock_decay_pct')) || 40;
+            
+            // Ex: Se configurou 40%, a força mínima será 0.6 (1 - 0.40)
+            const limitForce = Math.max(0.01, 1 - (userPct / 100)); 
+            const decay = Math.max(limitForce, 1 - (ageDays / userDays)); 
+            
+            d._finalScore = bm25Score * (1 + (Math.log1p(hitRate) * 0.15)) * decay;
         });
     } else {
         const k1 = 1.2, b = 0.75;
@@ -5077,6 +5201,8 @@ async function runSherlockSearch() {
 
         diags.forEach(d => {
             let bm25Score = 0;
+            let wordsHit = 0; // Quantas palavras da pesquisa ele acertou
+            
             bm25Tokens.forEach(t => {
                 const inTitle = d._tTitle.includes(t);
                 const inCause = d._tCause.includes(t);
@@ -5084,13 +5210,14 @@ async function runSherlockSearch() {
                 const inTags = d._tTags.includes(t);
                 let confidence = 1;
 
-                if (!(inTitle || inCause || inSol)) {
+                if (!(inTitle || inCause || inSol || inTags)) {
                     confidence = fuzzyIncludes(d._fullText, t);
                     if (confidence === 0) return;
                 }
+                
+                wordsHit++; // Bateu na palavra! Adiciona ao contador de acertos
 
                 const idf = Math.log((diags.length - df[t] + 0.5) / (df[t] + 0.5) + 1);
-                const safeT = t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
                 const tf = (d._fullText.split(t).length - 1) || 1;
                 const fieldWeight = inTitle ? W_TITLE : (inTags ? W_TAGS : (inCause ? W_CAUSE : W_SOL));  
                 const termScore = idf * ((tf * (k1 + 1)) / (tf + k1 * (1 - b + b * (d._docLen / avgdl))));
@@ -5098,8 +5225,26 @@ async function runSherlockSearch() {
                 bm25Score += termScore * fieldWeight * confidence;
             });
 
+            // 🛑 A TRAVA DE COBERTURA: O Segredo do Ceticismo
+            // Se eu pesquisei 5 palavras e o texto tem 2, ele cobre 40% (0.4)
+            // Se eu pesquisei 1 palavra e o texto tem 1, ele cobre 100% (1.0)
+            const coverageRatio = (bm25Tokens.length > 0) ? (wordsHit / bm25Tokens.length) : 1;
+            
+            // Nós penalizamos a nota baseando-se na cobertura. 
+            // Se bateu poucas palavras, a nota despenca.
+            const adjustedBm25 = bm25Score * coverageRatio;
+
+            // 🕰️ TIME DECAY e BAYES aplicados na nota JÁ penalizada
             const hitRate = d.relevanceCount || 0;
-            d._finalScore = bm25Score * (1 + (Math.log1p(hitRate) * 0.15));
+            const ageDays = (Date.now() - (d.createdAt || Date.now())) / (1000 * 60 * 60 * 24);
+            const userDays = parseFloat(localStorage.getItem('sherlock_decay_days')) || 1500;
+            const userPct = parseFloat(localStorage.getItem('sherlock_decay_pct')) || 40;
+            
+            const limitForce = Math.max(0.01, 1 - (userPct / 100)); 
+            const decay = Math.max(limitForce, 1 - (ageDays / userDays)); 
+            
+            // O Score Final agora usa a nota ajustada pela cobertura da frase
+            d._finalScore = adjustedBm25 * (1 + (Math.log1p(hitRate) * 0.15)) * decay;
         });
     }
 
@@ -5118,12 +5263,33 @@ let diagSpeechIndex = -1;
 function toggleDiagTts() {
     diagTtsEnabled = !diagTtsEnabled;
     const btn = document.getElementById('diag-tts-btn');
-    if (btn) btn.textContent = diagTtsEnabled ? '🔊' : '🔈';
+    
+    if (btn) {
+        btn.textContent = diagTtsEnabled ? '🔊' : '🔈';
+        
+        // ✨ FEEDBACK VISUAL PREMIUM ✨
+        // Prepara o botão para animar suavemente
+        btn.style.transition = 'all 0.3s ease';
+        btn.style.borderRadius = '30px';
+        
+        if (diagTtsEnabled) {
+            // LIGADO: Fundo aceso e leve brilho
+            btn.style.background = 'rgb(227 111 8)';
+            btn.style.boxShadow = '0 0 10px rgba(255, 255, 255, 0.5)';
+            btn.style.transform = 'scale(1.1)'; // Dá uma leve crescidinha
+        } else {
+            // DESLIGADO: Volta ao normal
+            btn.style.background = 'transparent';
+            btn.style.boxShadow = 'none';
+            btn.style.transform = 'scale(1)';
+        }
+    }
     
     if (!diagTtsEnabled && window.speechSynthesis) {
         window.speechSynthesis.cancel();
         diagSpeechIndex = -1;
     }
+    
     toast(diagTtsEnabled ? 'Modo Playlist Ativado 🔊' : 'Modo Playlist Desativado 🔈');
 }
 
@@ -5185,14 +5351,67 @@ function renderSherlockResults(results) {
         return;
     }
     
-    const banner = h('div', {style:'padding:12px; background:#0e0d0d; color:#E67E22; border-radius:8px; margin-bottom:16px; font-size:13px; font-weight:700; text-align:center; border:1px solid #E67E22;'}, 
-        `🕵️ Sherlock analisou as evidências: ${results.length} causa(s) encontrada(s).`);
-    list.appendChild(banner);
+    // ============================================================
+    // 🕵️ INTELIGÊNCIA: A Dedução Reversa do Sherlock
+    // ============================================================
+    let bestPct = 0;
+    if (results.length > 0) {
+        bestPct = (1 - Math.exp(-results[0]._finalScore * 0.35)) * 100;
+        if (results[0].relevanceCount > 0) bestPct += (results[0].relevanceCount * 3);
+    }
+    
+    // Se o melhor resultado tem menos de 65% de certeza, o Sherlock intervém!
+    if (results.length > 0 && bestPct < 65) {
+        
+        // Ele varre os resultados achados para ver que "Causa" se repete mais
+        const causeStats = {};
+        let topCause = ''; let topCauseCount = 0;
+        
+        results.forEach(r => {
+            if (r.cause && r.cause.trim().length > 3) {
+                const c = r.cause.trim();
+                causeStats[c] = (causeStats[c] || 0) + 1;
+                if (causeStats[c] > topCauseCount) {
+                    topCauseCount = causeStats[c];
+                    topCause = c;
+                }
+            }
+        });
+        
+        // Se ele achou uma causa comum, ele solta a fala!
+        if (topCauseCount > 1) {
+            const palpiteBanner = h('div', {style:'padding:14px; background:#1b120c; color:#E67E22; border-radius:8px; margin-bottom:16px; border-left:4px solid #E67E22; display:flex; gap:12px; align-items:center;'});
+            palpiteBanner.appendChild(h('div', {style:'font-size:26px;'}, '🕵️'));
+            const txt = h('div', {style:'flex:1;'});
+            txt.appendChild(h('div', {style:'font-size:12px; font-weight:800; margin-bottom:4px; letter-spacing:0.5px;'}, 'PALPITE DO SHERLOCK:'));
+            txt.appendChild(h('div', {style:'font-size:13.5px; color:#f5c6a1; line-height:1.4;'}, `Pistas fracas, meu caro... Mas reparei que <b>${topCause}</b> aparece frequentemente com esses sintomas. Você já deu uma olhada nisso?`));
+            palpiteBanner.appendChild(txt);
+            list.appendChild(palpiteBanner);
+        } else {
+             // O Banner padrão de resultados se não tiver palpite
+             const banner = h('div', {style:'padding:12px; background:#0e0d0d; color:#E67E22; border-radius:8px; margin-bottom:16px; font-size:13px; font-weight:700; text-align:center; border:1px solid #E67E22;'}, `🕵️ Evidências fracas, mas encontrei ${results.length} pista(s).`);
+             list.appendChild(banner);
+        }
+    } else if (results.length > 0) {
+        // Banner padrão para quando ele tem Certeza Alta!
+        const banner = h('div', {style:'padding:12px; background:#0e0d0d; color:#E67E22; border-radius:8px; margin-bottom:16px; font-size:13px; font-weight:700; text-align:center; border:1px solid #E67E22;'}, `🕵️ Sherlock analisou as evidências: ${results.length} causa(s) provável(is).`);
+        list.appendChild(banner);
+    }
 
     results.forEach((d, index) => {
         
-        let pct = (1 - Math.exp(-d._finalScore * 0.35)) * 100;
-        if (d.relevanceCount > 0) pct += (d.relevanceCount * 3); 
+        // 🧮 CÁLCULO DA PORCENTAGEM RECALIBRADO
+        // Diminuímos o fator de 0.35 para 0.12 para que seja MAIS DIFÍCIL chegar no vermelho
+        let pct = (1 - Math.exp(-d._finalScore * 0.12)) * 100;
+        
+        // Bônus Bayesiano Manual: Cada 👍 dá apenas 1.5% de certeza bruta, até o máximo de 15% 
+        // (Isso evita que um item muito curtido fique invencível para sempre)
+        if (d.relevanceCount > 0) { 
+            let boost = d.relevanceCount * 1.5;
+            pct += Math.min(15, boost); // Bônus Bayesiano travado em max 15%
+        }
+        
+        // Trava no máximo de 99.9%
         let pctInt = Math.floor(Math.min(99.9, pct));
 
         let probText, probColor, bgColor;
