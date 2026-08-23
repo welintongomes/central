@@ -5099,7 +5099,7 @@ function fuzzyIncludes(text, term) {
 }
 
 // ============================================================
-// 🧠 O CÉREBRO INVESTIGATIVO DO SHERLOCK (BM25F + BAYES + INTENÇÃO + FUZZY)
+// 🧠 O CÉREBRO INVESTIGATIVO DO SHERLOCK (BM25F PURO + BAYES + INTENÇÃO + TIME DECAY)
 // ============================================================
 async function runSherlockSearch() {
     markSherlockThinking(false);
@@ -5118,13 +5118,9 @@ async function runSherlockSearch() {
         else bm25Tokens.push(norm(t));
     });
 
-    // ============================================================
-    // 🧠 INJEÇÃO SEMÂNTICA (AGORA COM SUPORTE A FRASES!)
-    // ============================================================
+    // 🧠 INJEÇÃO SEMÂNTICA (SINÔNIMOS EM FRASES)
     const synRaw = localStorage.getItem('sherlock_synonyms') || '';
     let expandedTokens = new Set(bm25Tokens);
-    
-    // Pega a frase inteira que você digitou, tudo em minúsculo e sem acento
     const qNorm = norm(qRaw); 
 
     synRaw.split('\n').forEach(line => {
@@ -5133,16 +5129,10 @@ async function runSherlockSearch() {
         const root = norm(main.trim());
         const variations = rest.join('=').split(',').map(s => norm(s.trim())).filter(Boolean);
         
-        const allTerms = [root, ...variations]; // Junta tudo: "lavar bloco", "retifica", "torneiro"
-        
-        // Verifica se QUALQUER uma dessas expressões existe dentro do que você digitou
+        const allTerms = [root, ...variations];
         let matchFound = false;
-        allTerms.forEach(term => {
-            if (qNorm.includes(term)) matchFound = true;
-        });
+        allTerms.forEach(term => { if (qNorm.includes(term)) matchFound = true; });
 
-        // Se você digitou "lavar bloco", ele quebra os sinônimos ("torneiro mecânico") 
-        // e joga as palavras soltas no motor de busca para achar as pistas!
         if (matchFound) {
             allTerms.forEach(term => {
                 term.split(/\s+/).forEach(word => expandedTokens.add(word));
@@ -5150,9 +5140,7 @@ async function runSherlockSearch() {
         }
     });
     bm25Tokens = Array.from(expandedTokens);
-    // ============================================================
 
-    // Poucas pistas ainda -> espera mais, não sai chutando
     const meaningfulChars = bm25Tokens.join('').length;
     const hasOperators = mustHave.length > 0 || mustNotHave.length > 0;
     if (!hasOperators && meaningfulChars < SHERLOCK_MIN_CHARS) {
@@ -5172,24 +5160,24 @@ async function runSherlockSearch() {
 
     if (diags.length === 0) { renderSherlockResults([]); return; }
 
+    // 🧪 CIÊNCIA DE DADOS: Variável Global para a Nota Máxima Teórica
+    window._sherlockMaxScore = 1; 
+
     if (bm25Tokens.length === 0) {
         diags.forEach(d => {
             const hitRate = d.relevanceCount || 0;
-            
-            // 🕰️ TIME DECAY DINÂMICO (Configurado pelo Usuário)
             const ageDays = (Date.now() - (d.createdAt || Date.now())) / (1000 * 60 * 60 * 24);
             const userDays = parseFloat(localStorage.getItem('sherlock_decay_days')) || 1500;
             const userPct = parseFloat(localStorage.getItem('sherlock_decay_pct')) || 40;
             
-            // Ex: Se configurou 40%, a força mínima será 0.6 (1 - 0.40)
             const limitForce = Math.max(0.01, 1 - (userPct / 100)); 
             const decay = Math.max(limitForce, 1 - (ageDays / userDays)); 
             
-            d._finalScore = bm25Score * (1 + (Math.log1p(hitRate) * 0.15)) * decay;
+            d._finalScore = (1 + (Math.log1p(hitRate) * 0.15)) * decay;
         });
     } else {
         const k1 = 1.2, b = 0.75;
-        const W_TITLE = 3, W_TAGS = 2.2, W_CAUSE = 1.6, W_SOL = 1; // título > causa > solução
+        const W_TITLE = 3, W_TAGS = 2.2, W_CAUSE = 1.6, W_SOL = 1; 
 
         let totalLen = 0; diags.forEach(d => totalLen += d._docLen);
         const avgdl = totalLen / (diags.length || 1);
@@ -5199,9 +5187,16 @@ async function runSherlockSearch() {
             df[t] = diags.filter(d => d._fullText.includes(t) || fuzzyIncludes(d._fullText, t) > 0).length;
         });
 
+        // 🧪 CALCULA A NOTA MÁXIMA TEÓRICA POSSÍVEL (Se a busca batesse perfeitamente nos Títulos de tudo)
+        let maxTheoreticalScore = 0;
+        bm25Tokens.forEach(t => {
+            const idf = Math.log((diags.length - df[t] + 0.5) / (df[t] + 0.5) + 1);
+            maxTheoreticalScore += idf * (k1 + 1) * W_TITLE; 
+        });
+        window._sherlockMaxScore = maxTheoreticalScore || 1;
+
         diags.forEach(d => {
             let bm25Score = 0;
-            let wordsHit = 0; // Quantas palavras da pesquisa ele acertou
             
             bm25Tokens.forEach(t => {
                 const inTitle = d._tTitle.includes(t);
@@ -5215,8 +5210,6 @@ async function runSherlockSearch() {
                     if (confidence === 0) return;
                 }
                 
-                wordsHit++; // Bateu na palavra! Adiciona ao contador de acertos
-
                 const idf = Math.log((diags.length - df[t] + 0.5) / (df[t] + 0.5) + 1);
                 const tf = (d._fullText.split(t).length - 1) || 1;
                 const fieldWeight = inTitle ? W_TITLE : (inTags ? W_TAGS : (inCause ? W_CAUSE : W_SOL));  
@@ -5225,16 +5218,7 @@ async function runSherlockSearch() {
                 bm25Score += termScore * fieldWeight * confidence;
             });
 
-            // 🛑 A TRAVA DE COBERTURA: O Segredo do Ceticismo
-            // Se eu pesquisei 5 palavras e o texto tem 2, ele cobre 40% (0.4)
-            // Se eu pesquisei 1 palavra e o texto tem 1, ele cobre 100% (1.0)
-            const coverageRatio = (bm25Tokens.length > 0) ? (wordsHit / bm25Tokens.length) : 1;
-            
-            // Nós penalizamos a nota baseando-se na cobertura. 
-            // Se bateu poucas palavras, a nota despenca.
-            const adjustedBm25 = bm25Score * coverageRatio;
-
-            // 🕰️ TIME DECAY e BAYES aplicados na nota JÁ penalizada
+            // 🕰️ TIME DECAY + BAYES
             const hitRate = d.relevanceCount || 0;
             const ageDays = (Date.now() - (d.createdAt || Date.now())) / (1000 * 60 * 60 * 24);
             const userDays = parseFloat(localStorage.getItem('sherlock_decay_days')) || 1500;
@@ -5243,16 +5227,17 @@ async function runSherlockSearch() {
             const limitForce = Math.max(0.01, 1 - (userPct / 100)); 
             const decay = Math.max(limitForce, 1 - (ageDays / userDays)); 
             
-            // O Score Final agora usa a nota ajustada pela cobertura da frase
-            d._finalScore = adjustedBm25 * (1 + (Math.log1p(hitRate) * 0.15)) * decay;
+            // NOTA PURA DO BM25 x Aprendizado Bayesiano x Envelhecimento
+            d._finalScore = bm25Score * (1 + (Math.log1p(hitRate) * 0.15)) * decay;
         });
     }
 
-    if (myReqId !== _sherlockReqId) return; // resposta antiga, descarta
+    if (myReqId !== _sherlockReqId) return; 
 
     const sortedResults = diags.filter(d => d._finalScore > 0).sort((a, b) => b._finalScore - a._finalScore);
     renderSherlockResults(sortedResults);
 }
+
 // ============================================================
 // 🎙️ MOTOR DE PLAYLIST (TEXT-TO-SPEECH) DO SHERLOCK
 // ============================================================
@@ -5335,14 +5320,13 @@ function playNextDiagAudio() {
     
     window.speechSynthesis.speak(u);
 }
-// 👁️ DESENHA O PAINEL DE RESULTADOS DO SHERLOCK
-// 👁️ DESENHA O PAINEL DE RESULTADOS DO SHERLOCK (Com Porcentagem de Certeza)
-// 👁️ DESENHA O PAINEL DE RESULTADOS DO SHERLOCK (Com Lápis e Playlist)
+// ============================================================
+// 👁️ DESENHA O PAINEL DE RESULTADOS DO SHERLOCK (Cálculo Científico)
+// ============================================================
 function renderSherlockResults(results) {
     const list = document.getElementById('diagnosis-list');
     list.innerHTML = '';
     
-    // Corta qualquer áudio tocando se a lista mudar (por nova pesquisa)
     if (window.speechSynthesis) window.speechSynthesis.cancel();
     diagSpeechIndex = -1;
 
@@ -5351,19 +5335,15 @@ function renderSherlockResults(results) {
         return;
     }
     
-    // ============================================================
     // 🕵️ INTELIGÊNCIA: A Dedução Reversa do Sherlock
-    // ============================================================
     let bestPct = 0;
     if (results.length > 0) {
-        bestPct = (1 - Math.exp(-results[0]._finalScore * 0.35)) * 100;
-        if (results[0].relevanceCount > 0) bestPct += (results[0].relevanceCount * 3);
+        // 🧪 A Porcentagem do Palpite também usa a Matemática Real
+        bestPct = (results[0]._finalScore / window._sherlockMaxScore) * 100;
+        if (results[0].relevanceCount > 0) bestPct += Math.min(15, (results[0].relevanceCount * 2));
     }
     
-    // Se o melhor resultado tem menos de 65% de certeza, o Sherlock intervém!
     if (results.length > 0 && bestPct < 65) {
-        
-        // Ele varre os resultados achados para ver que "Causa" se repete mais
         const causeStats = {};
         let topCause = ''; let topCauseCount = 0;
         
@@ -5378,41 +5358,61 @@ function renderSherlockResults(results) {
             }
         });
         
-        // Se ele achou uma causa comum, ele solta a fala!
         if (topCauseCount > 1) {
             const palpiteBanner = h('div', {style:'padding:14px; background:#1b120c; color:#E67E22; border-radius:8px; margin-bottom:16px; border-left:4px solid #E67E22; display:flex; gap:12px; align-items:center;'});
             palpiteBanner.appendChild(h('div', {style:'font-size:26px;'}, '🕵️'));
             const txt = h('div', {style:'flex:1;'});
-            txt.appendChild(h('div', {style:'font-size:12px; font-weight:800; margin-bottom:4px; letter-spacing:0.5px;'}, 'PALPITE DO SHERLOCK:'));
-            txt.appendChild(h('div', {style:'font-size:13.5px; color:#f5c6a1; line-height:1.4;'}, `Pistas fracas, meu caro... Mas reparei que <b>${topCause}</b> aparece frequentemente com esses sintomas. Você já deu uma olhada nisso?`));
+            txt.appendChild(h('div', {style:'font-size:12px; font-weight:800; margin-bottom:4px; letter-spacing:0.5px;'}, 'PALPITE DO DETETIVE:'));
+            
+            // 👇 AQUI ACONTECE A MÁGICA DA INTERATIVIDADE 👇
+            const msg = h('div', {style:'font-size:13.5px; color:#f5c6a1; line-height:1.4;'});
+            msg.textContent = 'Pistas fracas, meu caro... Mas reparei que ';
+            
+            // O botão invisível (O Texto Clicável)
+            const clickCause = h('span', {
+                style: 'font-weight:900; color:#E74C3C; text-decoration:underline; cursor:pointer;',
+                onclick: () => {
+                    const searchInput = document.getElementById('diag-search-input');
+                    if (searchInput) {
+                        // Limpa o que você digitou e coloca o palpite do Sherlock lá!
+                        searchInput.value = topCause;
+                        // Aciona a busca forçada
+                        runSherlockSearch();
+                        // Mostra o "X" de limpar pesquisa
+                        toggleDiagClearButton(topCause);
+                        toast('🕵️ Seguindo a intuição do detetive...');
+                    }
+                }
+            }, topCause);
+            
+            msg.appendChild(clickCause);
+            msg.appendChild(document.createTextNode(' aparece frequentemente com esses sintomas. Você já deu uma olhada nisso?'));
+            
+            txt.appendChild(msg);
             palpiteBanner.appendChild(txt);
             list.appendChild(palpiteBanner);
         } else {
-             // O Banner padrão de resultados se não tiver palpite
              const banner = h('div', {style:'padding:12px; background:#0e0d0d; color:#E67E22; border-radius:8px; margin-bottom:16px; font-size:13px; font-weight:700; text-align:center; border:1px solid #E67E22;'}, `🕵️ Evidências fracas, mas encontrei ${results.length} pista(s).`);
              list.appendChild(banner);
         }
     } else if (results.length > 0) {
-        // Banner padrão para quando ele tem Certeza Alta!
         const banner = h('div', {style:'padding:12px; background:#0e0d0d; color:#E67E22; border-radius:8px; margin-bottom:16px; font-size:13px; font-weight:700; text-align:center; border:1px solid #E67E22;'}, `🕵️ Sherlock analisou as evidências: ${results.length} causa(s) provável(is).`);
         list.appendChild(banner);
     }
 
     results.forEach((d, index) => {
         
-        // 🧮 CÁLCULO DA PORCENTAGEM RECALIBRADO
-        // Diminuímos o fator de 0.35 para 0.12 para que seja MAIS DIFÍCIL chegar no vermelho
-        let pct = (1 - Math.exp(-d._finalScore * 0.12)) * 100;
+        // 🧮 CÁLCULO CIENTÍFICO DA PORCENTAGEM (O Coração da Matemática)
+        let pct = (d._finalScore / window._sherlockMaxScore) * 100;
         
-        // Bônus Bayesiano Manual: Cada 👍 dá apenas 1.5% de certeza bruta, até o máximo de 15% 
-        // (Isso evita que um item muito curtido fique invencível para sempre)
-        if (d.relevanceCount > 0) { 
-            let boost = d.relevanceCount * 1.5;
-            pct += Math.min(15, boost); // Bônus Bayesiano travado em max 15%
-        }
+        // Histórico positivo: ajuda até o limite de 15%
+        if (d.relevanceCount > 0) pct += Math.min(15, (d.relevanceCount * 2)); 
         
-        // Trava no máximo de 99.9%
-        let pctInt = Math.floor(Math.min(99.9, pct));
+        // Histórico negativo (Punição manual): subtrai brutalmente os pontos
+        if (d.relevanceCount < 0) pct += (d.relevanceCount * 5); 
+        
+        // Garante que fique estritamente entre 0% e 99.9%
+        let pctInt = Math.floor(Math.max(0, Math.min(99.9, pct))); 
 
         let probText, probColor, bgColor;
         if (pctInt >= 85) { probText = `🔥 ${pctInt}% — PISTA QUENTE (Certeza Alta)`; probColor = '#E74C3C'; bgColor = '#230a0a'; } 
@@ -5423,15 +5423,9 @@ function renderSherlockResults(results) {
         const rowStyle = index === 0 ? `border: 2px solid ${probColor}; background:${bgColor};` : '';
         const row = h('div',{class:'item', style: rowStyle}); 
         
-        // 👇 MUDANÇA AQUI: O clique no meio agora é governado pelo áudio 👇
         const grow = h('div',{class:'grow', onclick:() => {
-            if (diagTtsEnabled) {
-                // Se o falante lá em cima estiver ativado (🔊), vira playlist!
-                toggleDiagAudioPlay(index, results);
-            } else {
-                // Se o falante estiver desativado (🔈), funciona como antes (abre a edição)
-                openDiagnosisForm(d);
-            }
+            if (diagTtsEnabled) toggleDiagAudioPlay(index, results);
+            else openDiagnosisForm(d);
         }}); 
         
         grow.appendChild(h('div',{style:`font-size:11px; font-weight:900; color:${probColor}; margin-bottom:5px; letter-spacing:0.5px;`}, probText));
@@ -5448,17 +5442,15 @@ function renderSherlockResults(results) {
         }
         row.appendChild(grow);
 
-        // ✏️ NOVO BOTÃO: Lápis para forçar a edição sem desligar o áudio global
         row.appendChild(h('button',{ class:'icon-btn', style:'color:var(--c-quotes); font-size:16px; margin-right:2px;', onclick:(e)=>{ 
-            e.stopPropagation(); 
-            openDiagnosisForm(d); 
+            e.stopPropagation(); openDiagnosisForm(d); 
         }}, '✏️'));
 
         row.appendChild(h('button',{ class:'icon-btn', style:'color:#27AE60; font-size:18px;', onclick: async (e)=>{ 
             e.stopPropagation(); 
             d.relevanceCount = (d.relevanceCount || 0) + 1; 
             await dbPut('diagnosis', d);
-            toast('Sherlock aprendeu! 🧠 (+3% de Certeza)');
+            toast('Sherlock aprendeu! 🧠 (+2% de Certeza)');
             invalidateSherlockCache();
             runSherlockSearch(); 
         }}, '👍'));
