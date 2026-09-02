@@ -330,7 +330,7 @@ body.dark-theme #app { box-shadow: 0 0 60px rgba(0,0,0,0.5); }
 
 /* O Caminho de Migalhas Horizontal */
 .trail-breadcrumb { display: flex; overflow-x: auto; gap: 2px; padding: 12px 16px; background: var(--surface-2); border-bottom: 1px solid var(--line); scrollbar-width: none; align-items: center; }
-.trail-crumb { flex: 0 0 auto; background: var(--surface); border: 1px solid var(--line); padding: 6px 12px; border-radius: var(--r-pill); font-size: 13px; font-weight: 700; color: var(--ink-soft); cursor: pointer; display: flex; align-items: center; gap: 6px; transition: 0.2s; }
+.trail-crumb { flex: 0 0 auto;white-space: nowrap; background: var(--surface); max-width: 140px;overflow:hidden;text-overflow:ellipsis; border: 1px solid var(--line); padding: 6px 12px; border-radius: var(--r-pill); font-size: 13px; font-weight: 700; color: var(--ink-soft); cursor: pointer; display: flex; align-items: center; gap: 6px; transition: 0.2s; }
 .trail-crumb.active { background: #8E44AD; color: #fff; border-color: #8E44AD; }
 /* codigos para a calculadora os chips com estilos de codigo */
 .var-chip { background: #E8F8F5; border: 1px solid #1ABC9C; color: #16A085; padding: 4px 8px; border-radius: 6px; font-family: monospace; font-size: 13px; font-weight: bold; cursor: pointer; white-space: nowrap; }
