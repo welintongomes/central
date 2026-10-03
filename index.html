@@ -672,17 +672,22 @@ body.dark-theme #app { box-shadow: 0 0 60px rgba(0,0,0,0.5); }
   
   <div class="module-body" style="margin-top:0;padding-top:16px;">
     
-    <!-- Seletor de Mês (Igual ao Diário/Gastos) -->
-    <div style="display:flex; align-items:center; background:var(--surface); border:1px solid var(--line); border-radius:var(--r-pill); margin-bottom:16px;">
-      <button class="btn btn-ghost" onclick="changeWorkMonth(-1)" style="padding:8px 8px; font-size:24px; border:none; background:transparent; line-height:1;">‹</button>
-      <input type="month" id="work-month-input" style="flex:1; text-align: -webkit-center; min-width: min-content; border:none; background:transparent; font-family:inherit; color:var(--ink); font-weight:700; text-align:center; font-size:15px; outline:none; padding:8px 0;">
-      <button class="btn btn-ghost" onclick="changeWorkMonth(1)" style="padding:8px 8px; font-size:24px; border:none; background:transparent; line-height:1;">›</button>
+    <!-- 🗓️ Seletor de SEMANA (Novo) -->
+    <div style="display:flex; align-items:center; background:var(--surface); border:1px solid var(--line); border-radius:var(--r-pill); margin-bottom:12px;">
+      <button class="btn btn-ghost" onclick="changeWorkWeek(-1)" style="padding:8px 8px; font-size:24px; border:none; background:transparent; line-height:1;">‹</button>
+      <input type="week" id="work-week-input" style="flex:1; text-align: -webkit-center; min-width: min-content; border:none; background:transparent; font-family:inherit; color:var(--ink); font-weight:700; text-align:center; font-size:15px; outline:none; padding:8px 0;">
+      <button class="btn btn-ghost" onclick="changeWorkWeek(1)" style="padding:8px 8px; font-size:24px; border:none; background:transparent; line-height:1;">›</button>
     </div>
 
-    <!-- Dashboard Financeiro do Mês -->
+    <!-- 💰 Banner Global do Mês (Soma todas as semanas) -->
+    <div id="work-month-banner" style="background:rgba(39, 174, 96, 0.1); color:#27AE60; padding:10px 14px; border-radius:var(--r-md); font-size:13.5px; text-align:center; margin-bottom:16px; border:1px solid rgba(39, 174, 96, 0.3);">
+        💰 Resumo do Mês: <b>Calculando...</b>
+    </div>
+
+    <!-- Dashboard Financeiro da SEMANA -->
     <div id="work-summary" style="display:flex; flex-direction:column; gap:8px; margin-bottom:16px; background:var(--surface-2); padding:16px; border-radius:var(--r-md); border:1px solid var(--line);">
-      <div style="display:flex; justify-content:space-between; margin-bottom:8px; border-bottom:1px solid var(--line); padding-bottom:8px;">
-        <div style="font-size:12px; font-weight:700; color:var(--ink-soft); text-transform:uppercase;">Total de Horas</div>
+      <div style="display:flex; justify-content:space-between; margin-bottom:8px; border-bottom:1px dashed var(--line); padding-bottom:8px;">
+        <div style="font-size:12px; font-weight:700; color:var(--ink-soft); text-transform:uppercase;">Horas da Semana</div>
         <div id="work-tot-hours" style="font-size:16px; font-weight:700; color:var(--ink);">0h 00m</div>
       </div>
       <div style="display:flex; justify-content:space-between;">
@@ -694,12 +699,12 @@ body.dark-theme #app { box-shadow: 0 0 60px rgba(0,0,0,0.5); }
         <div id="work-tot-add" style="font-size:14px; font-weight:700; color:var(--c-habits);">R$ 0,00</div>
       </div>
       <div style="display:flex; justify-content:space-between; border-bottom:1px solid var(--line); padding-bottom:8px; margin-bottom:4px;">
-        <div style="font-size:12px; font-weight:700; color:var(--danger); text-transform:uppercase;">Vales (Adiantamentos)</div>
+        <div style="font-size:12px; font-weight:700; color:var(--danger); text-transform:uppercase;">Vales / Adiantamentos</div>
         <div id="work-tot-ded" style="font-size:14px; font-weight:700; color:var(--danger);">R$ 0,00</div>
       </div>
       <div style="display:flex; justify-content:space-between; margin-top:4px;">
-        <div style="font-size:14px; font-weight:800; color:var(--ink); text-transform:uppercase;">A Receber</div>
-        <div id="work-tot-final" style="font-size:18px; font-weight:800; color:#E67E22;">R$ 0,00</div>
+        <div style="font-size:14px; font-weight:800; color:var(--ink); text-transform:uppercase;">A Receber na Semana</div>
+        <div id="work-tot-final" style="font-size:18px; font-weight:900; color:#E67E22;">R$ 0,00</div>
       </div>
     </div>
 
@@ -1135,14 +1140,37 @@ async function updateHomeStats(){
   // NOVO: CÁLCULO FINANCEIRO DO PONTO NA TELA INICIAL, quantidade de trilhas
   // =====================================================
   setSub('trails', trails.length ? trails.length + ' etapa' + (trails.length > 1 ? 's' : '') : 'Crie diagnósticos');
-  const wSet = getWorkSettings();
-  const monthWork = workhours.filter(w => (w.date || '').startsWith(ym));
+  
+  // 👇 AQUI COMEÇA A NOVA LÓGICA SEMANAL 👇
+  
+  // 1. Descobre qual é a semana ISO de hoje (ex: 2026-W41)
+  const dateToWeekStrLocal = (dateStr) => {
+      const d = new Date(dateStr + 'T12:00:00');
+      const date = d.getDate();
+      const day = d.getDay() || 7;
+      d.setDate(date + 4 - day);
+      const year = d.getFullYear();
+      const start = new Date(year, 0, 1);
+      const week = Math.ceil((((d - start) / 86400000) + 1) / 7);
+      return `${year}-W${String(week).padStart(2, '0')}`;
+  };
+  
+  const currentWeekStr = dateToWeekStrLocal(todayISO); // Usa a variável todayISO que já existe na sua função
+  const wSet = getWorkSettings(); // Puxa os padrões globais (Valor da Hora, Horários)
+  
+  // 2. Puxa as Finanças EXCLUSIVAS dessa semana atual
+  const allFinances = JSON.parse(localStorage.getItem('work-finances') || '{}');
+  const wFin = allFinances[currentWeekStr] || { advance: 0, extras: 0, prevBalance: 0 };
+  
+  // 3. Filtra apenas as horas trabalhadas na semana atual
+  const weekWork = workhours.filter(w => dateToWeekStrLocal(w.date) === currentWeekStr);
+  
   let totalMins = 0;
   let globalDailyExtras = 0;
-  
   const tToM = (t) => { const [h,m] = (t||'00:00').split(':').map(Number); return h*60 + m; };
   
-  monthWork.forEach(w => {
+  // 4. Calcula os minutos trabalhados na semana e os extras diários
+  weekWork.forEach(w => {
       const workedMins = (tToM(w.tOut) - tToM(w.tIn)) - (tToM(w.lIn) - tToM(w.lOut)) - Number(w.coffee);
       totalMins += (workedMins > 0 ? workedMins : 0);
       if (w.extras && w.extras.length > 0) {
@@ -1150,20 +1178,23 @@ async function updateHomeStats(){
       }
   });
   
+  // 5. Calcula o Saldo da Semana com as variáveis corretas
   const subtotalWH = (totalMins / 60) * Number(wSet.rate);
-  const totalReceber = subtotalWH + Number(wSet.prevBalance) + Number(wSet.extras) + globalDailyExtras - Number(wSet.advance);
+  const totalReceber = subtotalWH + Number(wFin.prevBalance) + Number(wFin.extras) + globalDailyExtras - Number(wFin.advance);
   
+  // 6. Atualiza o texto na tela inicial
   const whSubEl = document.getElementById('sub-workhours');
-  if (monthWork.length > 0) {
-      setSub('workhours', 'Total: ' + brl(totalReceber));
+  if (weekWork.length > 0) {
+      setSub('workhours', 'Receber (Semana): ' + brl(totalReceber));
       if (whSubEl) {
           whSubEl.style.color = totalReceber >= 0 ? '#E67E22' : 'var(--danger)'; 
           whSubEl.style.fontWeight = '700';
       }
   } else {
-      setSub('workhours', 'Nenhum ponto');
+      setSub('workhours', 'Semana Vazia');
       if (whSubEl) { whSubEl.style.color = ''; whSubEl.style.fontWeight = 'normal'; }
   }
+  // 👆 FIM DA NOVA LÓGICA SEMANAL 👆
 
   buildStatChips(pending.length, income-outcome, wCount, doneToday.size, habits.length);
 
@@ -3360,96 +3391,166 @@ function changeWorkMonth(offset) {
 function timeToMins(t) { const [h,m] = (t||'00:00').split(':').map(Number); return h*60 + m; }
 function minsToTimeStr(m) { const h = Math.floor(m/60); const mm = m%60; return `${h}h ${String(mm).padStart(2,'0')}m`; }
 
+// ============================================================
+// 📅 MÁQUINA DO TEMPO SEMANAL (Calcula as Semanas do Ano)
+// ============================================================
+function dateToWeekStr(dateStr) {
+    const d = new Date(dateStr + 'T12:00:00');
+    const date = d.getDate();
+    const day = d.getDay() || 7;
+    d.setDate(date + 4 - day);
+    const year = d.getFullYear();
+    const start = new Date(year, 0, 1);
+    const week = Math.ceil((((d - start) / 86400000) + 1) / 7);
+    return `${year}-W${String(week).padStart(2, '0')}`;
+}
+
+function getISOWeekNow() {
+    return dateToWeekStr(new Date().toISOString().split('T')[0]);
+}
+
+function changeWorkWeek(dir) {
+    if(!window.workWeekFilter) window.workWeekFilter = getISOWeekNow();
+    let [y, w] = window.workWeekFilter.split('-W').map(Number);
+    w += dir;
+    if(w < 1) { y--; w = 52; } 
+    if(w > 52) { y++; w = 1; }
+    window.workWeekFilter = `${y}-W${String(w).padStart(2,'0')}`;
+    renderWorkHours();
+}
+
+// ============================================================
+// ⚙️ SEPARADOR DE CONFIGURAÇÕES (GLOBAL vs SEMANAL)
+// ============================================================
+function getWorkSettings() {
+    // Padrões de horário são Globais (Valem pra sempre)
+    const s = JSON.parse(localStorage.getItem('work-settings') || '{}');
+    return {
+        rate: s.rate || 0,
+        tIn: s.tIn || '08:00', tOut: s.tOut || '18:00',
+        lOut: s.lOut || '12:00', lIn: s.lIn || '13:00',
+        coffee: s.coffee || 0
+    };
+}
+
+function getWeeklyFinances(weekStr) {
+    // Dinheiro (Vale, Saldo) fica preso na Semana!
+    const f = JSON.parse(localStorage.getItem('work-finances') || '{}');
+    return f[weekStr] || { advance: 0, extras: 0, prevBalance: 0 };
+}
 
 async function renderWorkHours() {
-  const list = document.getElementById('workhours-list'); list.innerHTML = ''; 
-  let items = await dbAll('workhours');
+    const list = document.getElementById('workhours-list'); list.innerHTML = ''; 
+    let items = await dbAll('workhours');
 
-  if (!workMonthFilter) { const now = new Date(); workMonthFilter = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0'); }
-  const monthInput = document.getElementById('work-month-input');
-  if (monthInput && monthInput.value !== workMonthFilter) monthInput.value = workMonthFilter;
-  if (monthInput) monthInput.onchange = (e) => { workMonthFilter = e.target.value; renderWorkHours(); };
+    if (!window.workWeekFilter) window.workWeekFilter = getISOWeekNow();
+    
+    const weekInput = document.getElementById('work-week-input');
+    if (weekInput && weekInput.value !== window.workWeekFilter) weekInput.value = window.workWeekFilter;
+    if (weekInput) weekInput.onchange = (e) => { window.workWeekFilter = e.target.value; renderWorkHours(); };
 
-  let filtered = items.filter(w => (w.date || '').startsWith(workMonthFilter));
-  filtered.sort((a,b) => (b.date||'').localeCompare(a.date||'')); 
+    let filtered = items.filter(w => dateToWeekStr(w.date) === window.workWeekFilter);
+    filtered.sort((a,b) => (b.date||'').localeCompare(a.date||'')); 
 
-  const settings = getWorkSettings();
-  let totalMins = 0;
-  let sumDailyExtras = 0; 
+    const settings = getWorkSettings();
+    const wFin = getWeeklyFinances(window.workWeekFilter);
+    
+    let totalMins = 0;
+    let sumDailyExtras = 0; 
 
-  if (!filtered.length) {
-      list.appendChild(emptyState('⏱️', 'Nenhum registro', 'Adicione um dia de trabalho no +'));
-  } else {
-      filtered.forEach(w => {
-          const row = h('div',{class:'item'});
-          const grow = h('div',{class:'grow', onclick: () => openWorkHourForm(w)});
-          
-          const coffeeMins = Number(w.coffee) || 0;
-          
-          // Calcula os minutos de almoço
-          const lunchMins = timeToMins(w.lIn) - timeToMins(w.lOut);
-          
-          const workedMins = (timeToMins(w.tOut) - timeToMins(w.tIn)) - lunchMins - coffeeMins;
-          const finalMins = workedMins > 0 ? workedMins : 0;
-          totalMins += finalMins;
-          
-          let dayExtraTotal = 0;
-          if(w.extras && w.extras.length > 0) {
-              w.extras.forEach(ex => { dayExtraTotal += Number(ex.value); });
-          }
-          sumDailyExtras += dayExtraTotal;
-          
-          grow.appendChild(h('div',{class:'i-title'}, humanDateFull(w.date)));
-          
-          // NOVO: Construindo a linha exatamente na ordem pedida!
-          let subText = `Das ${w.tIn} às ${w.tOut}`;
-          
-          // 1. Almoço
-          if (lunchMins > 0) {
-              const lH = String(Math.floor(lunchMins/60)).padStart(2, '0');
-              const lM = String(lunchMins%60).padStart(2, '0');
-              subText += ` · 🍴 ${lH}:${lM}`;
-          }
-          
-          // 2. Café
-          if (coffeeMins > 0) subText += ` · ☕ ${coffeeMins}m`;
-          
-          // 3. Total Trabalhado
-          subText += ` · ⏱️ ${minsToTimeStr(finalMins)}`;
-          
-          // 4. Extras do dia
-          if (dayExtraTotal > 0) subText += ` · 🛠️ +${brl(dayExtraTotal)}`;
-          
-          grow.appendChild(h('div',{class:'i-sub'}, subText));
-          
-          row.appendChild(grow);
-          row.appendChild(h('button',{class:'icon-btn', onclick:(ev)=>{ ev.stopPropagation(); confirmDelete('workhours', w.id, ()=>{renderWorkHours();updateHomeStats();}); }},'✕'));
-          list.appendChild(row);
-      });
-  }
+    if (!filtered.length) {
+        list.appendChild(emptyState('⏱️', 'Semana Vazia', 'Adicione um dia de trabalho no +'));
+    } else {
+        filtered.forEach(w => {
+            const row = h('div',{class:'item'});
+            const grow = h('div',{class:'grow', onclick: () => openWorkHourForm(w)});
+            
+            const coffeeMins = Number(w.coffee) || 0;
+            const lunchMins = timeToMins(w.lIn) - timeToMins(w.lOut);
+            const workedMins = (timeToMins(w.tOut) - timeToMins(w.tIn)) - lunchMins - coffeeMins;
+            const finalMins = workedMins > 0 ? workedMins : 0;
+            totalMins += finalMins;
+            
+            let dayExtraTotal = 0;
+            if(w.extras && w.extras.length > 0) w.extras.forEach(ex => { dayExtraTotal += Number(ex.value); });
+            sumDailyExtras += dayExtraTotal;
+            
+            grow.appendChild(h('div',{class:'i-title'}, humanDateFull(w.date)));
+            
+            let subText = `Das ${w.tIn} às ${w.tOut}`;
+            if (lunchMins > 0) {
+                const lH = String(Math.floor(lunchMins/60)).padStart(2, '0');
+                const lM = String(lunchMins%60).padStart(2, '0');
+                subText += ` · 🍴 ${lH}:${lM}`;
+            }
+            if (coffeeMins > 0) subText += ` · ☕ ${coffeeMins}m`;
+            subText += ` · ⏱️ ${minsToTimeStr(finalMins)}`;
+            if (dayExtraTotal > 0) subText += ` · 🛠️ +${brl(dayExtraTotal)}`;
+            
+            grow.appendChild(h('div',{class:'i-sub'}, subText));
+            row.appendChild(grow);
+            row.appendChild(h('button',{class:'icon-btn', onclick:(ev)=>{ ev.stopPropagation(); confirmDelete('workhours', w.id, ()=>{renderWorkHours();updateHomeStats();}); }},'✕'));
+            list.appendChild(row);
+        });
+    }
 
-  const subtotal = (totalMins / 60) * Number(settings.rate);
-  const totalReceber = subtotal + Number(settings.prevBalance) + Number(settings.extras) + sumDailyExtras - Number(settings.advance);
+    // 💰 CÁLCULO DA SEMANA
+    const subtotal = (totalMins / 60) * Number(settings.rate);
+    const totalReceber = subtotal + Number(wFin.prevBalance) + Number(wFin.extras) + sumDailyExtras - Number(wFin.advance);
 
-  document.getElementById('work-tot-hours').textContent = minsToTimeStr(totalMins);
-  document.getElementById('work-tot-sub').textContent = brl(subtotal);
-  document.getElementById('work-tot-add').textContent = brl(Number(settings.prevBalance) + Number(settings.extras) + sumDailyExtras);
-  document.getElementById('work-tot-ded').textContent = brl(Number(settings.advance));
-  document.getElementById('work-tot-final').textContent = brl(totalReceber);
+    document.getElementById('work-tot-hours').textContent = minsToTimeStr(totalMins);
+    document.getElementById('work-tot-sub').textContent = brl(subtotal);
+    document.getElementById('work-tot-add').textContent = brl(Number(wFin.prevBalance) + Number(wFin.extras) + sumDailyExtras);
+    document.getElementById('work-tot-ded').textContent = brl(Number(wFin.advance));
+    document.getElementById('work-tot-final').textContent = brl(totalReceber);
+
+    // 💰 CÁLCULO MENSAL (Soma todas as semanas que tocam no mês atual)
+    let targetMonth = filtered.length > 0 ? filtered[0].date.substring(0,7) : new Date().toISOString().substring(0,7);
+    const monthItems = items.filter(w => (w.date||'').startsWith(targetMonth));
+    
+    let monthMins = 0;
+    let monthDailyExtras = 0;
+    monthItems.forEach(w => {
+        const lMins = timeToMins(w.lIn) - timeToMins(w.lOut);
+        const wMins = (timeToMins(w.tOut) - timeToMins(w.tIn)) - lMins - (Number(w.coffee)||0);
+        monthMins += (wMins > 0 ? wMins : 0);
+        if(w.extras) w.extras.forEach(ex => monthDailyExtras += Number(ex.value));
+    });
+    
+    // Puxa as caixinhas de Vales/Saldos de todas as semanas envolvidas
+    const uniqueWeeks = [...new Set(monthItems.map(w => dateToWeekStr(w.date)))];
+    let mExt = 0, mAdv = 0, mPrev = 0;
+    uniqueWeeks.forEach(wk => {
+        const wf = getWeeklyFinances(wk);
+        mExt += Number(wf.extras); mAdv += Number(wf.advance); mPrev += Number(wf.prevBalance);
+    });
+    
+    const monthTotal = ((monthMins / 60) * Number(settings.rate)) + mPrev + mExt + monthDailyExtras - mAdv;
+    const monthBanner = document.getElementById('work-month-banner');
+    if (monthBanner) {
+        const monthName = new Date(targetMonth + '-02').toLocaleString('pt-BR', {month:'long'});
+        monthBanner.innerHTML = `💰 Resumo do Mês (${monthName.charAt(0).toUpperCase() + monthName.slice(1)}): <b>${brl(monthTotal)}</b>`;
+    }
 }
-// ⚙️ Tela de Padrões e Valores Mensais
+
+// ⚙️ Tela de Configurações Dividida
 function openWorkSettings() {
     const s = getWorkSettings();
+    const wFin = getWeeklyFinances(window.workWeekFilter);
+    
     openSheet({
-        title: 'Padrões e Fechamento',
+        title: 'Fechamento & Padrões',
         buildFields: (box) => {
-            box.appendChild(h('div',{style:'font-size:12px; font-weight:700; color:var(--ink-soft); margin-bottom:8px; text-transform:uppercase;'}, 'Valores do Mês Atual'));
-            box.appendChild(fieldWrap('Valor da Hora (R$)', h('input',{type:'number', id:'f-ws-rate', value:s.rate})));
-            box.appendChild(fieldWrap('Vales / Adiantamentos (R$)', h('input',{type:'number', id:'f-ws-adv', value:s.advance})));
-            box.appendChild(fieldWrap('Serviços Extras (R$)', h('input',{type:'number', id:'f-ws-ext', value:s.extras})));
-            box.appendChild(fieldWrap('Saldo Anterior (R$)', h('input',{type:'number', id:'f-ws-prev', value:s.prevBalance})));
+            // FINANÇAS DA SEMANA ATUAL
+            box.appendChild(h('div',{style:'font-size:12px; font-weight:800; color:var(--c-habits); margin-bottom:8px; text-transform:uppercase;'}, `Valores desta Semana (${window.workWeekFilter})`));
+            box.appendChild(fieldWrap('Saldo Anterior (R$)', h('input',{type:'number', id:'f-ws-prev', value:wFin.prevBalance})));
+            box.appendChild(fieldWrap('Vales / Adiantamentos (R$)', h('input',{type:'number', id:'f-ws-adv', value:wFin.advance})));
+            box.appendChild(fieldWrap('Serviços Extras (R$)', h('input',{type:'number', id:'f-ws-ext', value:wFin.extras})));
             
-            box.appendChild(h('div',{style:'font-size:12px; font-weight:700; color:var(--ink-soft); margin:16px 0 8px; text-transform:uppercase;'}, 'Horários Padrão Diários'));
+            // PADRÕES DE HORÁRIO GERAIS
+            box.appendChild(h('div',{style:'font-size:12px; font-weight:800; color:var(--ink-soft); margin:16px 0 8px; text-transform:uppercase;'}, 'Padrões Gerais (Para todos os dias)'));
+            box.appendChild(fieldWrap('Valor da Hora (R$)', h('input',{type:'number', id:'f-ws-rate', value:s.rate})));
+            
             const row1 = h('div',{style:'display:flex; gap:8px;'});
             row1.appendChild(h('div',{style:'flex:1'}, fieldWrap('Entrada', h('input',{type:'time', id:'f-ws-tin', value:s.tIn}))));
             row1.appendChild(h('div',{style:'flex:1'}, fieldWrap('Saída', h('input',{type:'time', id:'f-ws-tout', value:s.tOut}))));
@@ -3463,22 +3564,94 @@ function openWorkSettings() {
             box.appendChild(fieldWrap('Tempo de Café (Minutos)', h('input',{type:'number', id:'f-ws-cof', value:s.coffee})));
         },
         onSubmit: () => {
+            // Salva as Globais
             const newSet = {
                 rate: document.getElementById('f-ws-rate').value || 0,
-                advance: document.getElementById('f-ws-adv').value || 0,
-                extras: document.getElementById('f-ws-ext').value || 0,
-                prevBalance: document.getElementById('f-ws-prev').value || 0,
                 tIn: document.getElementById('f-ws-tin').value, tOut: document.getElementById('f-ws-tout').value,
                 lOut: document.getElementById('f-ws-lout').value, lIn: document.getElementById('f-ws-lin').value,
                 coffee: document.getElementById('f-ws-cof').value || 0
             };
             localStorage.setItem('work-settings', JSON.stringify(newSet));
-            renderWorkHours(); toast('Padrões salvos!');
+            
+            // Salva o dinheiro DENTRO da semana
+            const newFin = {
+                advance: document.getElementById('f-ws-adv').value || 0,
+                extras: document.getElementById('f-ws-ext').value || 0,
+                prevBalance: document.getElementById('f-ws-prev').value || 0,
+            };
+            const f = JSON.parse(localStorage.getItem('work-finances') || '{}');
+            f[window.workWeekFilter] = newFin;
+            localStorage.setItem('work-finances', JSON.stringify(f));
+            
+            renderWorkHours(); updateHomeStats(); toast('Semana e Padrões salvos!');
         }
     });
 }
 
-// ⏱️ Registrar um dia novo (Puxa os padrões sozinho)
+// 📤 Relatório para o Chefe (Modo Semanal)
+async function exportWorkHours() {
+    let items = await dbAll('workhours');
+    let filtered = items.filter(w => dateToWeekStr(w.date) === window.workWeekFilter);
+    filtered.sort((a,b) => (a.date||'').localeCompare(b.date||'')); 
+    
+    if(filtered.length === 0) { toast('Nenhum registro nesta semana.'); return; }
+    
+    const s = getWorkSettings();
+    const wFin = getWeeklyFinances(window.workWeekFilter);
+    let totalMins = 0;
+    let sumDailyExtras = 0;
+    
+    let report = `🗓️ *Fechamento da Semana (${window.workWeekFilter})*\n\n`;
+    
+    filtered.forEach(w => {
+        const dStr = w.date.split('-').reverse().slice(0,2).join('/'); 
+        const coffeeMins = Number(w.coffee) || 0;
+        const lunchMins = timeToMins(w.lIn) - timeToMins(w.lOut);
+        
+        const workedMins = (timeToMins(w.tOut) - timeToMins(w.tIn)) - lunchMins - coffeeMins;
+        const finalMins = workedMins > 0 ? workedMins : 0;
+        totalMins += finalMins;
+        
+        report += `🔹 *${dStr}*: ${w.tIn} às ${w.tOut} (${minsToTimeStr(finalMins)})\n`;
+        let breaksList = [];
+        if (lunchMins > 0) {
+            const lH = String(Math.floor(lunchMins/60)).padStart(2, '0');
+            const lM = String(lunchMins%60).padStart(2, '0');
+            breaksList.push(`[🍴: ${lH}:${lM}]`);
+        }
+        if (coffeeMins > 0) breaksList.push(`[☕: ${coffeeMins}m]`);
+        if (breaksList.length > 0) report += `   ${breaksList.join('')}\n`;
+        if (w.obs) report += `   ↳ 📝 Obs: _${w.obs}_\n`;
+        
+        if (w.extras && w.extras.length > 0) {
+            w.extras.forEach(ex => {
+                sumDailyExtras += Number(ex.value);
+                report += `   ↳ 🛠️ Extra: ${ex.name} (+${brl(Number(ex.value))})\n`;
+            });
+        }
+    });
+    
+    const subtotal = (totalMins / 60) * Number(s.rate);
+    const globalExtras = Number(wFin.extras) + sumDailyExtras;
+    const totalReceber = subtotal + Number(wFin.prevBalance) + globalExtras - Number(wFin.advance);
+    
+    report += `\n⏱️ *Total Trabalhado:* ${minsToTimeStr(totalMins)}\n`;
+    report += `💰 Valor da Hora: ${brl(Number(s.rate))}\n`;
+    report += `💵 Subtotal das Horas: ${brl(subtotal)}\n`;
+    if(globalExtras > 0) report += `➕ Serviços Extras (Total): ${brl(globalExtras)}\n`;
+    if(Number(wFin.prevBalance)>0) report += `➕ Saldo Anterior: ${brl(Number(wFin.prevBalance))}\n`;
+    if(Number(wFin.advance)>0) report += `➖ Vales/Adiantamentos: ${brl(Number(wFin.advance))}\n`;
+    
+    report += `\n✅ *TOTAL A RECEBER: ${brl(totalReceber)}*`;
+
+    try {
+        await navigator.clipboard.writeText(report);
+        toast('Copiado! Só colar no WhatsApp.');
+        if (confirm("Relatório copiado! Deseja abrir o WhatsApp agora?")) {
+            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(report)}`, '_blank');
+        }
+    } catch(err) { toast('Erro ao copiar.'); }
+}
 // ⏱️ Registrar um dia novo (Agora com Serviços Extras Dinâmicos!)
 function openWorkHourForm(existing) {
   const isEdit = !!existing; const s = getWorkSettings();
@@ -3635,84 +3808,6 @@ function openWorkHourForm(existing) {
   });
 }
 
-// 📤 Gerar relatório detalhado para o Chefe (MÉTODO BLINDADO: Almoço antes do Café)
-async function exportWorkHours() {
-    let items = await dbAll('workhours');
-    let filtered = items.filter(w => (w.date || '').startsWith(workMonthFilter));
-    filtered.sort((a,b) => (a.date||'').localeCompare(b.date||'')); 
-    
-    if(filtered.length === 0) { toast('Nenhum registro neste mês.'); return; }
-    
-    const s = getWorkSettings();
-    let totalMins = 0;
-    let sumDailyExtras = 0;
-    
-    let report = `🗓️ *Fechamento de Horas - ${workMonthFilter.split('-').reverse().join('/')}*\n\n`;
-    
-    filtered.forEach(w => {
-        const dStr = w.date.split('-').reverse().slice(0,2).join('/'); 
-        const coffeeMins = Number(w.coffee) || 0;
-        const lunchMins = timeToMins(w.lIn) - timeToMins(w.lOut);
-        
-        const workedMins = (timeToMins(w.tOut) - timeToMins(w.tIn)) - lunchMins - coffeeMins;
-        const finalMins = workedMins > 0 ? workedMins : 0;
-        totalMins += finalMins;
-        
-        // LINHA 1: Dia, Entrada, Saída e Total de Horas
-        report += `🔹 *${dStr}*: ${w.tIn} às ${w.tOut} (${minsToTimeStr(finalMins)})\n`;
-        
-        // LINHA 2: Intervalos (Fila organizada à prova de falhas)
-        let breaksList = [];
-        
-        // 1º da fila: Almoço
-        if (lunchMins > 0) {
-            const lH = String(Math.floor(lunchMins/60)).padStart(2, '0');
-            const lM = String(lunchMins%60).padStart(2, '0');
-            breaksList.push(`[🍴: ${lH}:${lM}]`);
-        }
-        
-        // 2º da fila: Café
-        if (coffeeMins > 0) {
-            breaksList.push(`[☕: ${coffeeMins}m]`);
-        }
-        
-        // Imprime a fila (se tiver alguém nela)
-        if (breaksList.length > 0) {
-            report += `   ${breaksList.join('')}\n`;
-        }
-        
-        // LINHA 3 em diante: Observações e Serviços Extras
-        if (w.obs) report += `   ↳ 📝 Obs: _${w.obs}_\n`;
-        
-        if (w.extras && w.extras.length > 0) {
-            w.extras.forEach(ex => {
-                sumDailyExtras += Number(ex.value);
-                report += `   ↳ 🛠️ Extra: ${ex.name} (+${brl(Number(ex.value))})\n`;
-            });
-        }
-    });
-    
-    const subtotal = (totalMins / 60) * Number(s.rate);
-    const globalExtras = Number(s.extras) + sumDailyExtras;
-    const totalReceber = subtotal + Number(s.prevBalance) + globalExtras - Number(s.advance);
-    
-    report += `\n⏱️ *Total Trabalhado:* ${minsToTimeStr(totalMins)}\n`;
-    report += `💰 Valor da Hora: ${brl(Number(s.rate))}\n`;
-    report += `💵 Subtotal das Horas: ${brl(subtotal)}\n`;
-    if(globalExtras > 0) report += `➕ Serviços Extras (Total): ${brl(globalExtras)}\n`;
-    if(Number(s.prevBalance)>0) report += `➕ Saldo Anterior: ${brl(Number(s.prevBalance))}\n`;
-    if(Number(s.advance)>0) report += `➖ Vales/Adiantamentos: ${brl(Number(s.advance))}\n`;
-    
-    report += `\n✅ *TOTAL A RECEBER: ${brl(totalReceber)}*`;
-
-    try {
-        await navigator.clipboard.writeText(report);
-        toast('Copiado! Só colar no WhatsApp.');
-        if (confirm("Relatório copiado! Deseja abrir o WhatsApp agora?")) {
-            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(report)}`, '_blank');
-        }
-    } catch(err) { toast('Erro ao copiar.'); }
-}
 /* ============================================================
    TRILHAS E DIAGNÓSTICOS (Decision Trees + Atalhos Inteligentes)
    ============================================================ */
