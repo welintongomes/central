@@ -355,8 +355,7 @@ body.dark-theme #app { box-shadow: 0 0 60px rgba(0,0,0,0.5); }
 <!-- ===== HOME ===== -->
 <section id="screen-home" class="screen active" style="scrollbar-width: none";>
   
-  
-  
+
   <div class="greet home-header"><span id="greet-emoji">👋</span><span id="greet-text">Olá</span><div class="date" id="date-text"></div></div>
   <div id="home-alerts" style="padding: 16px var(--sp-5) 0;"></div>
   <div class="list" id="search-results" style="display: none;min-height: 66.9vh; overflow-y: auto; scrollbar-width: thin; scrollbar-color: rgb(60 56 56 / 80%) rgba(255, 255, 255, 0.05); max-height: 67vh; padding: 25px 15px 25px 15px;"></div>
@@ -1189,6 +1188,7 @@ async function updateHomeStats(){
       if (whSubEl) {
           whSubEl.style.color = totalReceber >= 0 ? '#E67E22' : 'var(--danger)'; 
           whSubEl.style.fontWeight = '700';
+          whSubEl.style.textAlign = 'center';
       }
   } else {
       setSub('workhours', 'Semana Vazia');
@@ -3504,12 +3504,19 @@ async function renderWorkHours() {
     document.getElementById('work-tot-ded').textContent = brl(Number(wFin.advance));
     document.getElementById('work-tot-final').textContent = brl(totalReceber);
 
-    // 💰 CÁLCULO MENSAL (Soma todas as semanas que tocam no mês atual)
-    let targetMonth = filtered.length > 0 ? filtered[0].date.substring(0,7) : new Date().toISOString().substring(0,7);
+    // 💰 CÁLCULO MENSAL GLOBAL (Soma o resultado de todos os dias do Mês Selecionado)
+    // O Mês alvo é baseado na semana que você está olhando (Pega o mês do 1º dia útil daquela semana)
+    
+    // Pega a data da segunda-feira da semana atual
+    const [yWeek, wWeek] = window.workWeekFilter.split('-W').map(Number);
+    const simpleDate = new Date(yWeek, 0, (wWeek - 1) * 7 + 1);
+    const targetMonth = simpleDate.toISOString().substring(0, 7); // Ex: "2026-10"
+
     const monthItems = items.filter(w => (w.date||'').startsWith(targetMonth));
     
     let monthMins = 0;
     let monthDailyExtras = 0;
+    
     monthItems.forEach(w => {
         const lMins = timeToMins(w.lIn) - timeToMins(w.lOut);
         const wMins = (timeToMins(w.tOut) - timeToMins(w.tIn)) - lMins - (Number(w.coffee)||0);
@@ -3517,19 +3524,27 @@ async function renderWorkHours() {
         if(w.extras) w.extras.forEach(ex => monthDailyExtras += Number(ex.value));
     });
     
-    // Puxa as caixinhas de Vales/Saldos de todas as semanas envolvidas
+    // Puxa as caixinhas de Vales/Saldos/Extras APENAS das semanas que tiveram trabalho naquele mês
     const uniqueWeeks = [...new Set(monthItems.map(w => dateToWeekStr(w.date)))];
     let mExt = 0, mAdv = 0, mPrev = 0;
+    
     uniqueWeeks.forEach(wk => {
         const wf = getWeeklyFinances(wk);
-        mExt += Number(wf.extras); mAdv += Number(wf.advance); mPrev += Number(wf.prevBalance);
+        mExt += Number(wf.extras); 
+        mAdv += Number(wf.advance); 
+        mPrev += Number(wf.prevBalance);
     });
     
     const monthTotal = ((monthMins / 60) * Number(settings.rate)) + mPrev + mExt + monthDailyExtras - mAdv;
+    
     const monthBanner = document.getElementById('work-month-banner');
     if (monthBanner) {
+        // Pega o nome do mês e deixa a primeira letra maiúscula (Ex: Setembro)
         const monthName = new Date(targetMonth + '-02').toLocaleString('pt-BR', {month:'long'});
-        monthBanner.innerHTML = `💰 Resumo do Mês (${monthName.charAt(0).toUpperCase() + monthName.slice(1)}): <b>${brl(monthTotal)}</b>`;
+        const monthCapitalized = monthName.charAt(0).toUpperCase() + monthName.slice(1);
+        
+        // Formato compacto para celular: Resumo Setembro 🕓 120h 30m 💰 R$ 2.500,00
+        monthBanner.innerHTML = `Resumo ${monthCapitalized} &nbsp; 🕓 <b>${minsToTimeStr(monthMins)}</b> &nbsp; 💰 <b>${brl(monthTotal)}</b>`;
     }
 }
 
@@ -3588,20 +3603,90 @@ function openWorkSettings() {
     });
 }
 
-// 📤 Relatório para o Chefe (Modo Semanal)
+// 📤 Relatório Inteligente (Escolha Múltipla com 2 Botões de Ação)
 async function exportWorkHours() {
     let items = await dbAll('workhours');
-    let filtered = items.filter(w => dateToWeekStr(w.date) === window.workWeekFilter);
-    filtered.sort((a,b) => (a.date||'').localeCompare(b.date||'')); 
+    if(items.length === 0) { toast('Nenhum registro de horas no banco.'); return; }
+
+    const weeksMap = {};
+    items.forEach(w => {
+        const wk = dateToWeekStr(w.date);
+        weeksMap[wk] = (weeksMap[wk] || 0) + 1; 
+    });
     
-    if(filtered.length === 0) { toast('Nenhum registro nesta semana.'); return; }
+    const uniqueWeeks = Object.keys(weeksMap).sort().reverse(); 
+
+    openSheet({
+        title: 'Exportar Relatório',
+        buildFields: (box) => {
+            box.appendChild(h('div', {style:'font-size:13px; color:var(--ink-soft); margin-bottom:12px;'}, 'Marque as semanas que você quer incluir neste acerto:'));
+
+            const checksContainer = h('div', {style: 'display:flex; flex-direction:column; gap:8px; max-height: 280px; overflow-y:auto; margin-bottom:16px; border:1px solid var(--line); border-radius:8px; padding:8px; background:var(--surface);'});
+
+            uniqueWeeks.forEach(wk => {
+                const [year, weekNum] = wk.split('-W');
+                const lbl = h('label', {style:'display:flex; align-items:center; gap:10px; padding:10px; background:var(--surface-2); border-radius:6px; font-size:14px; font-weight:700; cursor:pointer; color:var(--ink); border:1px solid transparent;'});
+                const cb = h('input', {type:'checkbox', value: wk, class:'export-wk-cb', style:'width:18px; height:18px; accent-color:#27AE60; cursor:pointer;'});
+                
+                if (wk === window.workWeekFilter) {
+                    cb.checked = true;
+                    lbl.style.borderColor = 'rgba(39, 174, 96, 0.5)';
+                }
+
+                cb.onchange = () => { lbl.style.borderColor = cb.checked ? 'rgba(39, 174, 96, 0.5)' : 'transparent'; };
+
+                lbl.appendChild(cb);
+                lbl.appendChild(document.createTextNode(`Semana ${weekNum} de ${year} (${weeksMap[wk]} dias)`));
+                checksContainer.appendChild(lbl);
+            });
+
+            box.appendChild(checksContainer);
+
+            // ==========================================
+            // NOVO: DOIS BOTÕES DE AÇÃO LADO A LADO
+            // ==========================================
+            const btnRow = h('div', {style: 'display:flex; gap:8px;'});
+            
+            const btnCopy = h('button', {class:'btn', style:'flex:1; background:var(--surface-2); color:var(--ink); font-weight:700; font-size:15px; padding:12px; border-radius:8px; border:1px solid var(--line);'}, '📋 Copiar');
+            btnCopy.onclick = () => {
+                const checked = Array.from(document.querySelectorAll('.export-wk-cb:checked')).map(cb => cb.value);
+                if(checked.length === 0) { toast('Selecione pelo menos uma semana!'); return; }
+                closeSheet();
+                generateCustomExportReport(checked, 'copy'); // Passa o comando "copy"
+            };
+            
+            const btnZap = h('button', {class:'btn', style:'flex:1; background:#27AE60; color:#fff; font-weight:900; font-size:15px; padding:12px; border-radius:8px; border:none;'}, '💬 WhatsApp');
+            btnZap.onclick = () => {
+                const checked = Array.from(document.querySelectorAll('.export-wk-cb:checked')).map(cb => cb.value);
+                if(checked.length === 0) { toast('Selecione pelo menos uma semana!'); return; }
+                closeSheet();
+                generateCustomExportReport(checked, 'whatsapp'); // Passa o comando "whatsapp"
+            };
+
+            btnRow.appendChild(btnCopy);
+            btnRow.appendChild(btnZap);
+            box.appendChild(btnRow);
+        },
+        onSubmit: () => { return true; }
+    });
+}
+
+// ⚙️ O Motor (Agora ele sabe se é só pra copiar ou se é pra mandar pro Zap)
+async function generateCustomExportReport(selectedWeeks, actionType) {
+    let items = await dbAll('workhours');
+    
+    let filtered = items.filter(w => selectedWeeks.includes(dateToWeekStr(w.date)));
+    filtered.sort((a,b) => (a.date||'').localeCompare(b.date||'')); 
+
+    if(filtered.length === 0) { toast('Nenhum registro encontrado.'); return; }
     
     const s = getWorkSettings();
-    const wFin = getWeeklyFinances(window.workWeekFilter);
     let totalMins = 0;
     let sumDailyExtras = 0;
     
-    let report = `🗓️ *Fechamento da Semana (${window.workWeekFilter})*\n\n`;
+    selectedWeeks.sort(); 
+    let titleText = selectedWeeks.length === 1 ? `Semana ${selectedWeeks[0].replace('-W', ' / ')}` : `${selectedWeeks.length} Semanas Selecionadas`;
+    let report = `🗓️ *Acerto de Horas - ${titleText}*\n\n`;
     
     filtered.forEach(w => {
         const dStr = w.date.split('-').reverse().slice(0,2).join('/'); 
@@ -3613,6 +3698,7 @@ async function exportWorkHours() {
         totalMins += finalMins;
         
         report += `🔹 *${dStr}*: ${w.tIn} às ${w.tOut} (${minsToTimeStr(finalMins)})\n`;
+        
         let breaksList = [];
         if (lunchMins > 0) {
             const lH = String(Math.floor(lunchMins/60)).padStart(2, '0');
@@ -3621,6 +3707,7 @@ async function exportWorkHours() {
         }
         if (coffeeMins > 0) breaksList.push(`[☕: ${coffeeMins}m]`);
         if (breaksList.length > 0) report += `   ${breaksList.join('')}\n`;
+        
         if (w.obs) report += `   ↳ 📝 Obs: _${w.obs}_\n`;
         
         if (w.extras && w.extras.length > 0) {
@@ -3631,27 +3718,46 @@ async function exportWorkHours() {
         }
     });
     
+    let mExt = 0, mAdv = 0, mPrev = 0;
+    selectedWeeks.forEach(wk => {
+        const wf = getWeeklyFinances(wk);
+        mExt += Number(wf.extras); 
+        mAdv += Number(wf.advance); 
+        mPrev += Number(wf.prevBalance);
+    });
+
     const subtotal = (totalMins / 60) * Number(s.rate);
-    const globalExtras = Number(wFin.extras) + sumDailyExtras;
-    const totalReceber = subtotal + Number(wFin.prevBalance) + globalExtras - Number(wFin.advance);
+    const globalExtras = mExt + sumDailyExtras;
+    const totalReceber = subtotal + mPrev + globalExtras - mAdv;
     
     report += `\n⏱️ *Total Trabalhado:* ${minsToTimeStr(totalMins)}\n`;
     report += `💰 Valor da Hora: ${brl(Number(s.rate))}\n`;
     report += `💵 Subtotal das Horas: ${brl(subtotal)}\n`;
-    if(globalExtras > 0) report += `➕ Serviços Extras (Total): ${brl(globalExtras)}\n`;
-    if(Number(wFin.prevBalance)>0) report += `➕ Saldo Anterior: ${brl(Number(wFin.prevBalance))}\n`;
-    if(Number(wFin.advance)>0) report += `➖ Vales/Adiantamentos: ${brl(Number(wFin.advance))}\n`;
+    if(globalExtras > 0) report += `➕ Serviços Extras (Soma): ${brl(globalExtras)}\n`;
+    if(mPrev > 0) report += `➕ Saldos Anteriores Acumulados: ${brl(mPrev)}\n`;
+    if(mAdv > 0) report += `➖ Vales/Adiantamentos Acumulados: ${brl(mAdv)}\n`;
     
-    report += `\n✅ *TOTAL A RECEBER: ${brl(totalReceber)}*`;
+    report += `\n✅ *TOTAL LÍQUIDO A RECEBER: ${brl(totalReceber)}*`;
 
+    // ==========================================
+    // NOVO: AÇÃO BASEADA NO BOTÃO CLICADO
+    // ==========================================
     try {
         await navigator.clipboard.writeText(report);
-        toast('Copiado! Só colar no WhatsApp.');
-        if (confirm("Relatório copiado! Deseja abrir o WhatsApp agora?")) {
+        
+        if (actionType === 'whatsapp') {
+            toast('Abrindo o WhatsApp...');
+            // Vai direto pro Zap, sem perguntar!
             window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(report)}`, '_blank');
+        } else {
+            // Apenas avisa que copiou
+            toast('📋 Relatório copiado para colar onde quiser!');
         }
-    } catch(err) { toast('Erro ao copiar.'); }
+    } catch(err) { 
+        toast('Erro ao copiar.'); 
+    }
 }
+
 // ⏱️ Registrar um dia novo (Agora com Serviços Extras Dinâmicos!)
 function openWorkHourForm(existing) {
   const isEdit = !!existing; const s = getWorkSettings();
