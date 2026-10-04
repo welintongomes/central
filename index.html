@@ -319,14 +319,7 @@ body.dark-theme #app { box-shadow: 0 0 60px rgba(0,0,0,0.5); }
 #workhours-header, #workhours-fab, .bubble.b-workhours { background: #E67E22; }
 .b-workhours { font-size: 20px !important; }
 /* ============================================================
-   ESTILO TRILHAS DIAGNÓSTICO
-   ============================================================ */
-#trails-header, #trails-fab, .bubble.b-trails { background: #8E44AD; }
-.b-trails { font-size: 20px !important; }
 
-/* Cores do Diagnóstico Mestre */
-#diagnosis-header, #diagnosis-fab, .bubble.b-diagnosis { background: #E67E22; color: #fff; }
-.b-diagnosis { font-size: 20px !important; }
 
 /* O Caminho de Migalhas Horizontal */
 .trail-breadcrumb { display: flex; overflow-x: auto; gap: 2px; padding: 12px 16px; background: var(--surface-2); border-bottom: 1px solid var(--line); scrollbar-width: none; align-items: center; }
@@ -519,32 +512,6 @@ body.dark-theme #app { box-shadow: 0 0 60px rgba(0,0,0,0.5); }
   </div>
 </section>
 
-<!-- ===== ÁGUA E SAÚDE ===== -->
-<section id="screen-water" class="screen module-screen">
-  
-  <div class="module-body" style="margin-top:0;padding-top:16px;">
-    <div class="summary-card">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-        <strong style="font-size:14px;">Peso</strong>
-        <button class="icon-btn" style="color:var(--c-water)" onclick="openWeightForm()">＋</button>
-      </div>
-      <div class="list" id="weight-list" style="overflow-y: auto; max-height: 29.1vh; min-height: 29vh;"></div>
-    </div>
-    <div class="summary-card" style="text-align:center;">
-      <div id="water-progress-wrap" class="progress-ring-wrap"></div>
-      <div style="font-size:13px;color:var(--ink-soft);font-weight:600;margin-top:2px;" id="water-label">0 de 8 copos hoje</div>
-      <div class="sheet-actions" style="margin-top:16px;">
-        <button class="btn btn-ghost" onclick="addWater(-1)">− copo</button>
-        <button class="btn btn-primary" style="background:var(--c-water)" onclick="addWater(1)">+ copo</button>
-      </div>
-    </div>
-    
-  </div>
-  <div class="module-header" id="water-header">
-    <button class="back-btn" onclick="goHome()">←</button>
-    <h2>Água e saúde</h2>
-  </div>
-</section>
 
 <!-- ===== SENHAS ===== -->
 <section id="screen-passwords" class="screen module-screen">
@@ -717,21 +684,7 @@ body.dark-theme #app { box-shadow: 0 0 60px rgba(0,0,0,0.5); }
     <button class="header-action" style="margin-left:8px; width: 30px; height: 30px;" onclick="exportWorkHours()" title="Enviar para o Chefe">📤</button>
   </div>
 </section>
-<!-- ===== TRILHAS E DIAGNÓSTICOS ===== -->
-<section id="screen-trails" class="screen module-screen">
-  <div class="module-body" style="margin-top:0;padding-top:16px;">
-    <div class="list" id="trails-list"></div>
-  </div>
-  
-  <button class="fab" id="trails-fab" onclick="openTrailForm()" style="bottom: calc(130px + env(safe-area-inset-bottom));">+</button>
-  <!-- Onde o caminho será desenhado -->
-  <div id="trail-breadcrumbs" class="trail-breadcrumb"></div>
-  <div class="module-header" id="trails-header">
-    <button class="back-btn" onclick="trailGoBack(); if(window.speechSynthesis)window.speechSynthesis.cancel();">←</button>
-    <h2 style="flex:1;">Trilhas</h2>
-    <button class="header-action" onclick="toggleTrailTts()" id="trail-tts-btn" title="Leitura Automática">🔊</button>
-  </div>
-</section>
+
 <!-- ===== BIBLIOTECA / COLEÇÕES ===== -->
 <section id="screen-library" class="screen module-screen">
   
@@ -759,56 +712,7 @@ body.dark-theme #app { box-shadow: 0 0 60px rgba(0,0,0,0.5); }
     <h2 style="flex:1;">Fórmulas e Cálculos</h2>
   </div>
 </section>
-<!-- ===== DIAGNÓSTICO MESTRE ===== -->
-<section id="screen-diagnosis" class="screen module-screen">
-  <!-- 👇 O NOVO MOTOR DE INVESTIGAÇÃO FICA AQUI 👇 -->
-  <div style="padding:16px; background:var(--surface); border-bottom:1px solid var(--line);">
-      <div style="font-size:12px; font-weight:700; color:#E67E22; text-align: center; margin-bottom:8px; letter-spacing:1px;">🔎 INVESTIGADOR SHERLOCK</div>
-      
-  </div>
 
-  <div class="module-body" style="margin-top:0;padding-top:16px;">
-    <!-- Lista de Casos -->
-    <div class="list" id="diagnosis-list"></div>
-  </div>
-  
-  <button class="fab" id="diagnosis-fab" onclick="openDiagnosisForm()" style="height: 44px;
-    width: 54px; border-radius: 18px; bottom: calc(138px + env(safe-area-inset-bottom));">+</button>
-  <div style="display:flex; gap:2px; margin: 9px 10px 16px 75px; align-items:center;">
-    <div style="position:relative; flex:10;">
-        <input type="text" id="diag-search-input" oninput="onSherlockTyping()" 
-        placeholder="Sintomas... Use - para excluir e + para obrigar" style="width:100%;
-        border: 1.5px solid var(--line);
-        background: var(--surface);
-        border-radius: 14px;
-        padding: 10px 10px 10px 45px;
-        font-size: 14.5px;
-        outline: none;
-        box-shadow: 0 1px 2px rgba(var(--shadow-rgb), .04);
-        color: var(--ink);">
-
-        <button type="button" id="diag-clear-search-btn" onclick="clearDiagSearch()"
-            style="display:none; position:absolute; left:1px; top:50%; transform:translateY(-50%);
-            width:45px; height:40px; border:none; border-radius:18px;
-            background:var(--surface); color:var(--ink-soft);
-            font-size:13px; line-height:1; cursor:pointer;
-            align-items:center; justify-content:center;
-            transition:background .15s ease, opacity .15s ease; opacity:.65;">✕</button>
-    </div>
-    <button class="btn btn-primary" style="background:#E67E22; border:none; font-size: 14px; padding: 10px;" onclick="runSherlockSearch()">Investigar</button>
-</div>
-  <!-- Filtro dos Cartuchos -->
-    <div id="diagnosis-cat-filter" class="chips chip-picker" style="padding: 0 16px; margin: 0px 16px 12px 16px;"></div>
-    
-  <div class="module-header" id="diagnosis-header">
-    <button class="back-btn" onclick="document.getElementById('screen-diagnosis').classList.remove('active'); document.getElementById('screen-home').classList.add('active'); if(window.speechSynthesis) window.speechSynthesis.cancel();">←</button>
-    <h2 style="flex:1;">Diagnósticos</h2>
-    <!-- 👇 NOVA ENGRENAGEM DE CONFIGURAÇÃO 👇 -->
-    <button class="header-action" onclick="openSherlockSettings()" title="Configurar Mente do Sherlock">⚙️</button>
-    <!-- 👇 O botão de Ligar/Desligar a Playlist 👇 -->
-    <button class="header-action" onclick="toggleDiagTts()" id="diag-tts-btn" title="Leitura Automática">🔈</button>
-  </div>
-</section>
 <!-- FIM APP -->
 
 <!-- VISUALIZADOR DE MÍDIA EM TELA CHEIA -->
@@ -893,7 +797,9 @@ function toast(msg){
    ============================================================ */
 const DB_NAME='centralPessoalDB';
 const DB_VERSION=10;
-const STORES=['tasks','notes','expenses','habits','habitLogs','shopping','journal','contacts','waterLogs','weight','passwords','gallery', 'quotes','flashcards','workhours','trails','library','calculators','diagnosis'];
+const QUOTE_CATS = ['Filosofia', 'Motivação', 'Livros', 'Filmes', 'Outro'];
+const FC_CATS = ['Inglês (1000 Palavras)', 'Português Culto', 'Espanhol', 'Outro'];
+const STORES=['tasks','notes','expenses','habits','habitLogs','shopping','journal','contacts','passwords','gallery', 'quotes','flashcards','workhours','library','calculators'];
 let db;
 function openDatabase(){
   return new Promise((resolve,reject)=>{
@@ -922,7 +828,6 @@ async function confirmDelete(store, id, after){ if(!confirm('Excluir este item?'
 const TASK_CATS = ['Trabalho', 'Casa', 'Estudos', 'Pessoais', 'Outro']; let taskCatFilter = 'Todos'; let taskFilter = 'pending';
 const NOTE_CATS = ['Geral', 'Trabalho', 'Estudos', 'Ideias', 'Outro']; let noteCatFilter = 'Todos';
 const EXP_CATS = ['Alimentação','Transporte','Moradia','Lazer','Saúde','Outros']; let expCatFilter = 'Todos';
-const EXP_CAT_COLOR = {'Alimentação':'#B8862B','Transporte':'#3B6E8F','Moradia':'#8E3B46','Lazer':'#7A5C8E','Saúde':'#2E8B7F','Outros':'#8A8578'};
 const HABIT_CATS = ['Saúde', 'Trabalho', 'Estudos', 'Casa', 'Outro']; let habitCatFilter = 'Todos';
 const CONTACT_CATS = ['Emergência','Família','Médico','Trabalho','Outro']; let contactFilter = 'Todos'; 
 const PWD_CATS = ['Emails', 'Bancos', 'Social', 'Trabalho', 'Outros']; let pwdCatFilter = 'Todos';
@@ -1049,8 +954,6 @@ function closeSheet(){ document.getElementById('sheet-overlay').classList.remove
 
 const MODULES=[
   {key:'workhours', title:'Ponto', icon:'⏱️', cls:'b-workhours'},
-  {key:'trails', title:'Trilhas', icon:'🗺️', cls:'b-trails'},
-  { key: 'diagnosis', title: 'Diagnósticos', icon: '🔎', cls: 'b-diagnosis' },
   {key:'tasks', title:'Tarefas', icon:'✅', cls:'b-tasks'},
   {key:'notes', title:'Notas', icon:'📝', cls:'b-notes'},
   {key:'flashcards', title:'Flashcards', icon:'🧠', cls:'b-flashcards'},
@@ -1060,7 +963,6 @@ const MODULES=[
   {key:'shopping', title:'Compras', icon:'🛒', cls:'b-shopping'},
   {key:'journal', title:'Diário', icon:'📔', cls:'b-journal'},
   {key:'contacts', title:'Contatos', icon:'📇', cls:'b-contacts'},
-  {key:'water', title:'Água e saúde', icon:'💧', cls:'b-water'},
   {key:'passwords', title:'Senhas', icon:'🔑', cls:'b-passwords'},
   {key:'gallery', title:'Galeria', icon:'🖼️', cls:'b-gallery'},
   {key:'library', title:'Biblioteca', icon:'📚', cls:'b-library'},
@@ -1087,7 +989,7 @@ function renderModule(key){
     if (list) { list.innerHTML = ''; list.appendChild(emptyState('🔒', 'Módulo Protegido', 'Toque no cadeado no topo para destravar.')); }
   } else {
     screen.classList.remove('is-locked');
-    ({tasks:renderTasks, notes:renderNotes, expenses:renderExpenses, habits:renderHabits, shopping:renderShopping, journal:renderJournal, contacts:renderContacts, water:renderWater, passwords:renderPasswords, gallery:renderGallery, quotes:renderQuotes, flashcards: renderFlashcards,workhours: renderWorkHours,trails: renderTrails, library: renderLibrary, calculators: renderCalculators, diagnosis: renderDiagnosis})[key]();
+    ({tasks:renderTasks, notes:renderNotes, expenses:renderExpenses, habits:renderHabits, shopping:renderShopping, journal:renderJournal, contacts:renderContacts, passwords:renderPasswords, gallery:renderGallery, quotes:renderQuotes, flashcards: renderFlashcards,workhours: renderWorkHours, library: renderLibrary, calculators: renderCalculators})[key]();
   }
 }
 
@@ -1096,8 +998,8 @@ function setSub(key, text){ const n=document.getElementById('sub-'+key); if(n) n
 async function updateHomeStats(){
   // AGORA BUSCAMOS TODOS OS 13 MÓDULOS! (workhours incluso)
 // 👇 Copie e cole este bloco EXATAMENTE assim na sua função handleGlobalSearch 👇
-  const [tasks, notes, expenses, habits, habitLogs, shopping, journal, contacts, waterLogs, passwords, gallery, quotes, flashcards, workhours, trails, library, calculators, diagnosis] = await Promise.all(
-    ['tasks','notes','expenses','habits','habitLogs','shopping','journal','contacts','waterLogs','passwords','gallery','quotes','flashcards','workhours','trails','library','calculators','diagnosis'].map(dbAll)
+  const [tasks, notes, expenses, habits, habitLogs, shopping, journal, contacts, passwords, gallery, quotes, flashcards, workhours, library, calculators] = await Promise.all(
+    ['tasks','notes','expenses','habits','habitLogs','shopping','journal','contacts','passwords','gallery','quotes','flashcards','workhours','library','calculators'].map(dbAll)
   );
   
   const pending = tasks.filter(t=>!t.done && !t.isEncrypted);
@@ -1119,9 +1021,7 @@ async function updateHomeStats(){
   setSub('shopping', shopping.length? pendingShop.length+' item'+(pendingShop.length!==1?'s':'') : 'Lista vazia');
   setSub('journal', journal.length? journal.length+' registro'+(journal.length>1?'s':'') : 'Nada escrito ainda');
   setSub('contacts', contacts.length? contacts.length+' salvo'+(contacts.length>1?'s':'') : 'Nenhum salvo');
-  
-  const wToday=waterLogs.find(w=>w.date===todayISO); const wCount=wToday?wToday.count:0; 
-  setSub('water', wCount+'/8 copos');
+
   
   setSub('passwords', passwords.length ? passwords.length + ' salvas' : 'Cofre vazio');
   setSub('gallery', gallery.length ? gallery.length + ' mídias' : 'Galeria vazia');
@@ -1129,16 +1029,6 @@ async function updateHomeStats(){
   
   const dueFC = flashcards.filter(f => !f.isEncrypted && (f.nextReview <= Date.now()));
   setSub('flashcards', flashcards.length ? (dueFC.length > 0 ? `🚨 ${dueFC.length} revisões hoje` : 'Tudo em dia') : 'Monte seu deck');
-  if (diagnosis.length) {
-      const diagCats = new Set(diagnosis.map(d => d.category || 'Geral')).size;
-      setSub('diagnosis', `${diagCats} cartucho${diagCats>1?'s':''} · ${diagnosis.length} caso${diagnosis.length>1?'s':''}`);
-  } else {
-      setSub('diagnosis', 'Banco vazio');
-  }
-  // =====================================================
-  // NOVO: CÁLCULO FINANCEIRO DO PONTO NA TELA INICIAL, quantidade de trilhas
-  // =====================================================
-  setSub('trails', trails.length ? trails.length + ' etapa' + (trails.length > 1 ? 's' : '') : 'Crie diagnósticos');
   
   // 👇 AQUI COMEÇA A NOVA LÓGICA SEMANAL 👇
   
@@ -1184,7 +1074,7 @@ async function updateHomeStats(){
   // 6. Atualiza o texto na tela inicial
   const whSubEl = document.getElementById('sub-workhours');
   if (weekWork.length > 0) {
-      setSub('workhours', 'Receber (Semana): ' + brl(totalReceber));
+      setSub('workhours', ' ' + brl(totalReceber));
       if (whSubEl) {
           whSubEl.style.color = totalReceber >= 0 ? '#E67E22' : 'var(--danger)'; 
           whSubEl.style.fontWeight = '700';
@@ -1196,7 +1086,7 @@ async function updateHomeStats(){
   }
   // 👆 FIM DA NOVA LÓGICA SEMANAL 👆
 
-  buildStatChips(pending.length, income-outcome, wCount, doneToday.size, habits.length);
+  buildStatChips(pending.length, income-outcome, doneToday.size, habits.length);
 
   // Alertas
   const alertsBox = document.getElementById('home-alerts'); alertsBox.innerHTML = ''; 
@@ -1215,7 +1105,7 @@ async function updateHomeStats(){
 }
 
 // Desenha os Chips na Home (Com atalhos, Configurações e o Foguinho 🔥 dos Hábitos)
-function buildStatChips(pendingCount, balance, wCount, habitsDone = 0, habitsTotal = 0) {
+function buildStatChips(pendingCount, balance, habitsDone = 0, habitsTotal = 0) {
   const row = document.getElementById('stat-row'); 
   if (!row) return;
   row.innerHTML = '';
@@ -1236,12 +1126,6 @@ function buildStatChips(pendingCount, balance, wCount, habitsDone = 0, habitsTot
   row.appendChild(h('button', {class:'stat-chip', onclick:()=>openModule('habits')}, [
       h('span', {class:'dot', style:'background:var(--c-habits)'}), 
       '🔥 ' + habitsDone + '/' + habitsTotal 
-  ]));
-
-  // 3. Água
-  row.appendChild(h('button', {class:'stat-chip', onclick:()=>openModule('water')}, [
-      h('span', {class:'dot', style:'background:var(--c-water)'}), 
-      '💧 ' + (wCount || 0) + '/8' 
   ]));
 
   // 5. Tema Claro/Escuro
@@ -1271,8 +1155,8 @@ function norm(str) { return (str || '').toString().normalize('NFD').replace(/[\u
 
 function renderGlobalSearchChips() {
   const container = document.getElementById('global-search-filters'); container.style.display = 'flex'; container.innerHTML = '';
-  // NOVO: 'Trilhas' adicionada no final da lista
-  const cats = ['Todos', 'Diagnósticos', 'Tarefas', 'Hábitos', 'Notas', 'Diário', 'Compras', 'Gastos', 'Senhas', 'Contatos', 'Galeria', 'Citações', 'Flashcards', 'Trilhas','Biblioteca','Calculadoras'];
+  // categorias da pesquisa global
+  const cats = ['Todos', 'Tarefas', 'Hábitos', 'Notas', 'Diário', 'Compras', 'Gastos', 'Senhas', 'Contatos', 'Galeria', 'Citações', 'Flashcards', 'Biblioteca','Calculadoras'];
   cats.forEach(c => { container.appendChild(h('button', { type: 'button', class: globalSearchFilter === c ? 'active' : '', style: 'flex: 0 0 auto;', onclick: () => { globalSearchFilter = c; handleGlobalSearch(); } }, c)); });
 }
 
@@ -1287,8 +1171,8 @@ async function handleGlobalSearch() {
   clearBtn.style.display = 'flex'; grid.style.display = 'none'; hint.style.display = 'none'; resBox.style.display = 'flex'; resBox.innerHTML = ''; renderGlobalSearchChips();
 
   // NOVO: dbAll('trails') adicionado no Promise! sempre que criar um novo modo adicione o nome ex: , library e abaixo o , dball(library)
-  const [tasks, notes, contacts, expenses, shopping, journal, habits, habitLogs, passwords, gallery, quotes, flashcards, trails, library, calculators, diagnosis] = await Promise.all([ 
-      dbAll('tasks'), dbAll('notes'), dbAll('contacts'), dbAll('expenses'), dbAll('shopping'), dbAll('journal'), dbAll('habits'), dbAll('habitLogs'), dbAll('passwords'), dbAll('gallery'), dbAll('quotes'), dbAll('flashcards'), dbAll('trails'), dbAll('library')
+  const [tasks, notes, contacts, expenses, shopping, journal, habits, habitLogs, passwords, gallery, quotes, flashcards, library, calculators] = await Promise.all([ 
+      dbAll('tasks'), dbAll('notes'), dbAll('contacts'), dbAll('expenses'), dbAll('shopping'), dbAll('journal'), dbAll('habits'), dbAll('habitLogs'), dbAll('passwords'), dbAll('gallery'), dbAll('quotes'), dbAll('flashcards'), dbAll('library')
   ]);
   
   let results = []; const todayISO = todayIso(); const now = Date.now();
@@ -1324,34 +1208,6 @@ async function handleGlobalSearch() {
               subText += ' · Toque para calcular';
               
               results.push({ type: 'calculator', item: calc, title: titulo, sub: subText }); 
-          } 
-      });
-  }
-
-  // TÁTICA DE ISOLAMENTO: Busca os diagnósticos direto do banco, blindado contra erros!
-  const dbDiagnosticos = await dbAll('diagnosis'); 
-  
-  if (globalSearchFilter === 'Todos' || globalSearchFilter === 'Diagnósticos') {
-      
-      (dbDiagnosticos || []).forEach(d => { 
-          const titulo = d.title || '';
-          const causa = d.cause || '';
-          const solucao = d.solution || '';
-          const cat = d.category || 'Geral';
-          
-          // Junta tudo para a pesquisa achar qualquer palavra solta
-          const searchArea = norm(titulo) + ' ' + norm(causa) + ' ' + norm(solucao);
-          
-          if (!d.isEncrypted && (!q || searchArea.includes(q))) {
-              let subText = cat;
-              if (causa) subText += ` · Causa: ${causa}`;
-              
-              results.push({ 
-                  type: 'diagnosis', 
-                  item: d, 
-                  title: titulo, 
-                  sub: subText 
-              }); 
           } 
       });
   }
@@ -1404,22 +1260,6 @@ async function handleGlobalSearch() {
   if (globalSearchFilter === 'Todos' || globalSearchFilter === 'Citações') quotes.forEach(qt => { if (!qt.isEncrypted && (!q || norm(qt.text).includes(q) || norm(qt.author).includes(q))) results.push({ type: 'quote', item: qt, title: qt.author || 'Desconhecido', sub: `"${(qt.text || '').slice(0, 50)}..."` }); });
   if (globalSearchFilter === 'Todos' || globalSearchFilter === 'Flashcards') flashcards.forEach(fc => { if (!fc.isEncrypted && (!q || norm(fc.front).includes(q) || norm(fc.back).includes(q))) results.push({ type: 'flashcard', item: fc, title: fc.front, sub: `Verso: ${(fc.back || '').slice(0, 40)}...` }); });
 
-  // NOVO: Filtro para as Trilhas de Orçamento (Ignorando os Atalhos!)
-if (globalSearchFilter === 'Todos' || globalSearchFilter === 'Trilhas') trails.forEach(tr => { 
-      if (!tr.isShortcut && (!q || norm(tr.title).includes(q) || norm(tr.desc).includes(q))) {
-          let subText = [];
-          if(tr.price > 0) subText.push(`💰 ${brl(tr.price)}`);
-          
-          let timeStr = [];
-          if (tr.hours > 0) timeStr.push(tr.hours + 'h');
-          if (tr.mins > 0) timeStr.push(tr.mins + 'm');
-          if (timeStr.length > 0) subText.push(`⏱️ ${timeStr.join(' ')}`);
-          
-          subText.push('Tocar para orçar');
-          results.push({ type: 'trail', item: tr, title: tr.title, sub: subText.join(' · ') }); 
-      } 
-  });
-
   if (results.length === 0) { resBox.appendChild(emptyState('🔍', 'Nada encontrado', 'Tente pesquisar por outros termos')); return; }
 
   results.forEach(r => {
@@ -1442,7 +1282,6 @@ if (globalSearchFilter === 'Todos' || globalSearchFilter === 'Trilhas') trails.f
       if (r.type === 'quote') { icon = '💬'; color = 'var(--c-quotes)'; } 
       if (r.type === 'flashcard') { icon = '🧠'; color = '#4A90E2'; } 
       if (r.type === 'gallery') { icon = r.item.mediaType === 'audio' ? '🎵' : (r.item.mediaType === 'video' ? '🎬' : '🖼️'); color = '#8E543B'; }
-      if (r.type === 'trail') { icon = '🗺️'; color = '#8E44AD'; } // Ícone das trilhas
       if (r.type === 'library') { icon = '📚'; color = '#D35400'; }
       if (r.type === 'calculator') { icon = '🧮'; color = '#2980B9'; }
       if (icon) row.appendChild(h('div', { style: `background:${color}; color:#fff; width:34px; height:34px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:16px; flex: 0 0 auto;` }, icon));
@@ -1450,8 +1289,7 @@ if (globalSearchFilter === 'Todos' || globalSearchFilter === 'Trilhas') trails.f
 
     const grow = h('div', { class: 'grow', onclick: () => {
       // As janelas abrem POR CIMA e a pesquisa continua no fundo!
-      if (r.type === 'trail') openQuoteModal(r.item); 
-      else if (r.type === 'task') openTaskForm(r.item); 
+      if (r.type === 'task') openTaskForm(r.item); 
       else if (r.type === 'library') openLibraryForm(r.item); 
       else if (r.type === 'note') openNoteForm(r.item); 
       else if (r.type === 'contact') openContactForm(r.item); 
@@ -1558,9 +1396,8 @@ async function exportAllData() {
     const storesMap = {
         tasks: '✅ Tarefas', notes: '📝 Notas', expenses: '💰 Gastos', habits: '⭐ Hábitos',
         habitLogs: '📅 Histórico de Hábitos', shopping: '🛒 Compras', journal: '📔 Diário',
-        contacts: '📇 Contatos', waterLogs: '💧 Água', passwords: '🔑 Senhas', gallery: '🖼️ Galeria (Mídia)',
-        quotes: '💬 Citações', flashcards: '🧠 Flashcards', workhours: '⏱️ Ponto', trails: '🗺️ Trilhas', library: '📚 Biblioteca', calculators: '🧮 Calculadoras', diagnosis: '🕵️ sherlock'
-    };
+        contacts: '📇 Contatos', passwords: '🔑 Senhas', gallery: '🖼️ Galeria (Mídia)',
+        quotes: '💬 Citações', flashcards: '🧠 Flashcards', workhours: '⏱️ Ponto', library: '📚 Biblioteca', calculators: '🧮 Calculadoras'};
 
     openSheet({
         title: 'Exportar Backup',
@@ -2383,31 +2220,6 @@ function openContactForm(existing){
   });
 }
 
-const WATER_GOAL=8;
-async function renderWater(){
-  const todayISO=todayIso(); const logs=await dbAll('waterLogs'); const today=logs.find(w=>w.date===todayISO); const count=today?today.count:0;
-  document.getElementById('water-label').textContent=count+' de '+WATER_GOAL+' copos hoje'; renderWaterRing(count); await renderWeightList();
-}
-function renderWaterRing(count){
-  const wrap=document.getElementById('water-progress-wrap'); const pct=Math.min(count/WATER_GOAL,1); const r=52, c=2*Math.PI*r; const offset=c*(1-pct);
-  wrap.innerHTML=''; const svgNS='http://www.w3.org/2000/svg'; const svg=document.createElementNS(svgNS,'svg'); svg.setAttribute('width','130'); svg.setAttribute('height','130'); svg.setAttribute('viewBox','0 0 130 130');
-  const bg=document.createElementNS(svgNS,'circle'); bg.setAttribute('cx','65'); bg.setAttribute('cy','65'); bg.setAttribute('r',r); bg.setAttribute('fill','none'); bg.setAttribute('stroke','var(--line)'); bg.setAttribute('stroke-width','12');
-  const fg=document.createElementNS(svgNS,'circle'); fg.setAttribute('cx','65'); fg.setAttribute('cy','65'); fg.setAttribute('r',r); fg.setAttribute('fill','none'); fg.setAttribute('stroke','var(--c-water)'); fg.setAttribute('stroke-width','12'); fg.setAttribute('stroke-linecap','round'); fg.setAttribute('stroke-dasharray',String(c)); fg.setAttribute('stroke-dashoffset',String(offset)); fg.setAttribute('transform','rotate(-90 65 65)'); fg.style.transition='stroke-dashoffset .3s ease';
-  const label=document.createElementNS(svgNS,'text'); label.setAttribute('x','65'); label.setAttribute('y','75'); label.setAttribute('text-anchor','middle'); label.setAttribute('font-size','32'); label.textContent='💧';
-  svg.appendChild(bg); svg.appendChild(fg); svg.appendChild(label); wrap.appendChild(svg);
-}
-async function addWater(delta){ const todayISO=todayIso(); const logs=await dbAll('waterLogs'); let today=logs.find(w=>w.date===todayISO); if(!today){ today={date:todayISO, count:0}; await dbAdd('waterLogs', today); } today.count=Math.max(0, (today.count||0)+delta); await dbPut('waterLogs', today); renderWater(); updateHomeStats(); }
-async function renderWeightList(){
-  const list=document.getElementById('weight-list'); list.innerHTML=''; let entries=await dbAll('weight'); entries.sort((a,b)=>(b.date||'').localeCompare(a.date||'')); entries=entries.slice(0,6); if(!entries.length){ list.appendChild(emptyState('⚖️','Nenhum registro','Toque em ＋', true)); return; }
-  entries.forEach(w=>{ const row=h('div',{class:'item'}); const grow=h('div',{class:'grow'}); grow.appendChild(h('div',{class:'i-title'}, w.kg+' kg')); grow.appendChild(h('div',{class:'i-sub'}, humanDateFull(w.date))); row.appendChild(grow); row.appendChild(h('button',{class:'icon-btn', onclick:()=>confirmDelete('weight', w.id, renderWeightList)},'✕')); list.appendChild(row); });
-  if(window.aplicarLazyLoading) window.aplicarLazyLoading();
-}
-function openWeightForm(){
-  openSheet({
-    title:'Novo peso', buildFields:(box)=>{ box.appendChild(fieldWrap('Peso (kg)', h('input',{type:'number', id:'f-kg', step:'0.1', min:'0', inputmode:'decimal'}))); box.appendChild(fieldWrap('Data', h('input',{type:'date', id:'f-wdate', value:todayIso()}))); },
-    onSubmit: async ()=>{ const kg=parseFloat(document.getElementById('f-kg').value); const date=document.getElementById('f-wdate').value || todayIso(); if(!kg || kg<=0){ toast('Peso inválido'); return false; } await dbAdd('weight', {kg:kg, date:date, createdAt:Date.now()}); renderWeightList(); toast('Registrado'); }
-  });
-}
 
 /* ============================================================
    COFRE DE SENHAS
@@ -2791,7 +2603,6 @@ function changeMasterPassword() {
    CITAÇÕES E FRASES (Com Autoplay Inteligente)
    ============================================================ */
 let quoteCatFilter = 'Todos';
-const QUOTE_CATS = ['Filosofia', 'Motivação', 'Livros', 'Filmes', 'Outro'];
 let quoteTtsEnabled = localStorage.getItem('quote-tts') !== 'off';
 
 let isQuoteAutoplay = false;
@@ -2973,7 +2784,6 @@ function openQuoteForm(existing) {
 /* ============================================================
    FLASHCARDS E ALGORITMO SM-2 (Com Modo Digitação)
    ============================================================ */
-const FC_CATS = ['Inglês (1000 Palavras)', 'Português Culto', 'Espanhol', 'Outro'];
 let fcDueToday = []; let fcCurrentIndex = 0; let fcIsFlipped = false;
 let fcTtsEnabled = localStorage.getItem('fc-tts') !== 'off';
 let fcTypeMode = localStorage.getItem('fc-type') === 'on'; // Lógica da chave de digitação
@@ -3914,430 +3724,7 @@ function openWorkHourForm(existing) {
   });
 }
 
-/* ============================================================
-   TRILHAS E DIAGNÓSTICOS (Decision Trees + Atalhos Inteligentes)
-   ============================================================ */
-let currentTrailPath = []; 
-let trailTtsEnabled = localStorage.getItem('trail-tts') !== 'off';
 
-function toggleTrailTts() {
-  trailTtsEnabled = !trailTtsEnabled; 
-  localStorage.setItem('trail-tts', trailTtsEnabled ? 'on' : 'off');
-  document.getElementById('trail-tts-btn').style.opacity = trailTtsEnabled ? '1' : '0.4';
-  toast(trailTtsEnabled ? 'Leitura de diagnóstico ligada' : 'Leitura desligada');
-}
-
-function playTrailVoice(text) {
-    if (window.speechSynthesis) window.speechSynthesis.cancel();
-    if (!text || !trailTtsEnabled) return;
-    if (window.speechSynthesis) {
-        const u = new SpeechSynthesisUtterance(text);
-        u.lang = 'pt-BR'; 
-        window.speechSynthesis.speak(u);
-    }
-}
-
-function trailGoBack() {
-    if (window.speechSynthesis) window.speechSynthesis.cancel();
-    if (currentTrailPath.length > 0) { currentTrailPath.pop(); renderTrails(); } 
-    else { goHome(); }
-}
-
-function trailBreadcrumbClick(index) {
-    if (window.speechSynthesis) window.speechSynthesis.cancel();
-    if (index === -1) currentTrailPath = [];
-    else currentTrailPath = currentTrailPath.slice(0, index + 1);
-    renderTrails();
-}
-
-function trailNavigate(node) {
-    playTrailVoice(`${node.title}. ${node.desc || ''}`);
-    currentTrailPath.push({id: node.id, title: node.title});
-    renderTrails();
-}
-
-async function jumpToTrailNode(targetId) {
-    const allTrails = await dbAll('trails');
-    let path = [];
-    let curr = allTrails.find(t => t.id === targetId);
-    
-    if (curr) playTrailVoice(`${curr.title}. ${curr.desc || ''}`);
-
-    while(curr) {
-        path.unshift({id: curr.id, title: curr.title});
-        curr = allTrails.find(t => t.id === curr.parentId);
-    }
-    currentTrailPath = path;
-    renderTrails();
-}
-
-async function renderTrails() {
-    document.getElementById('trail-tts-btn').style.opacity = trailTtsEnabled ? '1' : '0.4';
-    const list = document.getElementById('trails-list'); list.innerHTML = '';
-    const bcBox = document.getElementById('trail-breadcrumbs'); bcBox.innerHTML = '';
-
-    bcBox.appendChild(h('div', {class: 'trail-crumb ' + (currentTrailPath.length===0?'active':''), onclick: ()=>trailBreadcrumbClick(-1)}, '🏠 Início'));
-    currentTrailPath.forEach((p, idx) => {
-        bcBox.appendChild(h('div', {style: 'color:var(--line); font-weight:bold; font-size:12px;'}, '▶'));
-        bcBox.appendChild(h('div', {class: 'trail-crumb ' + (idx===currentTrailPath.length-1?'active':''), onclick: ()=>trailBreadcrumbClick(idx)}, p.title));
-    });
-    setTimeout(() => bcBox.scrollLeft = bcBox.scrollWidth, 50); 
-
-    const allTrails = await dbAll('trails');
-    const parentId = currentTrailPath.length > 0 ? currentTrailPath[currentTrailPath.length - 1].id : null;
-    let nodes = allTrails.filter(t => t.parentId === parentId);
-    nodes.sort((a, b) => (a.order || 0) - (b.order || 0)); 
-
-    if (nodes.length === 0) { list.appendChild(emptyState('🗺️', 'Nenhuma etapa', 'Adicione a primeira raiz no +')); return; }
-
-    nodes.forEach((node, idx) => {
-        const row = h('div', {class: 'item', style: 'align-items: flex-start;'});
-        const isShortcut = node.isShortcut;
-        
-        const orderCol = h('div', {style: 'display:flex; flex-direction:column; gap:4px; margin-right:8px; padding-top:4px;'});
-        const upBtn = h('button', {class:'icon-btn', style: 'padding:2px; font-size:16px;', onclick: (e)=>{e.stopPropagation(); moveTrailNode(node, nodes[idx-1])}}, '▲');
-        const downBtn = h('button', {class:'icon-btn', style: 'padding:2px; font-size:16px;', onclick: (e)=>{e.stopPropagation(); moveTrailNode(node, nodes[idx+1])}}, '▼');
-        if (idx > 0) orderCol.appendChild(upBtn);
-        if (idx < nodes.length - 1) orderCol.appendChild(downBtn);
-        row.appendChild(orderCol);
-
-        const grow = h('div', {class: 'grow'});
-        
-        const navArea = h('div', {onclick: () => { if (isShortcut) jumpToTrailNode(node.targetId); else trailNavigate(node); }});
-        navArea.appendChild(h('div', {class: 'i-title', style: isShortcut ? 'color:#8E44AD; font-style:italic;' : ''}, node.title));
-        
-        let subParts = [];
-        if (!isShortcut) {
-            if (node.price > 0) subParts.push('💰 ' + brl(node.price));
-            
-            // NOVO: Monta a string de tempo (Ex: 1h 15m)
-            let timeStr = [];
-            if (node.hours > 0) timeStr.push(node.hours + 'h');
-            if (node.mins > 0) timeStr.push(node.mins + 'm');
-            if (timeStr.length > 0) subParts.push('⏱️ ' + timeStr.join(' '));
-
-            if (node.desc) subParts.push(node.desc.slice(0,40) + (node.desc.length>40?'…':''));
-            const childCount = allTrails.filter(t => t.parentId === node.id).length;
-            if (childCount > 0) subParts.push(`📂 ${childCount} sub-etapas`);
-        } else { subParts.push('🔗 Toque para pular para a etapa original'); }
-        
-        if (subParts.length > 0) navArea.appendChild(h('div', {class: 'i-sub'}, subParts.join(' · ')));
-        grow.appendChild(navArea);
-
-        if (!isShortcut) {
-            const audioArea = h('div', {
-                style: 'margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--line); font-size: 11px; color: var(--ink-soft); font-weight: 700; text-transform: uppercase; cursor: pointer; display: flex; align-items: center; gap: 4px;',
-                onclick: (e) => {
-                    e.stopPropagation(); 
-                    playTrailVoice(`${node.title}. ${node.desc || ''}`);
-                    toast('🔊 Repetindo instrução');
-                }
-            });
-            audioArea.innerHTML = '🔊 Ler novamente';
-            grow.appendChild(audioArea);
-        }
-
-        row.appendChild(grow);
-
-        const actCol = h('div', {style: 'display:flex; flex-direction:column; align-items:center;'});
-        if (!isShortcut) {
-            actCol.appendChild(h('button', {class:'icon-btn', style:'color:#25D366; margin-bottom:6px;', title:'Orçar', onclick: (e)=>{e.stopPropagation(); openQuoteModal(node)}}, '💲'));
-            actCol.appendChild(h('button', {class:'icon-btn', style:'color:var(--c-quotes);', onclick: (e)=>{e.stopPropagation(); openTrailForm(node)}}, '✏️'));
-        }
-        actCol.appendChild(h('button', {class:'icon-btn', style:'color:var(--danger); margin-top:6px;', onclick: (e)=>{e.stopPropagation(); confirmDeleteTrail(node.id)}}, '✕'));
-        row.appendChild(actCol);
-
-        list.appendChild(row);
-    });
-}
-
-// Abre o formulário (Agora com o Modo Atalho Inteligente Embutido!)
-// Abre o formulário (Corrigido o erro do botão null e o texto do atalho)
-// Abre o formulário (Agora com campo de Minutos!)
-function openTrailForm(existing) {
-    const isEdit = !!existing;
-    const parentId = currentTrailPath.length > 0 ? currentTrailPath[currentTrailPath.length - 1].id : null;
-
-    openSheet({
-        title: isEdit ? 'Editar Etapa' : 'Nova Etapa',
-        buildFields: (box) => {
-            if (!isEdit) {
-                const shortcutBtn = h('button', {class:'btn btn-ghost', style:'width:100%; margin-bottom:16px; border:1px dashed #8E44AD; color:#8E44AD; font-weight:700;', onclick: async (e) => {
-                    e.preventDefault();
-                    box.innerHTML = '';
-                    
-                    const saveBtn = document.getElementById('sheet-save-btn');
-                    if (saveBtn) { saveBtn.style.display = 'none'; } 
-                    else { document.querySelectorAll('.sheet-content button').forEach(b => { if(b.textContent.toLowerCase().includes('salvar')) b.style.display = 'none'; }); }
-                    
-                    box.appendChild(h('div', {style:'font-size:13px; color:var(--ink-soft); margin-bottom:8px;'}, 'Pesquise a etapa original que você deseja linkar aqui:'));
-                    const searchInp = h('input', {type:'text', placeholder:'Ex: Testar Módulo...', style:'width:100%; padding:12px; margin-bottom:12px; border-radius:var(--r-md); border:1px solid var(--line); font-size:16px; outline:none;'});
-                    box.appendChild(searchInp);
-
-                    const listWrap = h('div', {style:'display:flex; flex-direction:column; gap:8px; max-height:50vh; overflow-y:auto; padding-bottom:12px;'});
-                    box.appendChild(listWrap);
-
-                    const allTrails = await dbAll('trails');
-                    const realNodes = allTrails.filter(t => !t.isShortcut); 
-
-                    const renderShortcutList = (q) => {
-                        listWrap.innerHTML = '';
-                        let filtered = realNodes;
-                        if (q) {
-                            const normQ = norm(q);
-                            filtered = realNodes.filter(t => norm(t.title).includes(normQ) || norm(t.desc).includes(normQ));
-                        }
-                        
-                        if(filtered.length === 0) listWrap.appendChild(emptyState('🔍', 'Nada encontrado', 'Tente outro termo.'));
-
-                        filtered.slice(0, 50).forEach(node => {
-                            const row = h('div', {style:'padding:12px; border:1px solid var(--line); border-radius:var(--r-md); background:var(--surface); cursor:pointer;'});
-                            row.appendChild(h('div', {style:'font-weight:700; color:var(--ink);'}, node.title));
-                            if (node.desc) row.appendChild(h('div', {style:'font-size:12px; color:var(--ink-soft); margin-top:4px;'}, node.desc.slice(0, 50) + '...'));
-                            
-                            row.onclick = async () => {
-                                const obj = {
-                                    id: Date.now().toString(), parentId: parentId, order: Date.now(),
-                                    isShortcut: true, targetId: node.id, title: '🔗 Ir para: ' + node.title
-                                };
-                                await dbAdd('trails', obj);
-                                const overlay = document.querySelector('.sheet-overlay');
-                                if(overlay) overlay.click(); 
-                                renderTrails();
-                                toast('Atalho criado!');
-                            };
-                            listWrap.appendChild(row);
-                        });
-                    };
-                    
-                    searchInp.oninput = (ev) => renderShortcutList(ev.target.value);
-                    renderShortcutList(''); 
-                    setTimeout(() => searchInp.focus(), 100);
-                }}, '🔗 Criar atalho para um item'); 
-                
-                box.appendChild(shortcutBtn);
-            }
-
-            box.appendChild(fieldWrap('Título / Falha', h('input', {type:'text', id:'f-tr-title', value: existing?existing.title:'', placeholder:'Ex: Jet não liga / Testar bateria'})));
-            box.appendChild(fieldWrap('Descrição / Detalhes (Opcional)', h('textarea', {id:'f-tr-desc', style:'min-height:80px;', placeholder:'Ex: Usar multímetro. Voltagem deve ser maior que 11.5v.'}, existing?existing.desc:'')));
-            
-            const row = h('div', {style: 'display:flex; gap:8px;'});
-            row.appendChild(h('div',{style:'flex:1'}, fieldWrap('Valor (R$)', h('input',{type:'number', id:'f-tr-price', value: existing?existing.price:''} ))));
-            
-            // NOVO: Divisão perfeita entre Horas e Minutos
-            const timeWrap = h('div', {style: 'flex:1; display:flex; gap:4px;'});
-            timeWrap.appendChild(h('div',{style:'flex:1'}, fieldWrap('Horas', h('input',{type:'number', id:'f-tr-hours', value: existing?(existing.hours||''):'', placeholder:'0'} ))));
-            timeWrap.appendChild(h('div',{style:'flex:1'}, fieldWrap('Minutos', h('input',{type:'number', id:'f-tr-mins', value: existing?(existing.mins||''):'', placeholder:'0'} ))));
-            row.appendChild(timeWrap);
-
-            box.appendChild(row);
-        },
-        onSubmit: async () => {
-            const title = document.getElementById('f-tr-title').value;
-            if (!title) { toast('Dê um título para a etapa!'); return false; }
-            
-            let obj = existing || { id: Date.now().toString(), parentId: parentId, order: Date.now() };
-            obj.title = title.trim();
-            obj.desc = document.getElementById('f-tr-desc').value.trim();
-            obj.price = Number(document.getElementById('f-tr-price').value) || 0;
-            obj.hours = Number(document.getElementById('f-tr-hours').value) || 0;
-            obj.mins = Number(document.getElementById('f-tr-mins').value) || 0; // Salva os minutos!
-
-            await dbPut('trails', obj);
-            renderTrails(); toast('Salvo!');
-        }
-    });
-}
-
-// Troca a posição de dois itens
-async function moveTrailNode(nodeA, nodeB) {
-    if (!nodeA || !nodeB) return;
-    const temp = nodeA.order || 0;
-    nodeA.order = nodeB.order || 0;
-    nodeB.order = temp;
-    await dbPut('trails', nodeA); await dbPut('trails', nodeB);
-    renderTrails();
-}
-// O Apagador "Cascata" Inteligente
-// O Apagador "Cascata" Inteligente (Corrigido para não dar erro dbDelete)
-async function confirmDeleteTrail(id) {
-    const all = await dbAll('trails');
-    const hasChildren = all.some(t => t.parentId === id);
-    
-    const msg = hasChildren 
-        ? '⚠️ Esta etapa tem sub-etapas dentro dela! Excluir apagará TUDO. Tem certeza?'
-        : 'Excluir esta etapa?';
-        
-    if (confirm(msg)) {
-        const toDelete = [id];
-        
-        // Coleta todos os "filhos", "netos" e "bisnetos" para apagar
-        const collectChildren = (pId) => {
-            all.filter(t => t.parentId === pId).forEach(child => {
-                toDelete.push(child.id);
-                collectChildren(child.id);
-            });
-        };
-        collectChildren(id);
-        
-        toast('Apagando etapa e sub-etapas...');
-        
-        // Injeção direta no banco nativo (resolve o erro ReferenceError)
-        try {
-            const tx = db.transaction('trails', 'readwrite');
-            const store = tx.objectStore('trails');
-            for (let did of toDelete) { store.delete(did); }
-            
-            tx.oncomplete = () => {
-                renderTrails(); 
-                if(typeof updateHomeStats === 'function') updateHomeStats();
-            };
-        } catch (err) {
-            console.error(err);
-            toast('Erro ao apagar. Tente recarregar a página.');
-        }
-    }
-}
-
-// 💲 GERADOR DE ORÇAMENTOS (Checklist Dinâmico para WhatsApp)
-// 💲 GERADOR DE ORÇAMENTOS (Com cálculo automático de minutos e horas)
-async function openQuoteModal(targetNode) {
-    const allTrails = await dbAll('trails');
-    let path = [];
-    let curr = targetNode;
-    
-    while(curr) {
-        path.unshift(curr);
-        curr = allTrails.find(t => t.id === curr.parentId);
-    }
-
-    let selectedItems = path.map(p => ({ ...p, checked: true }));
-
-    openSheet({
-        title: 'Gerar Orçamento',
-        buildFields: (box) => {
-            const info = h('div', {style:'font-size:13px; color:var(--ink-soft); margin-bottom:16px; text-align:center;'});
-            info.textContent = 'Desmarque as etapas que NÃO serão realizadas/cobradas no serviço do cliente:';
-            box.appendChild(info);
-
-            const listWrap = h('div', {style:'display:flex; flex-direction:column; gap:8px; margin-bottom:16px;'});
-            
-            const totalBox = h('div', {style:'background:var(--surface-2); padding:16px; border-radius:var(--r-md); border:1px solid var(--line); margin-top:16px; text-align:right; display:flex; justify-content:space-between; align-items:center;'});
-            const tHours = h('div', {style:'font-size:14px; color:var(--ink-soft); font-weight:700;'});
-            const tPrice = h('div', {style:'font-size:22px; color:#25D366; font-weight:900;'});
-            totalBox.appendChild(tHours); totalBox.appendChild(tPrice);
-
-            const updateTotals = () => {
-                let sumP = 0, sumH = 0, sumM = 0;
-                selectedItems.forEach(item => {
-                    if (item.checked) { 
-                        sumP += Number(item.price) || 0; 
-                        sumH += Number(item.hours) || 0; 
-                        sumM += Number(item.mins) || 0; 
-                    }
-                });
-                
-                // NOVO: Converte minutos estourados em horas (Ex: 90 mins -> 1h 30m)
-                const totalH = sumH + Math.floor(sumM / 60);
-                const totalM = sumM % 60;
-                
-                let tStr = [];
-                if (totalH > 0) tStr.push(totalH + 'h');
-                if (totalM > 0) tStr.push(totalM + 'm');
-                
-                tHours.textContent = tStr.length > 0 ? `⏱️ ${tStr.join(' ')}` : '';
-                tPrice.textContent = `Total: ${brl(sumP)}`;
-            };
-
-            selectedItems.forEach((item, idx) => {
-                const row = h('div', {style:'display:flex; align-items:center; gap:12px; background:var(--surface); padding:12px; border:1px solid var(--line); border-radius:var(--r-md);'});
-
-                const chk = h('input', {type:'checkbox', style:'width:22px; height:22px; accent-color:#25D366; flex:0 0 auto;'});
-                chk.checked = true;
-                chk.onchange = (e) => { item.checked = e.target.checked; updateTotals(); };
-                row.appendChild(chk);
-
-                const txtWrap = h('div', {style:'flex:1;'});
-                txtWrap.appendChild(h('div', {style:'font-size:15px; font-weight:700; color:var(--ink);'}, `${idx+1}. ${item.title}`));
-
-                let details = [];
-                if (item.price > 0) details.push(`💰 ${brl(item.price)}`);
-                
-                let itemTime = [];
-                if (item.hours > 0) itemTime.push(item.hours + 'h');
-                if (item.mins > 0) itemTime.push(item.mins + 'm');
-                if (itemTime.length > 0) details.push(`⏱️ ${itemTime.join(' ')}`);
-
-                if (details.length > 0) txtWrap.appendChild(h('div', {style:'font-size:13px; color:var(--ink-soft); margin-top:4px; font-weight:600;'}, details.join(' · ')));
-
-                row.appendChild(txtWrap);
-                listWrap.appendChild(row);
-            });
-
-            box.appendChild(listWrap);
-            box.appendChild(totalBox);
-            updateTotals();
-
-            setTimeout(() => {
-                const btn = document.getElementById('sheet-save-btn');
-                if(btn) {
-                    btn.innerHTML = '🟢 Enviar no WhatsApp';
-                    btn.style.background = '#25D366';
-                    btn.style.borderColor = '#25D366';
-                    btn.style.color = '#fff';
-                    btn.style.fontSize = '16px';
-                }
-            }, 10);
-        },
-        onSubmit: async () => {
-            const checkedItems = selectedItems.filter(i => i.checked);
-            if(checkedItems.length === 0) { toast('Selecione pelo menos uma etapa para o orçamento!'); return false; }
-
-            let sumP = 0, sumH = 0, sumM = 0;
-            let report = `🛠️ *Orçamento de Serviço e Diagnóstico*\n\n`;
-            report += `Abaixo estão as etapas, peças ou serviços necessários:\n\n`;
-
-            checkedItems.forEach((item, idx) => {
-                sumP += Number(item.price) || 0;
-                sumH += Number(item.hours) || 0;
-                sumM += Number(item.mins) || 0;
-                
-                report += `🔹 *${idx+1}. ${item.title}*\n`;
-                if(item.desc) report += `   📝 _${item.desc}_\n`;
-
-                let vals = [];
-                
-                let itemTime = [];
-                if (item.hours > 0) itemTime.push(item.hours + 'h');
-                if (item.mins > 0) itemTime.push(item.mins + 'm');
-                if (itemTime.length > 0) vals.push(`⏱️ ${itemTime.join(' ')}`);
-                
-                if(item.price > 0) vals.push(`💰 ${brl(item.price)}`);
-                if(vals.length > 0) report += `   ↳ ${vals.join(' | ')}\n`;
-                report += `\n`;
-            });
-
-            const totalH = sumH + Math.floor(sumM / 60);
-            const totalM = sumM % 60;
-            let tStr = [];
-            if (totalH > 0) tStr.push(totalH + 'h');
-            if (totalM > 0) tStr.push(totalM + 'm');
-
-            report += `➖➖➖➖➖➖➖➖➖➖\n`;
-            if(tStr.length > 0) report += `⏱️ *Tempo Total Estimado:* ${tStr.join(' ')}\n`;
-            report += `✅ *VALOR TOTAL: ${brl(sumP)}*`;
-
-            try {
-                await navigator.clipboard.writeText(report);
-                toast('Orçamento copiado!');
-                const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(report)}`;
-                window.open(url, '_blank');
-            } catch(e) { toast('Erro ao copiar.'); }
-            
-            return true;
-        }
-    });
-}
 /* ============================================================
    LAZY LOADING VIRTUAL
    ============================================================ */
@@ -4942,386 +4329,6 @@ function openCalculatorRunner(calc, isTest = false) {
         }
     });
 }
-/* ============================================================
-   DIAGNÓSTICO MESTRE (BANCO DE CAUSAS)
-   ============================================================ */
-let diagCatFilter = 'Todos';
-// Estes são os seus Cartuchos (pode alterar os nomes se quiser)
-const DIAG_CATS = ['Mecânica', 'Elétrica', 'Software', 'Ferramentas', 'Outros']; 
-// 🗂️ VASSOURA DE CARTUCHOS (Busca todos os que você já criou)
-async function getDynamicCategories() {
-    const diags = await dbAll('diagnosis');
-    const cats = new Set(DIAG_CATS); // Garante que os 5 originais sempre existam
-    diags.forEach(d => {
-        if (d.category && d.category.trim()) cats.add(d.category.trim());
-    });
-    return Array.from(cats).sort(); // Retorna em ordem alfabética
-}
-async function renderDiagnosis() {
-    const list = document.getElementById('diagnosis-list'); if (!list) return;
-    list.innerHTML = ''; 
-    let diags = await dbAll('diagnosis');
-    
-    // Desenha os filtros de Cartucho
-    buildCategoryFilter('diagnosis-cat-filter', DIAG_CATS, diags, diagCatFilter, async (val) => {
-    diagCatFilter = val;
-    const searchInput = document.getElementById('diag-search-input');
-    const hasActiveSearch = searchInput && searchInput.value.trim().length > 0;
-    if (hasActiveSearch) {
-        await renderDiagnosis();   // 👈 redesenha os chips já com a categoria nova pintada
-        await runSherlockSearch(); // 👈 e depois sobrescreve a lista com o resultado da busca
-    } else {
-        renderDiagnosis();
-    }
-  });
-    if (diagCatFilter !== 'Todos') diags = diags.filter(d => (d.category || DIAG_CATS[0]) === diagCatFilter); 
-    
-    // Ordem alfabética pelo Sintoma
-    diags.sort((a,b) => (a.title||'').localeCompare(b.title||'','pt-BR'));
-    
-    if(!diags.length){ list.appendChild(emptyState('🔎','Banco Vazio','Adicione um novo caso ao seu Diagnóstico Mestre')); return; }
-    
-    diags.forEach(d => {
-        // 📱 LAYOUT EM COLUNA: O texto fica em cima, os botões embaixo
-        const row = h('div',{class:'item', style:'flex-direction: column; align-items: stretch; padding-bottom: 8px;'}); 
-        
-        // == ZONA DE TEXTO (Ocupa 100% da largura agora) ==
-        const grow = h('div',{class:'grow', style:'width: 100%; cursor: pointer;', onclick:()=>openDiagnosisForm(d)}); 
-        grow.appendChild(h('div',{class:'i-title'}, d.title)); 
-        
-        let subTxt = `Cartucho: ${d.category || DIAG_CATS[0]}`;
-        if(d.cause) subTxt += ` · Causa: ${d.cause}`;
-        grow.appendChild(h('div',{class:'i-sub'}, subTxt)); 
-        
-        if (d.tags && d.tags.length) {
-            const tagsRow = h('div', {style:'display:flex; flex-wrap: nowrap; scrollbar-width: none; white-space: nowrap; gap:4px; margin-top:4px; overflow-x: auto;'});
-            d.tags.forEach(t => tagsRow.appendChild(h('span', {style:'font-size:10.5px; padding:2px 7px; border-radius:999px; background:var(--surface-2); color:var(--ink-soft);'}, t)));
-            grow.appendChild(tagsRow);
-        }
-        row.appendChild(grow);
-        
-        // == 🎛️ BARRA DE AÇÕES INFERIOR ==
-        const actions = h('div', {style:'display: flex; justify-content: flex-start; gap: 18px; border-top: 1px solid var(--line); padding-top: 10px; margin-top: 8px;margin-left: 10px;'});
-
-        actions.appendChild(h('button',{ class:'icon-btn', style:'color:var(--c-notes); font-size:15px;', onclick:(e)=>{ 
-            e.stopPropagation(); 
-            navigator.clipboard.writeText(d.solution || ''); 
-            toast('Solução copiada!'); 
-        } }, '📋'));
-
-        actions.appendChild(h('button',{ class:'icon-btn', style:'color:var(--c-tasks); font-size:15px;', onclick:(e)=>{ 
-            e.stopPropagation(); 
-            const fullText = `*Sintoma:* ${d.title}\n*Causa:* ${d.cause || 'N/A'}\n*Solução:*\n${d.solution || ''}`;
-            navigator.clipboard.writeText(fullText); 
-            toast('Caso copiado!'); 
-        } }, '📤'));
-
-        actions.appendChild(h('button',{class:'icon-btn', style:'color:var(--danger); font-size:15px;', onclick:(e)=>{ 
-            e.stopPropagation(); 
-            confirmDelete('diagnosis', d.id, ()=>{renderDiagnosis();updateHomeStats();}); 
-        }},'✕')); 
-
-        row.appendChild(actions);
-        list.appendChild(row);
-    });
-    
-    if(window.aplicarLazyLoading) window.aplicarLazyLoading();
-}
-
-// ✏️ ABRIR FORMULÁRIO DO DIAGNÓSTICO
-async function openDiagnosisForm(existing) { // 👈 NOVO: Agora é async
-    const isEdit = !!existing;
-    let cat = (existing && existing.category) || DIAG_CATS[0];
-    let tagFieldRef = null;
-    
-    // 👈 NOVO: Puxa todas as categorias que existem no seu banco
-    const dynamicCats = await getDynamicCategories(); 
-
-    openSheet({
-        title: isEdit ? 'Editar Caso Sherlock' : 'Novo Diagnóstico',
-        buildFields: (box) => {
-            const manualWrap = h('div', { id: 'diag-manual-fields', style: isEdit ? '' : 'display:none;' });
-            manualWrap.appendChild(fieldWrap('Sintoma / Problema (Título)', h('input', { type: 'text', id: 'f-diag-title', value: (existing && existing.title) || '' })));
-            
-            // 👇 NOVO: O Datalist Híbrido (Select + Input) 👇
-            const catInput = h('input', { type: 'text', id: 'f-cat-input', list: 'diag-cat-list', value: cat, placeholder: 'Escolha ou digite novo...' });
-            const dataList = h('datalist', { id: 'diag-cat-list' });
-            dynamicCats.forEach(c => {
-                const opt = document.createElement('option');
-                opt.value = c;
-                dataList.appendChild(opt);
-            });
-            const catWrap = h('div', {});
-            catWrap.appendChild(catInput);
-            catWrap.appendChild(dataList);
-            manualWrap.appendChild(fieldWrap('Cartucho (Categoria)', catWrap));
-            // 👆 FIM DO DATALIST 👆
-
-            manualWrap.appendChild(fieldWrap('Causa / Hipótese', h('input', { type: 'text', id: 'f-diag-cause', value: (existing && existing.cause) || '' })));
-
-            const ta = h('textarea', { id: 'f-diag-sol', style: 'height: 120px;' });
-            ta.value = (existing && existing.solution) || '';
-            manualWrap.appendChild(fieldWrap('Diagnóstico / Solução', ta));
-
-            tagFieldRef = buildTagInputField((existing && existing.tags) || []);
-            manualWrap.appendChild(fieldWrap('Tags', tagFieldRef));
-
-            if (isEdit) {
-                const badgeBox = h('div', { style: 'margin-top:16px; padding:12px; background:var(--surface-2); border-radius:8px; border:1px dashed var(--line); text-align:center;' });
-                badgeBox.appendChild(h('div', { style: 'font-size:12px; font-weight:800; color:var(--ink-soft); margin-bottom:8px;' }, '🧠 Força do Diagnóstico (Pontos)'));
-                badgeBox.appendChild(h('div', { style: 'font-size:11px; color:var(--ink-soft); margin-bottom:12px;' }, 'Use os botões para calibrar o peso deste caso nas pesquisas.'));
-                
-                // O empacotador que deixa tudo na mesma linha (flex)
-                const relWrap = h('div', { style: 'display:flex; justify-content:center; align-items:center; gap:12px;' });
-                
-                // Botão de Menos
-                const btnMinus = h('button', { type: 'button', class: 'btn', style: 'background:var(--surface); color:#E67E22; border: 2px solid #d90c0c; border-radius:12px; width:38px; height:38px; font-size:40px; display:flex; align-items:center; justify-content:center; padding:0;' }, '-');
-                
-                // O Input (agora mais bonitinho e centralizado)
-                const inputNum = h('input', { type: 'number', id: 'f-diag-relevance', value: existing.relevanceCount || 0, style: 'width:70px; text-align:center; font-weight:900; font-size:18px; color:#E67E22; border:1px solid var(--line); border-radius:8px; padding:8px; background:transparent;' });
-                
-                // Botão de Mais
-                const btnPlus = h('button', { type: 'button', class: 'btn', style: 'background:var(--surface); color:#E67E22; border: 2px solid #1e9635; border-radius:12px; width:38px; height:38px; font-size:40px; display:flex; align-items:center; justify-content:center; padding:0;' }, '+');
-
-                // A Lógica dos botões
-                btnMinus.onclick = (e) => { e.preventDefault(); let v = parseInt(inputNum.value, 10)||0; inputNum.value = v-1; };
-                btnPlus.onclick = (e) => { e.preventDefault(); let v = parseInt(inputNum.value, 10)||0; inputNum.value = v+1; };
-
-                relWrap.appendChild(btnMinus);
-                relWrap.appendChild(inputNum);
-                relWrap.appendChild(btnPlus);
-                badgeBox.appendChild(relWrap);
-                manualWrap.appendChild(badgeBox);
-            }
-
-            if (!isEdit) {
-                box.appendChild(buildQuickAddPanel(tagFieldRef, cat));
-
-                const toggleLink = h('div', { style: 'text-align:center; margin:4px 0 8px; font-size:12.5px; font-weight:700; color:#E67E22; cursor:pointer;' }, '✏️ Preencher manualmente');
-                toggleLink.onclick = () => {
-                    const hidden = manualWrap.style.display === 'none';
-                    manualWrap.style.display = hidden ? '' : 'none';
-                    toggleLink.textContent = hidden ? '🔼 Esconder campos manuais' : '✏️ Preencher manualmente';
-                };
-                box.appendChild(toggleLink);
-            }
-
-            box.appendChild(manualWrap);
-        },
-        onSubmit: async () => {
-            const title = document.getElementById('f-diag-title').value.trim();
-            if (!title) { toast('O Sintoma é obrigatório'); return false; }
-
-            const obj = existing || { createdAt: Date.now() };
-            obj.title = title;
-            obj.cause = document.getElementById('f-diag-cause').value.trim();
-            obj.solution = document.getElementById('f-diag-sol').value.trim();
-            
-            // 👈 NOVO: Agora ele pega o "value" do datalist em vez do dataset.val do chip
-            obj.category = document.getElementById('f-cat-input').value.trim() || DIAG_CATS[0]; 
-            
-            obj.tags = tagFieldRef ? tagFieldRef._getTags() : (existing && existing.tags) || [];
-
-            if (existing) {
-                const relVal = document.getElementById('f-diag-relevance');
-                if (relVal) obj.relevanceCount = parseInt(relVal.value, 10) || 0;
-            } else {
-                obj.relevanceCount = 0;
-            }
-
-            if (existing) await dbPut('diagnosis', obj);
-            else await dbAdd('diagnosis', obj);
-            invalidateSherlockCache();
-
-            renderDiagnosis(); updateHomeStats(); toast('Caso arquivado!');
-
-            const searchBox = document.getElementById('diag-search-input');
-            if (searchBox && searchBox.value) runSherlockSearch();
-
-            return true;
-        },
-        onDelete: isEdit ? () => confirmDelete('diagnosis', existing.id, () => { invalidateSherlockCache(); renderDiagnosis(); updateHomeStats(); }) : null
-    });
-}
-
-// ⚙️ PAINEL DE CONTROLE DO SHERLOCK (Stopwords + Sinônimos + Time Decay)
-function openSherlockSettings() {
-    const savedSynonyms = localStorage.getItem('sherlock_synonyms') || "fio = cabo, chicote\nbateria = pilha, acumulador";
-    const savedDecayDays = localStorage.getItem('sherlock_decay_days') || "1500";
-    const savedDecayPct = localStorage.getItem('sherlock_decay_pct') || "40";
-    
-    // Puxa a lista atual de stopwords e transforma em array para editarmos
-    let currentSW = Array.from(PT_STOPWORDS);
-
-    openSheet({
-        title: '⚙️ Motor do Sherlock',
-        buildFields: (box) => {
-            
-            // == BLOCO 0: STOPWORDS (Otimizado para Celular) ==
-            const swBox = h('div', {style: 'padding:14px; background:var(--surface-2); border-radius:12px; border:1px solid var(--line); margin-bottom:12px;'});
-            swBox.appendChild(h('div', {style:'font-size:12px; font-weight:800; color:#E67E22; margin-bottom:8px;'}, '🛑 PALAVRAS IGNORADAS (Stopwords)'));
-            swBox.appendChild(h('div', {style:'font-size:11px; color:var(--ink-soft); margin-bottom:12px; line-height:1.4;'}, 'Palavras curtas que o Sherlock ignora na busca para poupar a memória do celular.'));
-
-            const swInputRow = h('div', {style:'display:flex; gap:6px; margin-bottom:12px;'});
-            const swInput = h('input', {type:'text', placeholder:'Nova palavra...', style:'flex:1; padding:8px; border:1px solid var(--line); border-radius:8px; background:var(--surface); color:var(--ink);'});
-            
-            // 📱 A SOLUÇÃO PRO CELULAR: O Botão Físico!
-            const swBtn = h('button', {type:'button', style:'background:#E67E22; color:#fff; border:none; border-radius:8px; padding:0 14px; font-weight:bold;'}, '+ Add');
-            swInputRow.appendChild(swInput);
-            swInputRow.appendChild(swBtn);
-            swBox.appendChild(swInputRow);
-
-            const swChipsBox = h('div', {style:'display:flex; flex-wrap:wrap; gap:6px; max-height:140px; overflow-y:auto; padding-right:4px;'});
-
-            function renderSWChips() {
-                swChipsBox.innerHTML = '';
-                currentSW.forEach((word, idx) => {
-                    const chip = h('span', {style:'display:inline-flex; align-items:center; gap:4px; background:var(--surface); border:1px solid var(--line); color:var(--ink); padding:4px 8px; border-radius:999px; font-size:11.5px;'});
-                    chip.textContent = word;
-                    const rm = h('span', {style:'cursor:pointer; font-weight:900; opacity:.8; color:var(--danger); margin-left:2px;', onclick:() => {
-                        currentSW.splice(idx, 1);
-                        renderSWChips();
-                    }}, '✕');
-                    chip.appendChild(rm);
-                    swChipsBox.appendChild(chip);
-                });
-            }
-            renderSWChips(); // Desenha a lista pela primeira vez
-
-            // Ação do Botão Add
-            swBtn.onclick = () => {
-                const normWord = (swInput.value || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-                if (normWord && !currentSW.includes(normWord)) {
-                    currentSW.unshift(normWord); // Coloca a palavra nova no topo!
-                    renderSWChips();
-                }
-                swInput.value = '';
-            };
-
-            // Para quando usar no PC, o Enter continua funcionando!
-            swInput.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); swBtn.click(); } };
-
-            swBox.appendChild(swChipsBox);
-            box.appendChild(swBox);
-
-            // == BLOCO 1: SINÔNIMOS ==
-            const info = h('div', {style:'font-size:12px; color:var(--ink-soft); margin-bottom:12px; line-height:1.4;'});
-            info.innerHTML = `<b>Dicionário de Sinônimos:</b><br>Formato: <code>palavra = sinonimo1, sinonimo2</code>`;
-            box.appendChild(info);
-            
-            const ta = h('textarea', {id: 'f-sherlock-syn', style: 'height:120px; font-family:monospace; font-size:13px; margin-bottom:8px;'});
-            ta.value = savedSynonyms;
-            box.appendChild(fieldWrap('Sinônimos (Uma regra por linha)', ta));
-
-            // == BLOCO 2: ENVELHECIMENTO DA PISTA (Time Decay) ==
-            const decayBox = h('div', {style: 'padding:14px; background:var(--surface-2); border-radius:12px; border:1px solid var(--line); margin-top:8px;'});
-            decayBox.appendChild(h('div', {style:'font-size:12px; font-weight:800; color:#E67E22; margin-bottom:10px;'}, '⏳ MEMÓRIA E ENVELHECIMENTO (Time Decay)'));
-            
-            const wrapDays = h('div', {style:'display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;'});
-            wrapDays.appendChild(h('div', {style:'font-size:13px; font-weight:700;'}, 'Vencimento em (Dias):'));
-            const inputDays = h('input', {type:'number', id:'f-decay-days', value: savedDecayDays, style:'width:80px; text-align:center; padding:6px; background:var(--surface); border:1px solid var(--line); border-radius:6px; color:#E67E22; font-weight:bold;'});
-            wrapDays.appendChild(inputDays);
-            decayBox.appendChild(wrapDays);
-
-            const wrapPct = h('div', {style:'display:flex; align-items:center; justify-content:space-between;'});
-            wrapPct.appendChild(h('div', {style:'font-size:13px; font-weight:700;'}, 'Perder Força Base (%):'));
-            const inputPct = h('input', {type:'number', id:'f-decay-pct', value: savedDecayPct, max: 99, style:'width:80px; text-align:center; padding:6px; background:var(--surface); border:1px solid var(--line); border-radius:6px; color:#E74C3C; font-weight:bold;'});
-            wrapPct.appendChild(inputPct);
-            decayBox.appendChild(wrapPct);
-
-            box.appendChild(decayBox);
-        },
-        onSubmit: () => {
-            // 💾 Salva os Stopwords novos!
-            PT_STOPWORDS = new Set(currentSW);
-            localStorage.setItem('sherlock_stopwords', JSON.stringify(currentSW));
-
-            localStorage.setItem('sherlock_synonyms', document.getElementById('f-sherlock-syn').value);
-            localStorage.setItem('sherlock_decay_days', document.getElementById('f-decay-days').value || "1500");
-            localStorage.setItem('sherlock_decay_pct', document.getElementById('f-decay-pct').value || "40");
-            
-            invalidateSherlockCache();
-            toast('🧠 Mente do Sherlock atualizada!');
-            
-            const searchBox = document.getElementById('diag-search-input');
-            if (searchBox && searchBox.value) runSherlockSearch();
-            return true;
-        }
-    });
-}
-// ============================================================
-// 🕵️ CONFIGURAÇÃO DO DETETIVE
-// ============================================================
-const SHERLOCK_MIN_CHARS = 2;       // não investiga com menos que isso
-const SHERLOCK_DEBOUNCE_MS = 300;   // espera você parar de digitar
-const SHERLOCK_CACHE_TTL_MS = 4000; // evita reconsultar o banco a cada tecla
-
-let _sherlockTimer = null;
-let _sherlockCache = null;
-let _sherlockCacheAt = 0;
-let _sherlockReqId = 0; // evita resultado antigo sobrescrever o novo
-function clearDiagSearch() {
-    const input = document.getElementById('diag-search-input');
-    input.value = '';
-    toggleDiagClearButton('');
-    renderDiagnosis();
-}
-
-function toggleDiagClearButton(value) {
-    const btn = document.getElementById('diag-clear-search-btn');
-    if (btn) btn.style.display = (value && value.trim()) ? 'flex' : 'none';
-}
-// ============================================================
-// ⌨️ DISPARADOR COM DEBOUNCE (chamado pelo oninput)
-// ============================================================
-function onSherlockTyping() {
-    clearTimeout(_sherlockTimer);
-    const qRaw = document.getElementById('diag-search-input').value;
-
-    toggleDiagClearButton(qRaw); // 👈 essa linha é a única coisa nova aqui
-
-    if (!qRaw || !qRaw.trim()) {
-        renderDiagnosis();
-        return;
-    }
-
-    markSherlockThinking(true);
-    _sherlockTimer = setTimeout(() => { runSherlockSearch(); }, SHERLOCK_DEBOUNCE_MS);
-}
-
-function markSherlockThinking(isThinking) {
-    const box = document.getElementById('diag-results') || document.getElementById('sherlock-results');
-    if (!box) return;
-    box.classList.toggle('sherlock-thinking', isThinking);
-}
-
-// ============================================================
-// 📚 CACHE DE CASOS
-// ============================================================
-function buildSearchIndexEntry(d) {
-    const norm = str => (str || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[.,/#!$%^&*;:{}=\-_`~()]/g, '');
-    d._tTitle = norm(d.title || '');
-    d._tCause = norm(d.cause || '');
-    d._tSol = norm(d.solution || '');
-    d._tTags = norm((d.tags || []).join(' '));
-    d._fullText = `${d._tTitle} ${d._tCause} ${d._tSol} ${d._tTags}`;
-    d._docLen = d._fullText.split(/\s+/).filter(Boolean).length;
-    return d;
-}
-
-async function getSherlockCases() {
-    const now = Date.now();
-    if (!_sherlockCache || (now - _sherlockCacheAt) > SHERLOCK_CACHE_TTL_MS) {
-        const raw = await dbAll('diagnosis');
-        _sherlockCache = raw.map(buildSearchIndexEntry); // normaliza 1x, não a cada tecla
-        _sherlockCacheAt = now;
-    }
-    return _sherlockCache;
-}
-
-function invalidateSherlockCache() {
-    _sherlockCache = null;
-}
 
 // ============================================================
 // 🔎 DISTÂNCIA DE LEVENSHTEIN (tolerância a erro de digitação)
@@ -5356,191 +4363,6 @@ function fuzzyIncludes(text, term) {
         if (levenshtein(w, term) <= maxDist) return 0.2; // confiança parcial
     }
     return 0;
-}
-
-// ============================================================
-// 🧠 O CÉREBRO INVESTIGATIVO DO SHERLOCK (BM25F PURO + BAYES + INTENÇÃO + TIME DECAY)
-// ============================================================
-async function runSherlockSearch() {
-    markSherlockThinking(false);
-    const myReqId = ++_sherlockReqId;
-
-    const qRaw = document.getElementById('diag-search-input').value;
-    if (!qRaw || !qRaw.trim()) { renderDiagnosis(); return; }
-
-    // 🧹 NORMALIZAÇÃO PESADA: Tira acentos, vírgulas, pontos e sinais! 
-    // Assim "bomba," vira apenas "bomba"
-    const norm = str => (str || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[.,/#!$%^&*;:{}=\-_`~()]/g, '');
-    const rawTokens = qRaw.split(/\s+/).filter(t => t.length > 1);
-
-    let mustHave = [], mustNotHave = [], bm25Tokens = [];
-    rawTokens.forEach(t => {
-        if (t.startsWith('+') && t.length > 2) {
-            mustHave.push(norm(t.substring(1)));
-        } else if (t.startsWith('-') && t.length > 2) {
-            mustNotHave.push(norm(t.substring(1)));
-        } else {
-            const cleanToken = norm(t);
-            // 🛑 A BARREIRA: Se for um StopWord (de, na, o, a), ele ignora!
-            // E só permite investigar palavras que sobraram no filtro.
-            if (!PT_STOPWORDS.has(cleanToken)) {
-                bm25Tokens.push(cleanToken);
-            }
-        }
-    });
-
-    // 🧠 INJEÇÃO SEMÂNTICA (SINÔNIMOS EM FRASES)
-    const synRaw = localStorage.getItem('sherlock_synonyms') || '';
-    let expandedTokens = new Set(bm25Tokens);
-    const qNorm = norm(qRaw); 
-
-    synRaw.split('\n').forEach(line => {
-        if (!line.includes('=')) return;
-        const [main, ...rest] = line.split('=');
-        const root = norm(main.trim());
-        const variations = rest.join('=').split(',').map(s => norm(s.trim())).filter(Boolean);
-        
-        const allTerms = [root, ...variations];
-        let matchFound = false;
-        allTerms.forEach(term => { if (qNorm.includes(term)) matchFound = true; });
-
-        if (matchFound) {
-            allTerms.forEach(term => {
-                term.split(/\s+/).forEach(word => expandedTokens.add(word));
-            });
-        }
-    });
-    bm25Tokens = Array.from(expandedTokens);
-
-    const meaningfulChars = bm25Tokens.join('').length;
-    const hasOperators = mustHave.length > 0 || mustNotHave.length > 0;
-    if (!hasOperators && meaningfulChars < SHERLOCK_MIN_CHARS) {
-        renderDiagnosis();
-        return;
-    }
-
-    let diags = await getSherlockCases();
-    if (diagCatFilter !== 'Todos') {
-        diags = diags.filter(d => (d.category || DIAG_CATS[0]) === diagCatFilter);
-    }
-    diags = diags.filter(d => {
-        for (const bad of mustNotHave) if (d._fullText.includes(bad)) return false;
-        for (const good of mustHave) if (!d._fullText.includes(good)) return false;
-        return true;
-    });
-
-    if (diags.length === 0) { renderSherlockResults([]); return; }
-
-    // 🧪 CIÊNCIA DE DADOS: Variável Global para a Nota Máxima Teórica
-    window._sherlockMaxScore = 1; 
-
-    if (bm25Tokens.length === 0) {
-        diags.forEach(d => {
-            const hitRate = d.relevanceCount || 0;
-            const ageDays = (Date.now() - (d.createdAt || Date.now())) / (1000 * 60 * 60 * 24);
-            const userDays = parseFloat(localStorage.getItem('sherlock_decay_days')) || 1500;
-            const userPct = parseFloat(localStorage.getItem('sherlock_decay_pct')) || 40;
-            
-            const limitForce = Math.max(0.01, 1 - (userPct / 100)); 
-            const decay = Math.max(limitForce, 1 - (ageDays / userDays)); 
-            
-            d._finalScore = (1 + (Math.log1p(hitRate) * 0.15)) * decay;
-        });
-    } else {
-        const k1 = 1.2, b = 0.75;
-        const W_TITLE = 3, W_TAGS = 2.2, W_CAUSE = 1.6, W_SOL = 1; 
-
-        let totalLen = 0; diags.forEach(d => totalLen += d._docLen);
-        const avgdl = totalLen / (diags.length || 1);
-
-        const df = {};
-        bm25Tokens.forEach(t => {
-            df[t] = diags.filter(d => d._fullText.includes(t) || fuzzyIncludes(d._fullText, t) > 0).length;
-        });
-
-        // 🧪 CALCULA A NOTA MÁXIMA TEÓRICA POSSÍVEL
-        let maxTheoreticalScore = 0;
-        bm25Tokens.forEach(t => {
-            const idf = Math.log((diags.length - df[t] + 0.5) / (df[t] + 0.5) + 1);
-            maxTheoreticalScore += idf * (k1 + 1) * W_TITLE; 
-        });
-        
-        // 🚀 BÔNUS MÁXIMO TEÓRICO DE BIGRAMAS
-        let maxBigramBonus = 1;
-        if (bm25Tokens.length >= 2) {
-            // Em vez de somar 0.4 adoidado, vamos aplicar um bônus modesto global
-            // Se o usuário digitou mais de 2 palavras, a chance perfeita é 1.25x maior
-            maxBigramBonus = 1.25; 
-        }
-        
-        // Se a busca tiver 3 palavras, e o item tiver a frase exata "palavra1 palavra2 palavra3", a nota teórica permite alcançar o teto de 100%.
-        window._sherlockMaxScore = (maxTheoreticalScore || 1) * maxBigramBonus;
-
-        diags.forEach(d => {
-            let bm25Score = 0;
-            
-            bm25Tokens.forEach(t => {
-                const inTitle = d._tTitle.includes(t);
-                const inCause = d._tCause.includes(t);
-                const inSol = d._tSol.includes(t);
-                const inTags = d._tTags.includes(t);
-                let confidence = 1;
-
-                if (!(inTitle || inCause || inSol || inTags)) {
-                    confidence = fuzzyIncludes(d._fullText, t);
-                    if (confidence === 0) return;
-                }
-                
-                const idf = Math.log((diags.length - df[t] + 0.5) / (df[t] + 0.5) + 1);
-                const tf = (d._fullText.split(t).length - 1) || 1;
-                const fieldWeight = inTitle ? W_TITLE : (inTags ? W_TAGS : (inCause ? W_CAUSE : W_SOL));  
-                const termScore = idf * ((tf * (k1 + 1)) / (tf + k1 * (1 - b + b * (d._docLen / avgdl))));
-
-                bm25Score += termScore * fieldWeight * confidence;
-            });
-
-            // ============================================================
-            // 🧠 SUPER BÔNUS DE BIGRAMAS (Palavras Conectadas)
-            // ============================================================
-            let bigramBonus = 1;
-            if (bm25Tokens.length >= 2) {
-                // Checa a frase exata
-                const exactPhrase = bm25Tokens.join(' ');
-                if (d._fullText.includes(exactPhrase)) {
-                    bigramBonus = 1.25; // 25% de bônus direto se a frase for exata
-                } else {
-                    // Se não tem a frase exata inteira, procura as palavras em duplas
-                    for (let i = 0; i < bm25Tokens.length - 1; i++) {
-                        const bigram = bm25Tokens[i] + ' ' + bm25Tokens[i+1];
-                        if (d._fullText.includes(bigram)) {
-                            // Se bater uma duplinha de palavras na ordem, ganha 10%
-                            bigramBonus += 0.10; 
-                        }
-                    }
-                }
-            }
-            
-            const finalBm25 = bm25Score * bigramBonus;
-            // ============================================================
-
-            // 🕰️ TIME DECAY + BAYES
-            const hitRate = d.relevanceCount || 0;
-            const ageDays = (Date.now() - (d.createdAt || Date.now())) / (1000 * 60 * 60 * 24);
-            const userDays = parseFloat(localStorage.getItem('sherlock_decay_days')) || 1500;
-            const userPct = parseFloat(localStorage.getItem('sherlock_decay_pct')) || 40;
-            
-            const limitForce = Math.max(0.01, 1 - (userPct / 100)); 
-            const decay = Math.max(limitForce, 1 - (ageDays / userDays)); 
-            
-            // NOTA FINAL: BM25 Bigramado x Bayes x Envelhecimento
-            d._finalScore = finalBm25 * (1 + (Math.log1p(hitRate) * 0.15)) * decay;
-        });
-    }
-
-    if (myReqId !== _sherlockReqId) return; 
-
-    const sortedResults = diags.filter(d => d._finalScore > 0).sort((a, b) => b._finalScore - a._finalScore);
-    renderSherlockResults(sortedResults);
 }
 
 // ============================================================
@@ -5628,161 +4450,7 @@ function playNextDiagAudio() {
 // ============================================================
 // 👁️ DESENHA O PAINEL DE RESULTADOS DO SHERLOCK (Cálculo Científico)
 // ============================================================
-function renderSherlockResults(results) {
-    const list = document.getElementById('diagnosis-list');
-    list.innerHTML = '';
-    
-    if (window.speechSynthesis) window.speechSynthesis.cancel();
-    diagSpeechIndex = -1;
 
-    if (results.length === 0) {
-        list.appendChild(emptyState('🤷‍♂️', 'Nenhuma Pista Encontrada', 'Tente usar outros termos para descrever o sintoma.'));
-        return;
-    }
-    
-    // 🕵️ INTELIGÊNCIA: A Dedução Reversa do Sherlock
-    let bestPct = 0;
-    if (results.length > 0) {
-        // 🧪 A Porcentagem do Palpite também usa a Matemática Real
-        bestPct = (results[0]._finalScore / window._sherlockMaxScore) * 100;
-        if (results[0].relevanceCount > 0) bestPct += Math.min(15, (results[0].relevanceCount * 2));
-    }
-    
-    if (results.length > 0 && bestPct < 65) {
-        const causeStats = {};
-        let topCause = ''; let topCauseCount = 0;
-        
-        results.forEach(r => {
-            if (r.cause && r.cause.trim().length > 3) {
-                const c = r.cause.trim();
-                causeStats[c] = (causeStats[c] || 0) + 1;
-                if (causeStats[c] > topCauseCount) {
-                    topCauseCount = causeStats[c];
-                    topCause = c;
-                }
-            }
-        });
-        
-        if (topCauseCount > 1) {
-            const palpiteBanner = h('div', {style:'padding:14px; background:#1b120c; color:#E67E22; border-radius:8px; margin-bottom:16px; border-left:4px solid #E67E22; display:flex; gap:12px; align-items:center;'});
-            palpiteBanner.appendChild(h('div', {style:'font-size:26px;'}, '🕵️'));
-            const txt = h('div', {style:'flex:1;'});
-            txt.appendChild(h('div', {style:'font-size:12px; font-weight:800; margin-bottom:4px; letter-spacing:0.5px;'}, 'PALPITE DO DETETIVE:'));
-            
-            // 👇 AQUI ACONTECE A MÁGICA DA INTERATIVIDADE 👇
-            const msg = h('div', {style:'font-size:13.5px; color:#f5c6a1; line-height:1.4;'});
-            msg.textContent = 'Pistas fracas, meu caro... Mas reparei que ';
-            
-            // O botão invisível (O Texto Clicável)
-            const clickCause = h('span', {
-                style: 'font-weight:900; color:#E74C3C; text-decoration:underline; cursor:pointer;',
-                onclick: () => {
-                    const searchInput = document.getElementById('diag-search-input');
-                    if (searchInput) {
-                        // Limpa o que você digitou e coloca o palpite do Sherlock lá!
-                        searchInput.value = topCause;
-                        // Aciona a busca forçada
-                        runSherlockSearch();
-                        // Mostra o "X" de limpar pesquisa
-                        toggleDiagClearButton(topCause);
-                        toast('🕵️ Seguindo a intuição do detetive...');
-                    }
-                }
-            }, topCause);
-            
-            msg.appendChild(clickCause);
-            msg.appendChild(document.createTextNode(' aparece frequentemente com esses sintomas. Você já deu uma olhada nisso?'));
-            
-            txt.appendChild(msg);
-            palpiteBanner.appendChild(txt);
-            list.appendChild(palpiteBanner);
-        } else {
-             const banner = h('div', {style:'padding:12px; background:#0e0d0d; color:#E67E22; border-radius:8px; margin-bottom:16px; font-size:13px; font-weight:700; text-align:center; border:1px solid #E67E22;'}, `🕵️ Evidências fracas, mas encontrei ${results.length} pista(s).`);
-             list.appendChild(banner);
-        }
-    } else if (results.length > 0) {
-        const banner = h('div', {style:'padding:12px; background:#0e0d0d; color:#E67E22; border-radius:8px; margin-bottom:16px; font-size:13px; font-weight:700; text-align:center; border:1px solid #E67E22;'}, `🕵️ Sherlock analisou as evidências: ${results.length} causa(s) provável(is).`);
-        list.appendChild(banner);
-    }
-
-    results.forEach((d, index) => {
-        
-        let pct = (d._finalScore / window._sherlockMaxScore) * 100;
-        if (d.relevanceCount > 0) pct += Math.min(15, (d.relevanceCount * 2)); 
-        if (d.relevanceCount < 0) pct += (d.relevanceCount * 5); 
-        let pctInt = Math.floor(Math.max(0, Math.min(99.9, pct))); 
-
-        let probText, probColor, bgColor;
-        if (pctInt >= 85) { probText = `🔥 ${pctInt}% — PISTA QUENTE`; probColor = '#E74C3C'; bgColor = '#230a0a'; } 
-        else if (pctInt >= 60) { probText = `🟠 ${pctInt}% — ALTA SUSPEITA`; probColor = '#E67E22'; bgColor = '#211306'; } 
-        else if (pctInt >= 35) { probText = `🟡 ${pctInt}% — POSSÍVEL CAUSA`; probColor = '#F1C40F'; bgColor = '#1f1a07'; } 
-        else { probText = `🔵 ${pctInt}% — PISTA FRACA`; probColor = '#3498DB'; bgColor = '#08131c'; }
-
-        // 📱 LAYOUT EM COLUNA
-        const baseStyle = 'flex-direction: column; align-items: stretch; padding-bottom: 8px;';
-        const rowStyle = index === 0 ? `border: 2px solid ${probColor}; background:${bgColor}; ${baseStyle}` : baseStyle;
-        const row = h('div',{class:'item', style: rowStyle}); 
-        
-        // == ZONA DE TEXTO ==
-        const grow = h('div',{class:'grow', style:'width: 100%; cursor: pointer;', onclick:() => {
-            if (diagTtsEnabled) toggleDiagAudioPlay(index, results);
-            else openDiagnosisForm(d);
-        }}); 
-        
-        grow.appendChild(h('div',{style:`font-size:11px; font-weight:900; color:${probColor}; margin-bottom:5px; letter-spacing:0.5px;`}, probText));
-        grow.appendChild(h('div',{class:'i-title'}, d.title)); 
-        
-        let subTxt = `Cartucho: ${d.category || 'Geral'}`;
-        if(d.cause) subTxt += ` · Causa: ${d.cause}`;
-        grow.appendChild(h('div',{class:'i-sub'}, subTxt)); 
-        
-        if (d.tags && d.tags.length) {
-            const tagsRow = h('div', {style:'display:flex; flex-wrap:wrap; gap:4px; margin-top:4px;'});
-            d.tags.forEach(t => tagsRow.appendChild(h('span', {style:'font-size:10.5px; padding:2px 7px; border-radius:999px; background:var(--surface-2); color:var(--ink-soft);'}, t)));
-            grow.appendChild(tagsRow);
-        }
-        row.appendChild(grow);
-
-        // == 🎛️ BARRA DE AÇÕES INFERIOR (Layout Espaçado) ==
-        const actions = h('div', {style:'display: flex; align-items: center; justify-content: flex-start; border-top: 1px dashed var(--line); padding-top: 10px; margin-top: 8px; gap:25px;margin-left: 10px;'});
-        
-        // Lado Esquerdo: O Botão de Treinamento agora tem formato de "Chip"
-        actions.appendChild(h('button',{ class:'icon-btn', style:'color:#27AE60; font-size:13px; font-weight:800; display:flex; gap:6px; align-items:center; background:rgba(39, 174, 96, 0.12); padding:6px 12px; border-radius:8px; border:1px solid rgba(39, 174, 96, 0.3);', onclick: async (e)=>{ 
-            e.stopPropagation(); 
-            d.relevanceCount = (d.relevanceCount || 0) + 1; 
-            await dbPut('diagnosis', d);
-            toast('Sherlock aprendeu! 🧠 (+2%)');
-            invalidateSherlockCache();
-            runSherlockSearch(); 
-        }}, '👍 Ensinar'));
-        
-        // Lado Direito: Editar e Copiar
-        const rightBtns = h('div', {style: 'display: flex; gap: 16px;'});
-
-        rightBtns.appendChild(h('button',{ class:'icon-btn', style:'color:var(--c-quotes); font-size:15px;', onclick:(e)=>{ 
-            e.stopPropagation(); openDiagnosisForm(d); 
-        }}, '✏️'));
-
-        rightBtns.appendChild(h('button',{ class:'icon-btn', style:'color:var(--c-notes); font-size:15px;', onclick:(e)=>{ 
-            e.stopPropagation(); 
-            const txtToCopy = d.solution ? d.solution.trim() : 'Nenhuma solução cadastrada neste caso.';
-            navigator.clipboard.writeText(txtToCopy); 
-            toast('Solução copiada!'); 
-        } }, '📋'));
-
-        rightBtns.appendChild(h('button',{ class:'icon-btn', style:'color:var(--c-tasks); font-size:15px;', onclick:(e)=>{ 
-            e.stopPropagation(); 
-            const fullText = `*Sintoma:* ${d.title}\n*Causa:* ${d.cause || 'N/A'}\n*Solução:*\n${d.solution || 'N/A'}`;
-            navigator.clipboard.writeText(fullText); 
-            toast('Caso copiado!'); 
-        } }, '📤'));
-
-        actions.appendChild(rightBtns);
-        row.appendChild(actions);
-        
-        list.appendChild(row);
-    });
-}
 function buildTagInputField(initialTags) {
     const wrap = h('div', { style: 'display:flex; flex-wrap:wrap; gap:6px; padding:8px; border:1.5px solid var(--line); border-radius:12px; background:var(--surface); align-items:center;' });
     const chipsBox = h('div', { style: 'display:flex; flex-wrap:wrap; gap:6px;' });
@@ -5860,157 +4528,6 @@ function normalizeForTags(str) {
 function capitalizeFirst(str) {
     if (!str) return str;
     return str.charAt(0).toUpperCase() + str.slice(1);
-}
-
-// ============================================================
-// 🛑 DICIONÁRIO DE STOPWORDS (Agora Dinâmico e Salvo no Celular!)
-// ============================================================
-const DEFAULT_STOPWORDS = ['de','a','o','que','e','do','da','em','um','para','com','nao','uma','os','no','se','na','por','mais','as','dos','como','mas','ao','ele','das','seu','sua','ou','quando','muito','nos','ja','eu','tambem','so','pelo','pela','ate','isso','ela','entre','depois','sem','mesmo','aos','seus','quem','nas','me','esse','eles','voce','essa','num','nem','suas','meu','minha','numa','pelos','elas','qual','lhe','deles','essas','esses','pelas','este','dele','tu','te','voces','vos','lhes','meus','minhas','teu','tua','teus','tuas','nosso','nossa','nossos','nossas','dela','delas','esta','estes','estas','aquele','aquela','aqueles','aquelas','isto','aquilo','estou','estamos','estao','foi','ser','estar','ter','tem','tinha','pra','pro','ai','la','aqui','entao','sim','onde','porque','apos','durante','sobre','ainda','todo','toda','todos','todas','tudo','nada','algo','alguns','algumas','cada','outro','outra','outros','outras','vez','vezes'];
-
-// Começa com o padrão
-let PT_STOPWORDS = new Set(DEFAULT_STOPWORDS);
-
-// Se tiver alguma lista salva por você, ele puxa do cache na hora que abre o app!
-try {
-    const savedSW = localStorage.getItem('sherlock_stopwords');
-    if (savedSW) PT_STOPWORDS = new Set(JSON.parse(savedSW));
-} catch(e) {}
-
-function extractTitleCandidates(rawText) {
-    const clean = rawText.trim();
-    if (!clean) return [];
-
-    const lines = clean.split(/\n+/).map(s => s.trim()).filter(Boolean);
-    const sentences = clean.split(/(?<=[.!?])\s+/).map(s => s.trim()).filter(Boolean);
-    const rawCandidates = [...new Set([...lines, ...sentences])];
-
-    let scored = rawCandidates.map((text, idx) => {
-        const words = text.split(/\s+/).filter(Boolean);
-        const wc = words.length;
-        if (wc < 2 || wc > 14) return null; // título tem que ser curto
-
-        const posScore = 1 / (1 + idx * 0.5);      // quanto mais cedo, melhor
-        const idealLen = 6;
-        const lenScore = Math.max(0, 1 - Math.abs(idealLen - wc) / idealLen);
-        return { text: capitalizeFirst(text), score: posScore * 0.6 + lenScore * 0.4 };
-    }).filter(Boolean);
-
-    scored.sort((a, b) => b.score - a.score);
-
-    const uniq = [];
-    scored.forEach(c => {
-        const dup = uniq.some(u => levenshtein(u.text.toLowerCase(), c.text.toLowerCase()) <= 2);
-        if (!dup) uniq.push(c);
-    });
-
-    if (uniq.length === 0 && clean) {
-        const words = clean.split(/\s+/).slice(0, 8).join(' ');
-        uniq.push({ text: capitalizeFirst(words) + '…', score: 1 });
-    }
-
-    return uniq.slice(0, 6);
-}
-const SPLIT_MARKERS = [
-    'solucao:', 'solução:', 'resolvi', 'resolvido', 'conserto:', 'correcao:', 'correção:',
-    'diagnostico:', 'diagnóstico:', 'causa:', 'o problema era', 'consegui resolver'
-];
-
-function splitCauseSolution(rawText) {
-    const clean = rawText.trim();
-    if (!clean) return { cause: '', solution: '' };
-
-    const lower = clean.toLowerCase();
-    for (const marker of SPLIT_MARKERS) {
-        const idx = lower.indexOf(marker);
-        if (idx > 5) return { cause: clean.slice(0, idx).trim(), solution: clean.slice(idx).trim() };
-    }
-
-    const parts = clean.split(/(?<=[.!?\n])\s*/).map(s => s.trim()).filter(Boolean);
-    let cutIdx = -1, acc = '';
-    for (let i = 0; i < parts.length; i++) {
-        acc += (acc ? ' ' : '') + parts[i];
-        if (acc.split(/\s+/).length >= 4) { cutIdx = i; break; }
-    }
-    if (cutIdx >= 0) {
-        const cause = parts.slice(0, cutIdx + 1).join(' ').trim();
-        const solution = parts.slice(cutIdx + 1).join(' ').trim();
-        if (solution) return { cause, solution };
-    }
-
-    const words = clean.split(/\s+/);
-    const cutCount = Math.min(15, Math.max(4, Math.round(words.length * 0.25)));
-    return { cause: words.slice(0, cutCount).join(' '), solution: words.slice(cutCount).join(' ') || clean };
-}
-function extractTagCandidates(rawText, tagFrequencyMap) {
-    const norm = normalizeForTags(rawText);
-    const tokens = norm.split(/[^a-z0-9]+/).filter(Boolean);
-
-    const freq = {};
-    tokens.forEach(t => {
-        if (t.length < 3 || PT_STOPWORDS.has(t)) return;
-        freq[t] = (freq[t] || 0) + 1;
-    });
-
-    const bigramFreq = {};
-    for (let i = 0; i < tokens.length - 1; i++) {
-        const w1 = tokens[i], w2 = tokens[i + 1];
-        if (w1.length < 3 || w2.length < 3) continue;
-        if (PT_STOPWORDS.has(w1) || PT_STOPWORDS.has(w2)) continue;
-        const bg = `${w1} ${w2}`;
-        bigramFreq[bg] = (bigramFreq[bg] || 0) + 1;
-    }
-
-    const candidates = [];
-    Object.entries(freq).forEach(([term, count]) => {
-        let score = count;
-        if (tagFrequencyMap && tagFrequencyMap[term]) score += tagFrequencyMap[term].count * 2; // já usado antes = bônus
-        candidates.push({ term, score });
-    });
-    Object.entries(bigramFreq).forEach(([term, count]) => {
-        let score = count * 1.6; // frase composta vale mais
-        if (tagFrequencyMap && tagFrequencyMap[term]) score += tagFrequencyMap[term].count * 2;
-        candidates.push({ term, score });
-    });
-
-    return candidates.sort((a, b) => b.score - a.score).slice(0, 10).map(c => c.term);
-}
-
-async function getTagFrequencyMap() {
-    const diags = await getSherlockCases(); // reaproveita o cache do Sherlock
-    const freq = {};
-    diags.forEach(d => {
-        (d.tags || []).forEach(tag => {
-            const key = normalizeForTags(tag);
-            if (!key) return;
-            if (!freq[key]) freq[key] = { display: tag, count: 0 };
-            freq[key].count++;
-        });
-    });
-    return freq;
-}
-function buildQuickAddPanel(tagFieldRef, defaultCat) {
-    const panel = h('div', { style: 'background:var(--surface-2); border:1px solid var(--line); border-radius:14px; padding:14px; margin-bottom:16px;' });
-    panel.appendChild(h('div', { style: 'font-size:12px; font-weight:800; color:#E67E22; letter-spacing:.5px; margin-bottom:8px;' }, '⚡ ADIÇÃO RÁPIDA'));
-
-    const textarea = h('textarea', {
-        id: 'qa-raw-text',
-        placeholder: 'Cole aqui o relato completo do caso (sintoma, causa, solução)...',
-        style: 'width:100%; min-height:110px; border:1.5px solid var(--line); border-radius:12px; padding:10px; font-size:13.5px; background:var(--surface); color:var(--ink); resize:vertical;'
-    });
-    panel.appendChild(textarea);
-
-    const resultsBox = h('div', { id: 'qa-results', style: 'display:none; margin-top:12px;' });
-    panel.appendChild(resultsBox);
-
-    let qaTimer = null;
-    textarea.addEventListener('input', () => {
-        clearTimeout(qaTimer);
-        const text = textarea.value;
-        if (!text || text.trim().length < 12) { resultsBox.style.display = 'none'; return; }
-        qaTimer = setTimeout(() => { renderQuickAddSuggestions(text, resultsBox, tagFieldRef, defaultCat); }, 350);
-    });
-
-    return panel;
 }
 
 async function renderQuickAddSuggestions(text, box, tagFieldRef, defaultCat) {
