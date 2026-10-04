@@ -1129,10 +1129,9 @@ function buildStatChips(pendingCount, balance, habitsDone = 0, habitsTotal = 0) 
 
   // 5. Tema Claro/Escuro
   const isDark = document.body.classList.contains('dark-theme');
-  row.appendChild(h('button', {id: 'theme-toggle-btn', class:'stat-chip', style: 'padding-left: 12px; padding-right: 12px; font-size: 16px;', onclick: toggleTheme}, isDark ? '🌙' : '☀️'));
-  
   // 6. Engrenagem de Configurações
   row.appendChild(h('button', {class:'stat-chip', style: 'padding-left: 12px; padding-right: 12px; font-size: 16px;', onclick: openSettings}, '⚙️'));
+  row.appendChild(h('button', {id: 'theme-toggle-btn', class:'stat-chip', style: 'padding-left: 12px; padding-right: 12px; font-size: 16px;', onclick: toggleTheme}, isDark ? '🌙' : '☀️'));
 }
 
 function setupGreeting(){
@@ -1389,7 +1388,7 @@ async function base64ToBlob(base64) {
   return await res.blob();
 }
 
-// 📤 EXPORTAR DADOS (Agora com tela de Seleção)
+// 📤 EXPORTAR DADOS (Com tela de Seleção e Nome Customizado)
 async function exportAllData() {
     const storesMap = {
         tasks: '✅ Tarefas', notes: '📝 Notas', expenses: '💰 Gastos', habits: '⭐ Hábitos',
@@ -1400,9 +1399,18 @@ async function exportAllData() {
     openSheet({
         title: 'Exportar Backup',
         buildFields: (box) => {
+            // 👇 MUDANÇA 1: Adicionado o campo de texto para o nome opcional
+            box.appendChild(h('div', {style:'font-size:13px; color:var(--ink-soft); margin-bottom:4px;'}, 'Nome do arquivo (Opcional):'));
+            box.appendChild(h('input', {
+                id: 'f-export-name', 
+                type: 'text', 
+                placeholder: `Ex: meu_backup_${todayIso()}`,
+                style: 'width:100%; padding:10px; margin-bottom:16px; border:1px solid var(--line); border-radius:6px; background:var(--surface-2); color:var(--ink);'
+            }));
+
             box.appendChild(h('div', {style:'font-size:13px; color:var(--ink-soft); margin-bottom:16px;'}, 'Selecione o que deseja salvar:'));
 
-            const listWrap = h('div', {style:'display:flex; flex-direction:column; gap:2px; max-height:55vh; overflow-y:auto; padding-right:8px;'});
+            const listWrap = h('div', {style:'display:flex; flex-direction:column; gap:2px; max-height:45vh; overflow-y:auto; padding-right:8px;'});
 
             const rowAll = h('div', {style:'display:flex; align-items:center; gap:12px; padding:12px; background:var(--surface-2); border-radius:var(--r-md); margin-bottom:8px; border:1px solid var(--line);'});
             const chkAll = h('input', {type:'checkbox', checked:true, style:'width:22px; height:22px; accent-color:var(--c-tasks); flex:0 0 auto;'});
@@ -1432,13 +1440,21 @@ async function exportAllData() {
             const selectedStores = Array.from(document.querySelectorAll('.chk-exp-store')).filter(c => c.checked).map(c => c.value);
             if (selectedStores.length === 0) { toast('Selecione pelo menos um módulo!'); return false; }
 
+            // 👇 MUDANÇA 2: Resgata o nome digitado e processa
+            const inputName = document.getElementById('f-export-name');
+            const userText = inputName ? inputName.value.trim() : '';
+            let finalFileName = userText ? userText : `central-backup-${todayIso()}`;
+            // Garante que termina com .json
+            if (!finalFileName.toLowerCase().endsWith('.json')) {
+                finalFileName += '.json';
+            }
+
             toast('Preparando backup... aguarde.');
             try {
                 const data = {}; 
                 for (const store of selectedStores) {
                     const items = await dbAll(store);
                     
-                    // SEU CÓDIGO INTACTO: Vasculha procurando arquivos para converter
                     for (const item of items) {
                         if (item.mediaEncrypted instanceof Blob) item.mediaEncrypted = await blobToBase64(item.mediaEncrypted);
                         if (item.mediaData instanceof Blob) item.mediaData = await blobToBase64(item.mediaData);
@@ -1450,14 +1466,17 @@ async function exportAllData() {
                 const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
                 const url = URL.createObjectURL(blob); 
                 const a = document.createElement('a'); a.href = url;
-                a.download = `central-backup-${todayIso()}.json`; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); 
+                
+                // 👇 MUDANÇA 3: Usa a variável finalFileName inteligente no download
+                a.download = finalFileName; 
+                
+                document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); 
                 toast('Backup salvo com sucesso!');
                 return true;
             } catch (e) { toast('Erro ao salvar backup.'); console.error(e); return false; }
         }
     });
 }
-
 // 📥 IMPORTAR DADOS (Agora com opções: Mesclar ou Substituir)
 function triggerImport() {
   const input = document.createElement('input'); input.type = 'file'; input.accept = '.json';
@@ -4191,17 +4210,24 @@ async function openCalculatorBuilder(existing) {
     });
 }
 
-// 🚀 O EXECUTOR DE CÁLCULOS (Com opção de Salvar Padrões e Salvar do Teste)
+// 🚀 O EXECUTOR DE CÁLCULOS (Layout Otimizado Mobile: Scroll nos inputs)
 function openCalculatorRunner(calc, isTest = false) {
     if (!calc.inputs || calc.inputs.length === 0) { toast('Essa calculadora não tem campos de entrada!'); return; }
 
     openSheet({
         title: isTest ? '🧪 TESTE: ' + (calc.title || 'Calculadora sem nome') : calc.title,
         buildFields: (box) => {
-            if (calc.desc) box.appendChild(h('div', {style:'font-size:14px; color:var(--ink-soft); margin-bottom:16px; font-style:italic; border-left:3px solid #2980B9; padding-left:8px;'}, calc.desc));
+            if (calc.desc) box.appendChild(h('div', {style:'font-size:14px; color:var(--ink-soft); margin-bottom:12px; font-style:italic; border-left:3px solid #2980B9; padding-left:8px;'}, calc.desc));
 
-            const resultBox = h('div', {style:'background:#E8F8F5; border:1px solid #1ABC9C; padding:16px; border-radius:12px; margin-bottom:24px; min-height:80px;'});
+            // 👇 CAIXA DE RESULTADOS (Fica fixa no topo, sempre visível)
+            const resultBox = h('div', {style:'background:#E8F8F5; border:1px solid #1ABC9C; padding:16px; border-radius:12px; margin-bottom:16px; min-height:80px;'});
             box.appendChild(resultBox);
+
+            // 👇 CAIXA DE INPUTS (Tem barra de rolagem e tamanho máximo no celular)
+            const inputsContainer = h('div', {
+                style: 'max-height: 45vh; overflow-y: auto; padding-right: 8px; border-top: 1px solid var(--line); padding-top: 12px; padding-bottom: 12px; display:flex; flex-direction:column; gap:4px;'
+            });
+            box.appendChild(inputsContainer);
 
             const valStore = {}; // Guarda tudo: v1, v2, r1, r2...
 
@@ -4240,6 +4266,7 @@ function openCalculatorRunner(calc, isTest = false) {
                 });
             };
 
+            // Adiciona os campos de entrada DENTRO da nova caixa de scroll (inputsContainer)
             calc.inputs.forEach((inp, idx) => {
                 const varName = `v${idx+1}`;
                 
@@ -4261,7 +4288,6 @@ function openCalculatorRunner(calc, isTest = false) {
                     });
                     f.onchange = (e) => { valStore[varName] = Number(e.target.value.replace(',','.')) || 0; doMath(); };
                     if(inp.options && inp.options.length > 0 && def === '') valStore[varName] = Number(inp.options[0].value) || 0;
-                    // Se tiver valor padrão salvo, tenta selecionar ele
                     if(def !== '') {
                         Array.from(f.options).forEach(o => { if(o.value == def) o.selected = true; });
                         valStore[varName] = Number(def) || 0;
@@ -4275,38 +4301,35 @@ function openCalculatorRunner(calc, isTest = false) {
                     f.oninput = (e) => { valStore[varName] = Number(e.target.value.replace(',','.')) || 0; doMath(); };
                 }
                 
-                w.appendChild(f); box.appendChild(w);
+                w.appendChild(f); 
+                inputsContainer.appendChild(w); // Adiciona na caixa com scroll, e não direto na 'box' principal
             });
             
             doMath(); 
 
-            // BOTÕES ESPECIAIS DE ACORDO COM O MODO
+            // BOTÕES ESPECIAIS DE ACORDO COM O MODO (Também ficam dentro da caixa com scroll no fim)
             if (isTest) {
-                // Modo Teste: Botão de voltar para edição
-                const backBtn = h('button', {class:'btn btn-ghost', style:'width:100%; margin-top:16px; border:1px dashed #2980B9; color:#2980B9; padding:12px;', onclick:(e)=>{
+                const backBtn = h('button', {class:'btn btn-ghost', style:'width:100%; margin-top:8px; border:1px dashed #2980B9; color:#2980B9; padding:12px;', onclick:(e)=>{
                     e.preventDefault();
-                    openCalculatorBuilder(calc); // Reabre a tela de construção sem perder nada
+                    openCalculatorBuilder(calc);
                 }}, '🔙 Voltar para edição da fórmula');
-                box.appendChild(backBtn);
+                inputsContainer.appendChild(backBtn);
                 
-                // Transforma o botão "Salvar" padrão para salvar o trabalho
                 setTimeout(() => { 
                     const b = document.getElementById('sheet-save-btn'); 
                     if(b) { b.style.display='block'; b.textContent='💾 Salvar Calculadora'; b.style.background='#27AE60'; b.style.borderColor='#27AE60'; b.style.color='#fff'; }
                 }, 10);
             } else {
-                // Modo Normal (Usando): Botão para salvar os valores atuais como padrão
-                const saveDefBtn = h('button', {class:'btn btn-ghost', style:'width:100%; margin-top:16px; border:1px dashed #16A085; color:#16A085; padding:12px;', onclick: async (e)=>{
+                const saveDefBtn = h('button', {class:'btn btn-ghost', style:'width:100%; margin-top:8px; border:1px dashed #16A085; color:#16A085; padding:12px;', onclick: async (e)=>{
                     e.preventDefault();
                     calc.inputs.forEach((inp, idx) => {
-                        inp.defaultValue = valStore[`v${idx+1}`]; // Pega o valor exato que está no input agora
+                        inp.defaultValue = valStore[`v${idx+1}`]; 
                     });
                     await dbPut('calculators', calc);
                     toast('Valores atuais salvos como padrão!');
                 }}, '💾 Salvar valores atuais como padrão');
-                box.appendChild(saveDefBtn);
+                inputsContainer.appendChild(saveDefBtn);
                 
-                // Muda o botão principal para apenas "Fechar"
                 setTimeout(() => { 
                     const b = document.getElementById('sheet-save-btn'); 
                     if(b) { b.textContent='Fechar'; b.style.background='var(--surface-2)'; b.style.color='var(--ink)'; b.style.borderColor='var(--line)'; }
@@ -4314,7 +4337,6 @@ function openCalculatorRunner(calc, isTest = false) {
             }
         },
         onSubmit: async () => { 
-            // Se for Teste, o botão principal salva a calculadora no banco de dados!
             if (isTest) {
                 if (!calc.title || !calc.title.trim()) { toast('Dê um nome para a calculadora antes de salvar!'); return false; }
                 await dbPut('calculators', calc);
@@ -4322,11 +4344,10 @@ function openCalculatorRunner(calc, isTest = false) {
                 if(typeof updateHomeStats === 'function') updateHomeStats();
                 toast('Calculadora Salva com Sucesso!');
             }
-            return true; // Fecha a janela
+            return true; 
         }
     });
 }
-
 async function init(){
   loadTheme();
   try{ await openDatabase(); }catch(err){ toast('Não foi possível abrir o banco local.'); console.error(err); return; }
