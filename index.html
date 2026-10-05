@@ -4274,7 +4274,7 @@ function openCalculatorRunner(calc, isTest = false) {
                 if(inp.type === 'number') valStore[varName] = Number(def) || 0;
                 else valStore[varName] = def; 
 
-                const w = h('div', {style:'margin-bottom:12px;'});
+                const w = h('div', {style:'margin-bottom:12px; padding-left: 4px;'});
                 const lblWrap = h('div', {style:'display:flex; justify-content:space-between; margin-bottom:4px;'});
                 lblWrap.appendChild(h('div', {style:'font-size:13px; font-weight:700; color:var(--ink);'}, inp.label || `Campo ${idx+1}`));
                 if (inp.unit) lblWrap.appendChild(h('div', {style:'font-size:12px; color:var(--ink-soft);'}, inp.unit));
